@@ -145,7 +145,8 @@ shift-k/
 - [x] IPC dialog:pick-folder, config:update, window:open-settings
 - [x] services/watcher-manager : syncWatcher() redemarre chokidar quand downloadsPath change
 - [x] FooterBar reorganise : 6 boutons, EditSlots (Sliders) separe de Settings (gear)
-- [ ] globalShortcut Ctrl+Alt+1..9 (switch slot), Ctrl+Alt+S (cycle stage), Ctrl+Alt+P (pause)
+- [x] globalShortcut Ctrl+Alt+1..9 (switch slot), Ctrl+Alt+S (cycle stage), Ctrl+Alt+P (pause)
+- [x] services/actions extrait (DRY entre IPC handlers et shortcuts)
 - [ ] Tray icon + menu contextuel quit/show/hide
 - [ ] Notifications natives sur routage (Notification API Electron)
 - [ ] Onboarding wizard premier lancement (root + downloadsPath)
