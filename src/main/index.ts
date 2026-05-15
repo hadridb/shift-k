@@ -1,35 +1,30 @@
 import { app, BrowserWindow } from 'electron';
-import path from 'path';
-
-const isDev = !app.isPackaged;
-
-function createWindow(): BrowserWindow {
-  const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    backgroundColor: '#000000',
-    webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-
-  if (isDev) {
-    void win.loadURL('http://localhost:5173');
-  } else {
-    void win.loadFile(path.join(__dirname, '../renderer/index.html'));
-  }
-
-  return win;
-}
+import { registerConfigHandlers } from './ipc/config-handlers';
+import { createOverlayWindow } from './windows/overlay';
+import { createWatcher } from '@core/watcher/watcher';
+import { getConfig } from '@core/config/store';
 
 app.whenReady().then(() => {
-  createWindow();
+  registerConfigHandlers();
+  createOverlayWindow();
+
+  // Start file watcher (only if configured)
+  const config = getConfig();
+  if (config.downloadsPath) {
+    createWatcher({
+      getConfig,
+      onEvent: (event) => {
+        if (event.type === 'routed') {
+          // TODO Sprint 4: native notification
+        }
+      },
+    });
+  }
 
   app.on('activate', () => {
+    // macOS: re-create overlay if all windows closed
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createOverlayWindow();
     }
   });
 });

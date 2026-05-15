@@ -1,0 +1,24 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+#root {
+  background: transparent;
+}
+
+/* Drag region on header */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+/* Interactive elements inside drag region must opt out */
+.no-drag {
+  -webkit-app-region: no-drag;
+}

@@ -18,6 +18,12 @@ export default defineConfig({
   build: {
     outDir: 'dist/renderer',
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        overlay: 'overlay.html',
+      },
+    },
   },
   base: './',
 });
