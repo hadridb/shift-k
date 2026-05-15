@@ -142,18 +142,33 @@ shift-k/
 - [x] EditSlotsModal : 9 dropdowns charges depuis filesystem (bouton Settings pour l'instant)
 - [x] OpenFoldersModal : checkboxes stages + toggle "dossier du jour" (ost toujours stage root), shell.openPath
 
-**Sprint 4 (en cours)** : Configuration & raccourcis.
+**Sprint 4 (termine)** : Configuration & raccourcis.
 - [x] Settings BrowserWindow 540x720 non-modal (general / stages / preferences)
 - [x] IPC dialog:pick-folder, config:update, window:open-settings
-- [x] services/watcher-manager : syncWatcher() redemarre chokidar quand downloadsPath change
+- [x] services/watcher-manager : syncWatcher() ferme chokidar quand pause OU downloadsPath change (await close + ignoreInitial:true au restart pour pas re-router les fichiers arrives pendant la pause)
 - [x] FooterBar reorganise : 6 boutons, EditSlots (Sliders) separe de Settings (gear)
 - [x] globalShortcut Ctrl+Alt+1..9 (switch slot), Ctrl+Alt+S (cycle stage), Ctrl+Alt+P (pause)
 - [x] services/actions extrait (DRY entre IPC handlers et shortcuts)
 - [x] Ctrl+Shift+K (global) toggle overlay
 - [x] Shift+J/K/L (overlay focused) navigation NLE-style — voir ADR-021 + docs/SHORTCUTS.md
-- [ ] Tray icon + menu contextuel quit/show/hide
-- [ ] Notifications natives sur routage (Notification API Electron)
+- [x] Tray icon (K base64 16x16) + menu contextuel afficher/quitter, click toggle overlay
+- [x] Notifications natives sur routage (Electron Notification API, AppUserModelID com.shiftk.app pour identite Windows)
 - [x] Onboarding wizard premier lancement (root + downloadsPath, 3 etapes : welcome/paths/recap)
+- [x] Dry-run rescan : scanner.previewRescan + executeRescan + RescanModal (checkboxes par fichier), pref confirmBeforeRescan
+
+**Sprint 5a (termine)** : Packaging Windows + autostart.
+- [x] electron-builder.yml : NSIS per-user, appId com.shiftk.app, icone electron/resources/icon.png (512x512 K-sur-fond-arrondi-noir)
+- [x] services/autostart : app.setLoginItemSettings avec --hidden flag, no-op en dev
+- [x] main/index detecte wasOpenedAtLogin OU --hidden et skip createOverlayWindow (tray seul)
+- [x] preferences.startOnLogin toggle dans Settings, applique via onConfigChange listener
+- [x] Build pre-req : Windows Developer Mode activable via ms-settings:developers (sinon electron-builder echoue sur les symlinks Mac du cache winCodeSign — bug connu, voir commit 2d3de9d)
+- [x] Installer genere : release/Shift-K Setup 0.1.0.exe (~80 MB, non signe — SmartScreen warning au premier lancement)
+
+**Sprint 5b (prochain)** : A definir parmi :
+- Code signing Windows (cert Sectigo EV) pour faire disparaitre SmartScreen warning
+- electron-updater + GitHub Releases feed pour auto-update silencieux
+- Polish overlay : badge "N fichiers en attente" pres du bouton Rescan, recherche dans EditSlots
+- Phase Gamma : extension navigateur pour capture metadonnees (prompt, seed, params depuis Runway/Higgsfield/Kling)
 
 ## Contacts
 
@@ -162,4 +177,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 15 mai 2026 (Sprint 3 termine). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 15 mai 2026 (Sprint 5a termine — installer Windows produit, V2 prete a remplacer V1 PowerShell sur la machine d'Hadrien). A maintenir a jour a chaque decision structurante.*
