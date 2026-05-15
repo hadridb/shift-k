@@ -1,32 +1,50 @@
-// Shared types between main process and renderer — no Electron imports here
+// Shared types between main process and renderer — no Electron or Node imports here
 
 export type Stage = 'src' | 'img' | 'out' | 'ost' | 'liv';
 
+export type SlotKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+
 export type StageLabels = Record<Stage, string>;
 
-export interface Project {
-  id: string;
-  client: string;
-  mission: string;
-  folderPath: string;
+export interface Preferences {
+  dailyFolderFormat: string;
+  lazyDailyFolders: boolean;
+  groupByPlatform: boolean;
+  logRetentionDays: number;
+  notifyOnRoute: boolean;
+  overlay: { x: number; y: number };
+  openFoldersLast: Record<Stage, boolean>;
+  openFoldersToday: boolean;
 }
 
 export interface AppConfig {
-  version: number;
-  projectsRoot: string;
+  version: string;
+  root: string;
   downloadsPath: string;
-  activeSlot: number | null;
-  slots: Array<string | null>;
-  stageLabels: StageLabels;
+  activeClient: string | null;
   activeStage: Stage;
+  stages: StageLabels;
+  platforms: Record<string, string[]>;
+  videoExtensions: string[];
+  imageExtensions: string[];
+  projectExtensions: string[];
+  ignoreExtensions: string[];
+  slots: Record<SlotKey, string | null>;
   routingEnabled: boolean;
-  groupByPlatform: boolean;
+  preferences: Preferences;
 }
 
 export interface RouteResult {
   sourcePath: string;
   destinationPath: string;
-  platform: string | null;
-  stage: Stage;
+  platform: string;
+  stageKey: Stage;
+  stageFolderName: string;
   movedAt: Date;
+}
+
+export interface ScanResult {
+  routed: RouteResult[];
+  skipped: number;
+  errors: Array<{ file: string; error: string }>;
 }
