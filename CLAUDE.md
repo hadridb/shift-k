@@ -149,7 +149,7 @@ shift-k/
 - [x] services/actions extrait (DRY entre IPC handlers et shortcuts)
 - [ ] Tray icon + menu contextuel quit/show/hide
 - [ ] Notifications natives sur routage (Notification API Electron)
-- [ ] Onboarding wizard premier lancement (root + downloadsPath)
+- [x] Onboarding wizard premier lancement (root + downloadsPath, 3 etapes : welcome/paths/recap)
 
 ## Contacts
 
