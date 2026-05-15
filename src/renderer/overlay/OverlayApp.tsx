@@ -3,6 +3,11 @@ import type { AppConfig } from '../../shared/types';
 import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
 import { FooterBar } from './components/FooterBar';
+import { NewProjectModal } from './modals/NewProjectModal';
+import { EditSlotsModal } from './modals/EditSlotsModal';
+import { OpenFoldersModal } from './modals/OpenFoldersModal';
+
+type ModalType = 'new-project' | 'edit-slots' | 'open-folders' | null;
 
 function useConfig() {
   const [config, setConfig] = useState<AppConfig | null>(null);
@@ -17,6 +22,9 @@ function useConfig() {
 
 export function OverlayApp() {
   const config = useConfig();
+  const [modal, setModal] = useState<ModalType>(null);
+
+  const closeModal = useCallback(() => setModal(null), []);
 
   const handleSelectClient = useCallback((client: string | null) => {
     void window.shiftK.setActiveClient(client);
@@ -62,6 +70,7 @@ export function OverlayApp() {
         borderRadius: 14,
         overflow: 'hidden',
         boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
+        position: 'relative',
       }}
     >
       {/* Header — drag region */}
@@ -125,10 +134,15 @@ export function OverlayApp() {
         routingEnabled={config.routingEnabled}
         onTogglePause={handleTogglePause}
         onRescan={handleRescan}
-        onOpenFolders={() => {}}
-        onNewProject={() => {}}
-        onSettings={() => {}}
+        onOpenFolders={() => setModal('open-folders')}
+        onNewProject={() => setModal('new-project')}
+        onSettings={() => setModal('edit-slots')}
       />
+
+      {/* Modals */}
+      {modal === 'new-project' && <NewProjectModal onClose={closeModal} />}
+      {modal === 'edit-slots' && <EditSlotsModal config={config} onClose={closeModal} />}
+      {modal === 'open-folders' && <OpenFoldersModal config={config} onClose={closeModal} />}
     </div>
   );
 }

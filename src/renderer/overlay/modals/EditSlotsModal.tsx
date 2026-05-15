@@ -1,0 +1,158 @@
+import React, { useState, useEffect } from 'react';
+import type { AppConfig, SlotKey } from '@shared/types';
+
+const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+const EMPTY_SENTINEL = '__null__';
+
+interface Props {
+  config: AppConfig;
+  onClose: () => void;
+}
+
+const selectStyle: React.CSSProperties = {
+  flex: 1,
+  background: '#1A1A1A',
+  border: '1px solid #2A2A2A',
+  borderRadius: 5,
+  color: '#CCCCCC',
+  fontSize: 11,
+  padding: '5px 8px',
+  outline: 'none',
+  cursor: 'pointer',
+};
+
+export function EditSlotsModal({ config, onClose }: Props) {
+  const [slots, setSlots] = useState<Record<SlotKey, string | null>>({ ...config.slots });
+  const [projects, setProjects] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    void window.shiftK.listProjects().then(setProjects);
+  }, []);
+
+  function handleChange(key: SlotKey, raw: string) {
+    setSlots((prev) => ({ ...prev, [key]: raw === EMPTY_SENTINEL ? null : raw }));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await window.shiftK.setSlots(slots);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(10,10,10,0.95)',
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '20px 16px 16px',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 14,
+        }}
+      >
+        <span
+          style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: '#FFFFFF' }}
+        >
+          SLOTS
+        </span>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#666666',
+            fontSize: 14,
+            cursor: 'pointer',
+            padding: 4,
+            lineHeight: 1,
+          }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Slot rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
+        {SLOT_KEYS.map((key) => (
+          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                fontSize: 10,
+                color: '#555555',
+                fontVariantNumeric: 'tabular-nums',
+                minWidth: 10,
+                textAlign: 'right',
+              }}
+            >
+              {key}
+            </span>
+            <select
+              style={selectStyle}
+              value={slots[key] ?? EMPTY_SENTINEL}
+              onChange={(e) => handleChange(key, e.target.value)}
+              disabled={saving}
+            >
+              <option value={EMPTY_SENTINEL} style={{ color: '#444' }}>
+                (vide)
+              </option>
+              {projects.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
+        <button
+          onClick={onClose}
+          disabled={saving}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#666666',
+            fontSize: 11,
+            cursor: 'pointer',
+            padding: '8px 12px',
+          }}
+        >
+          Annuler
+        </button>
+        <button
+          onClick={() => void handleSave()}
+          disabled={saving}
+          style={{
+            background: saving ? '#2A2A2A' : '#FFFFFF',
+            border: 'none',
+            borderRadius: 6,
+            color: saving ? '#555555' : '#000000',
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: saving ? 'default' : 'pointer',
+            padding: '8px 16px',
+          }}
+        >
+          {saving ? '…' : 'Enregistrer'}
+        </button>
+      </div>
+    </div>
+  );
+}

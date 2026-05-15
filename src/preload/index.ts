@@ -19,6 +19,15 @@ const bridge: ShiftKBridge = {
     ipcRenderer.on('config:changed', handler);
     return () => ipcRenderer.removeListener('config:changed', handler);
   },
+
+  setSlots: (slots) => ipcRenderer.invoke('config:set-slots', slots),
+
+  createProject: (client, mission) => ipcRenderer.invoke('projects:create', client, mission),
+
+  listProjects: () => ipcRenderer.invoke('projects:list'),
+
+  openFolders: (stages, todayOnly) =>
+    ipcRenderer.invoke('projects:open-folders', stages, todayOnly),
 };
 
 contextBridge.exposeInMainWorld('shiftK', bridge);

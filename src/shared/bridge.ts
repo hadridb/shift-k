@@ -1,4 +1,4 @@
-import type { AppConfig, Stage, ScanResult } from './types';
+import type { AppConfig, Stage, SlotKey, ScanResult } from './types';
 
 export interface ShiftKBridge {
   getConfig: () => Promise<AppConfig>;
@@ -7,4 +7,9 @@ export interface ShiftKBridge {
   toggleRouting: () => Promise<boolean>;
   triggerRescan: () => Promise<ScanResult>;
   onConfigChange: (callback: (config: AppConfig) => void) => () => void;
+
+  setSlots: (slots: Record<SlotKey, string | null>) => Promise<void>;
+  createProject: (client: string, mission: string) => Promise<string>;
+  listProjects: () => Promise<string[]>;
+  openFolders: (stages: Stage[], todayOnly: boolean) => Promise<void>;
 }
