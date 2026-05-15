@@ -26,7 +26,7 @@ export function createOnboardingWindow(): BrowserWindow {
     center: true,
     show: false,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -43,7 +43,7 @@ export function createOnboardingWindow(): BrowserWindow {
   if (isDev) {
     void onboardingWindow.loadURL('http://localhost:5173/onboarding.html');
   } else {
-    void onboardingWindow.loadFile(path.join(__dirname, '../renderer/onboarding.html'));
+    void onboardingWindow.loadFile(path.join(__dirname, '../../renderer/onboarding.html'));
   }
 
   return onboardingWindow;

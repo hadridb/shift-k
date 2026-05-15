@@ -25,7 +25,7 @@ export function createSettingsWindow(): BrowserWindow {
     resizable: false,
     show: false,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -42,7 +42,7 @@ export function createSettingsWindow(): BrowserWindow {
   if (isDev) {
     void settingsWindow.loadURL('http://localhost:5173/settings.html');
   } else {
-    void settingsWindow.loadFile(path.join(__dirname, '../renderer/settings.html'));
+    void settingsWindow.loadFile(path.join(__dirname, '../../renderer/settings.html'));
   }
 
   return settingsWindow;

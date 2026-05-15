@@ -31,7 +31,7 @@ export function createOverlayWindow(): BrowserWindow {
     resizable: false,
     hasShadow: false,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -42,7 +42,7 @@ export function createOverlayWindow(): BrowserWindow {
   if (isDev) {
     void win.loadURL('http://localhost:5173/overlay.html');
   } else {
-    void win.loadFile(path.join(__dirname, '../renderer/overlay.html'));
+    void win.loadFile(path.join(__dirname, '../../renderer/overlay.html'));
   }
 
   // Persist position on move
