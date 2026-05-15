@@ -27,6 +27,8 @@ Persona de reference : **Hadrien Durand-Baissas** (le co-architecte de ce projet
 
 Une **V1 fonctionnelle existe deja** en PowerShell + AHK, deployee sur la machine d'Hadrien. Elle est **gelee** (voir `E:\000 My Razer Blade\Documents\Phasma\000 Phasma Missions\_PHASMA_SYSTEM\_FROZEN_V1.md`). La logique metier est solide et a ete testee en conditions reelles ; le port vers TypeScript doit en **preserver les comportements exacts**. Voir `docs/V1_REFERENCE.md` pour le mapping V1 -> V2.
 
+**Piege au demarrage V1 vs V2 (15/05/2026)** : V1 s'installait via deux taches Task Scheduler Windows — `Phasma-Watcher` (running) et `Phasma-Overlay` (ready). Tant que ces taches restent activees, V1 continue de surveiller `~/Downloads` en parallele de V2 et **vole les fichiers** que V2 devrait router (le pause de V2 ne sert a rien dans ce cas). Si un test de routage montre des fichiers qui disparaissent vers une destination inattendue : verifier `Get-ScheduledTask Phasma-Watcher,Phasma-Overlay` et `Disable-ScheduledTask` les deux. V1 reste installe sur disque comme fallback manuel.
+
 ## Stack technique (decidee, voir docs/DECISIONS.md)
 
 - **Framework desktop** : Electron 33+
