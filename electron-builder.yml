@@ -1,0 +1,31 @@
+appId: app.shift-k
+productName: Shift-K
+copyright: Copyright © 2026 Hadrien Durand-Baissas
+
+directories:
+  buildResources: electron/resources
+  output: release
+
+files:
+  - dist/main/**/*
+  - dist/preload/**/*
+  - dist/renderer/**/*
+  - "!**/*.map"
+  - "!**/*.d.ts"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # icon: electron/resources/icon.ico  # Uncomment once icon.ico is added
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  installerIcon: null
+  uninstallerIcon: null
+
+publish: null
