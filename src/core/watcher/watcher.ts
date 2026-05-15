@@ -24,6 +24,12 @@ async function processFile(
   const dest = resolveDestination(fileName, config);
   if (!dest) return;
 
+  // Defense in depth: pause could have toggled between resolveDestination
+  // and now (e.g. queued event firing just before watcher.close finishes).
+  // resolveDestination already checks routingEnabled, but re-read here so
+  // a late pause still skips the move.
+  if (!getConfig().routingEnabled) return;
+
   try {
     const destinationPath = await moveFile(filePath, dest.destDir);
     onEvent({

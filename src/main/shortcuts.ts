@@ -40,7 +40,7 @@ export function registerShortcuts(): void {
 
   // Ctrl+Alt+P — toggle pause routing
   register('Control+Alt+P', () => {
-    toggleRouting();
+    void toggleRouting();
   });
 }
 

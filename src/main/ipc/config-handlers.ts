@@ -43,10 +43,10 @@ export function registerConfigHandlers(): void {
     broadcastConfigChange();
   });
 
-  ipcMain.handle('config:update', (_e, updates: Partial<AppConfig>) => {
+  ipcMain.handle('config:update', async (_e, updates: Partial<AppConfig>) => {
     setConfig(updates);
     broadcastConfigChange();
-    syncWatcher();
+    await syncWatcher();
   });
 
   ipcMain.handle('dialog:pick-folder', async (e, title?: string) => {
@@ -66,10 +66,10 @@ export function registerConfigHandlers(): void {
     createSettingsWindow();
   });
 
-  ipcMain.handle('onboarding:complete', (e) => {
+  ipcMain.handle('onboarding:complete', async (e) => {
     const senderWin = BrowserWindow.fromWebContents(e.sender);
     createOverlayWindow();
-    syncWatcher();
+    await syncWatcher();
     senderWin?.close();
   });
 

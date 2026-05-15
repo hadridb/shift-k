@@ -49,15 +49,16 @@ export function cycleStage(): Stage {
   return next;
 }
 
-export function toggleRouting(): boolean {
+export async function toggleRouting(): Promise<boolean> {
   const next = !getConfig().routingEnabled;
   setConfigKey('routingEnabled', next);
   broadcastConfigChange();
   // Closes the chokidar watcher entirely on pause, restarts fresh
-  // (with ignoreInitial:true) on resume. Drops any pending
-  // awaitWriteFinish events so files added during pause can't be
-  // re-routed by a quick resume.
-  syncWatcher();
+  // (with ignoreInitial:true) on resume. Awaits the close so any
+  // pending awaitWriteFinish events from the previous watcher are
+  // drained — otherwise a file dropped during a quick pause/resume
+  // toggle could still be routed.
+  await syncWatcher();
   return next;
 }
 

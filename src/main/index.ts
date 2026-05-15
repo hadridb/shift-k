@@ -47,7 +47,7 @@ app.whenReady().then(() => {
 
   if (isConfigComplete()) {
     createOverlayWindow();
-    syncWatcher();
+    void syncWatcher();
   } else {
     createOnboardingWindow();
   }
@@ -65,7 +65,7 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
   unregisterShortcuts();
-  closeWatcher();
+  void closeWatcher();
   destroyTray();
 });
 
