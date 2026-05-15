@@ -117,12 +117,30 @@ shift-k/
 - [x] Premier commit + push sur github.com/hadridb/shift-k
 - [x] Switch pnpm -> npm (ADR-020 : drive E: exFAT, symlinks impossibles)
 
-**Sprint 1 (prochain)** : Moteur metier — voir docs/ROADMAP.md.
-- [ ] src/core/config/ : schema Zod + store electron-store, migrations
-- [ ] src/core/router/ : pattern matcher, destination resolver (port V1)
-- [ ] src/core/watcher/ : chokidar wrapper, retry-move, debounce
-- [ ] src/core/scanner/ : rescan manuel Downloads
-- [ ] Tests Vitest >80% coverage sur core
+**Sprint 1 (termine)** : Moteur metier.
+- [x] src/core/config/ : schema Zod + store electron-store, migrations
+- [x] src/core/router/ : platform-matcher, destination resolver (port V1)
+- [x] src/core/watcher/ : chokidar wrapper, retry-move, debounce
+- [x] src/core/scanner/ : rescan manuel Downloads
+- [x] Tests Vitest 36 tests, 100% core coverage
+
+**Sprint 2 (termine)** : Overlay always-on-top.
+- [x] Fenetre frameless/transparent/alwaysOnTop 290x468px
+- [x] SlotList (9 slots, indicateur actif, click pour switcher)
+- [x] StageBar (cycle de stage, indicateur PAUSED)
+- [x] FooterBar (5 boutons icon : FolderOpen, Pause/Play, Rescan, NewProject, Settings)
+- [x] IPC bridge complet (getConfig, setActiveClient, cycleStage, toggleRouting, triggerRescan, onConfigChange)
+- [x] Persistence position overlay sur moved
+
+**Sprint 3 (termine)** : Dialogues projet.
+- [x] src/core/projects/scaffolder : createProject (copie _TEMPLATE, dirs stages + dossiers journaliers), listProjects
+- [x] IPC handlers : projects:create, projects:list, projects:open-folders, config:set-slots
+- [x] Bridge + preload : createProject, listProjects, openFolders, setSlots
+- [x] NewProjectModal : champs client + mission, creation + activation automatique
+- [x] EditSlotsModal : 9 dropdowns charges depuis filesystem (bouton Settings pour l'instant)
+- [x] OpenFoldersModal : checkboxes stages + toggle "dossier du jour" (ost toujours stage root), shell.openPath
+
+**Sprint 4 (prochain)** : A definir — Settings panel, tray icon, globalShortcut Ctrl+Alt+1..9, notifications natives.
 
 ## Contacts
 
@@ -131,4 +149,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 15 mai 2026 (Sprint 0 termine). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 15 mai 2026 (Sprint 3 termine). A maintenir a jour a chaque decision structurante.*
