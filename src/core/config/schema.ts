@@ -3,7 +3,7 @@ import type { AppConfig } from '@shared/types';
 
 const StageSchema = z.enum(['src', 'img', 'out', 'ost', 'liv']);
 
-const SlotKeySchema = z.enum(['1', '2', '3', '4', '5', '6', '7', '8', '9']);
+export const SlotKeySchema = z.enum(['1', '2', '3', '4', '5', '6', '7', '8', '9']);
 
 export const AppConfigSchema = z.object({
   version: z.string().default('2.0.0'),
