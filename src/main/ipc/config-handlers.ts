@@ -1,11 +1,13 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { ipcMain, BrowserWindow, shell } from 'electron';
-import { getConfig, setConfigKey } from '@core/config/store';
+import { ipcMain, BrowserWindow, shell, dialog } from 'electron';
+import { getConfig, setConfig, setConfigKey } from '@core/config/store';
 import { scanDownloads } from '@core/scanner/scanner';
 import { createProject, listProjects } from '@core/projects/scaffolder';
 import { formatDailyFolderName } from '@core/router/daily-path';
-import type { Stage, SlotKey } from '@shared/types';
+import { createSettingsWindow } from '@main/windows/settings';
+import { syncWatcher } from '@main/services/watcher-manager';
+import type { AppConfig, Stage, SlotKey } from '@shared/types';
 
 const STAGE_ORDER: Stage[] = ['src', 'img', 'out', 'ost', 'liv'];
 
@@ -46,6 +48,29 @@ export function registerConfigHandlers(): void {
     broadcastConfigChange();
   });
 
+  ipcMain.handle('config:update', (_e, updates: Partial<AppConfig>) => {
+    setConfig(updates);
+    broadcastConfigChange();
+    syncWatcher();
+  });
+
+  ipcMain.handle('dialog:pick-folder', async (e, title?: string) => {
+    const senderWin = BrowserWindow.fromWebContents(e.sender);
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openDirectory'],
+      ...(title ? { title } : {}),
+    };
+    const result = senderWin
+      ? await dialog.showOpenDialog(senderWin, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled) return null;
+    return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle('window:open-settings', () => {
+    createSettingsWindow();
+  });
+
   ipcMain.handle('scanner:rescan', async () => {
     const config = getConfig();
     return scanDownloads(config);
@@ -70,7 +95,6 @@ export function registerConfigHandlers(): void {
       const config = getConfig();
       if (!config.activeClient || !config.root) return;
 
-      // Persist selection
       const openFoldersLast: Record<Stage, boolean> = {
         src: false,
         img: false,
@@ -88,7 +112,6 @@ export function registerConfigHandlers(): void {
       });
       broadcastConfigChange();
 
-      // Open each selected stage folder
       const dailyFolder = formatDailyFolderName(config.preferences.dailyFolderFormat);
       for (const stage of stages) {
         const stageFolderName = config.stages[stage];

@@ -1,5 +1,13 @@
 import React from 'react';
-import { FolderOpen, Pause, Play, RefreshCw, Plus, Settings } from 'lucide-react';
+import {
+  FolderOpen,
+  Pause,
+  Play,
+  RefreshCw,
+  Plus,
+  Settings,
+  Sliders,
+} from 'lucide-react';
 
 interface Props {
   routingEnabled: boolean;
@@ -7,6 +15,7 @@ interface Props {
   onRescan: () => void;
   onOpenFolders: () => void;
   onNewProject: () => void;
+  onEditSlots: () => void;
   onSettings: () => void;
 }
 
@@ -26,8 +35,14 @@ function IconButton({
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className="no-drag flex items-center justify-center w-9 h-9 rounded transition-colors duration-100 focus:outline-none"
-      style={{ background: 'transparent', color: '#666666', cursor: disabled ? 'default' : 'pointer' }}
+      className="no-drag flex items-center justify-center rounded transition-colors duration-100 focus:outline-none"
+      style={{
+        background: 'transparent',
+        color: '#666666',
+        cursor: disabled ? 'default' : 'pointer',
+        width: 32,
+        height: 32,
+      }}
       onMouseEnter={(e) => {
         if (!disabled) {
           (e.currentTarget as HTMLButtonElement).style.background = '#161616';
@@ -50,28 +65,36 @@ export function FooterBar({
   onRescan,
   onOpenFolders,
   onNewProject,
+  onEditSlots,
   onSettings,
 }: Props) {
   return (
     <div className="no-drag flex items-center justify-between px-2 h-11">
-      <IconButton onClick={onOpenFolders} title="Open folders (Ctrl+Alt+F)">
-        <FolderOpen size={15} />
+      <IconButton onClick={onOpenFolders} title="Ouvrir dossiers">
+        <FolderOpen size={14} />
       </IconButton>
 
-      <IconButton onClick={onTogglePause} title={routingEnabled ? 'Pause routing' : 'Resume routing'}>
-        {routingEnabled ? <Pause size={15} /> : <Play size={15} />}
+      <IconButton onClick={onNewProject} title="Nouveau projet">
+        <Plus size={14} />
       </IconButton>
 
-      <IconButton onClick={onRescan} title="Rescan Downloads now">
-        <RefreshCw size={15} />
+      <IconButton onClick={onEditSlots} title="Slots">
+        <Sliders size={14} />
       </IconButton>
 
-      <IconButton onClick={onNewProject} title="New project">
-        <Plus size={15} />
+      <IconButton
+        onClick={onTogglePause}
+        title={routingEnabled ? 'Pause routing' : 'Reprendre routing'}
+      >
+        {routingEnabled ? <Pause size={14} /> : <Play size={14} />}
       </IconButton>
 
-      <IconButton onClick={onSettings} title="Settings">
-        <Settings size={15} />
+      <IconButton onClick={onRescan} title="Rescan Downloads">
+        <RefreshCw size={14} />
+      </IconButton>
+
+      <IconButton onClick={onSettings} title="Réglages">
+        <Settings size={14} />
       </IconButton>
     </div>
   );

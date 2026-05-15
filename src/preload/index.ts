@@ -28,6 +28,12 @@ const bridge: ShiftKBridge = {
 
   openFolders: (stages, todayOnly) =>
     ipcRenderer.invoke('projects:open-folders', stages, todayOnly),
+
+  updateConfig: (updates) => ipcRenderer.invoke('config:update', updates),
+
+  pickFolder: (title) => ipcRenderer.invoke('dialog:pick-folder', title),
+
+  openSettings: () => ipcRenderer.invoke('window:open-settings'),
 };
 
 contextBridge.exposeInMainWorld('shiftK', bridge);

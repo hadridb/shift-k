@@ -136,7 +136,8 @@ export function OverlayApp() {
         onRescan={handleRescan}
         onOpenFolders={() => setModal('open-folders')}
         onNewProject={() => setModal('new-project')}
-        onSettings={() => setModal('edit-slots')}
+        onEditSlots={() => setModal('edit-slots')}
+        onSettings={() => void window.shiftK.openSettings()}
       />
 
       {/* Modals */}

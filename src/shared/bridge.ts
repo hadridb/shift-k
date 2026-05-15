@@ -12,4 +12,8 @@ export interface ShiftKBridge {
   createProject: (client: string, mission: string) => Promise<string>;
   listProjects: () => Promise<string[]>;
   openFolders: (stages: Stage[], todayOnly: boolean) => Promise<void>;
+
+  updateConfig: (updates: Partial<AppConfig>) => Promise<void>;
+  pickFolder: (title?: string) => Promise<string | null>;
+  openSettings: () => Promise<void>;
 }
