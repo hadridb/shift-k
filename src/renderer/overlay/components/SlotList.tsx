@@ -24,7 +24,7 @@ export function SlotList({ slots, activeClient, onSelect }: Props) {
             style={{ background: 'transparent' }}
             onClick={() => !isEmpty && onSelect(client)}
             disabled={isEmpty}
-            {...(client ? { title: client } : {})}
+            title={`Ctrl+Alt+${key}${client ? ` — ${client}` : ''}`}
           >
             {/* Active indicator — 2px × 14px white bar */}
             <div

@@ -6,6 +6,7 @@ import {
   setWatcherEventHandler,
   closeWatcher,
 } from './services/watcher-manager';
+import { registerShortcuts, unregisterShortcuts } from './shortcuts';
 
 app.whenReady().then(() => {
   registerConfigHandlers();
@@ -18,6 +19,8 @@ app.whenReady().then(() => {
   });
   syncWatcher();
 
+  registerShortcuts();
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createOverlayWindow();
@@ -25,9 +28,13 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('will-quit', () => {
+  unregisterShortcuts();
+  closeWatcher();
+});
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    closeWatcher();
     app.quit();
   }
 });

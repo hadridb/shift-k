@@ -7,41 +7,24 @@ import { createProject, listProjects } from '@core/projects/scaffolder';
 import { formatDailyFolderName } from '@core/router/daily-path';
 import { createSettingsWindow } from '@main/windows/settings';
 import { syncWatcher } from '@main/services/watcher-manager';
+import {
+  broadcastConfigChange,
+  setActiveClient,
+  cycleStage,
+  toggleRouting,
+} from '@main/services/actions';
 import type { AppConfig, Stage, SlotKey } from '@shared/types';
-
-const STAGE_ORDER: Stage[] = ['src', 'img', 'out', 'ost', 'liv'];
-
-function broadcastConfigChange(): void {
-  const config = getConfig();
-  BrowserWindow.getAllWindows().forEach((win) => {
-    win.webContents.send('config:changed', config);
-  });
-}
 
 export function registerConfigHandlers(): void {
   ipcMain.handle('config:get', () => getConfig());
 
   ipcMain.handle('config:set-active-client', (_e, client: string | null) => {
-    setConfigKey('activeClient', client);
-    broadcastConfigChange();
+    setActiveClient(client);
   });
 
-  ipcMain.handle('config:cycle-stage', () => {
-    const config = getConfig();
-    const idx = STAGE_ORDER.indexOf(config.activeStage);
-    const next = STAGE_ORDER[(idx + 1) % STAGE_ORDER.length] as Stage;
-    setConfigKey('activeStage', next);
-    broadcastConfigChange();
-    return next;
-  });
+  ipcMain.handle('config:cycle-stage', () => cycleStage());
 
-  ipcMain.handle('config:toggle-routing', () => {
-    const config = getConfig();
-    const next = !config.routingEnabled;
-    setConfigKey('routingEnabled', next);
-    broadcastConfigChange();
-    return next;
-  });
+  ipcMain.handle('config:toggle-routing', () => toggleRouting());
 
   ipcMain.handle('config:set-slots', (_e, slots: Record<SlotKey, string | null>) => {
     setConfigKey('slots', slots);
