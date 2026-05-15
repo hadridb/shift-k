@@ -1,5 +1,6 @@
 import { BrowserWindow } from 'electron';
 import { getConfig, setConfigKey } from '@core/config/store';
+import { syncWatcher } from './watcher-manager';
 import type { AppConfig, Stage, SlotKey } from '@shared/types';
 
 const STAGE_ORDER: Stage[] = ['src', 'img', 'out', 'ost', 'liv'];
@@ -52,6 +53,11 @@ export function toggleRouting(): boolean {
   const next = !getConfig().routingEnabled;
   setConfigKey('routingEnabled', next);
   broadcastConfigChange();
+  // Closes the chokidar watcher entirely on pause, restarts fresh
+  // (with ignoreInitial:true) on resume. Drops any pending
+  // awaitWriteFinish events so files added during pause can't be
+  // re-routed by a quick resume.
+  syncWatcher();
   return next;
 }
 

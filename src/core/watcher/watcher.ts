@@ -60,7 +60,11 @@ export function createWatcher(options: WatcherOptions): FSWatcher {
 
   const watcher = chokidar.watch(config.downloadsPath, {
     depth: 0,
-    ignoreInitial: false, // catch-up on boot
+    // Existing files at startup or after a pause/resume cycle are NOT auto-routed.
+    // The user must trigger Rescan explicitly. This avoids the timing window
+    // where pause + drop + quick-resume would have routed the file anyway via
+    // chokidar's awaitWriteFinish buffer.
+    ignoreInitial: true,
     persistent: true,
     awaitWriteFinish: {
       stabilityThreshold: 2000,

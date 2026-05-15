@@ -4,6 +4,7 @@ import { getConfig } from '@core/config/store';
 
 let watcher: FSWatcher | null = null;
 let currentPath = '';
+let currentRoutingEnabled = false;
 let eventHandler: (event: WatcherEvent) => void = () => {};
 
 export function setWatcherEventHandler(handler: (event: WatcherEvent) => void): void {
@@ -11,24 +12,35 @@ export function setWatcherEventHandler(handler: (event: WatcherEvent) => void): 
 }
 
 /**
- * Sync the watcher to the current config.downloadsPath.
- * - Starts a watcher if path is set and none is running.
- * - Restarts the watcher if path changed.
- * - Stops the watcher if path is cleared.
+ * Sync the watcher to the current config.
+ *
+ * The watcher is only running when BOTH:
+ *  - config.downloadsPath is set
+ *  - config.routingEnabled is true
+ *
+ * Pausing routing fully closes the watcher (drops any pending
+ * awaitWriteFinish queue), so files dropped during a pause cannot be
+ * routed by a subsequent resume — they sit in Downloads until the user
+ * triggers Rescan. Resuming spins up a fresh watcher with
+ * ignoreInitial:true so existing files aren't auto-processed.
  */
 export function syncWatcher(): void {
   const config = getConfig();
   const newPath = config.downloadsPath;
+  const newRouting = config.routingEnabled;
 
-  if (newPath === currentPath && watcher) return;
+  const sameState =
+    !!watcher && currentPath === newPath && currentRoutingEnabled === newRouting;
+  if (sameState) return;
 
   if (watcher) {
     void watcher.close();
     watcher = null;
   }
   currentPath = newPath;
+  currentRoutingEnabled = newRouting;
 
-  if (newPath) {
+  if (newPath && newRouting) {
     watcher = createWatcher({
       getConfig,
       onEvent: (event) => eventHandler(event),
@@ -41,5 +53,6 @@ export function closeWatcher(): void {
     void watcher.close();
     watcher = null;
     currentPath = '';
+    currentRoutingEnabled = false;
   }
 }
