@@ -10,6 +10,7 @@ interface Form {
   groupByPlatform: boolean;
   notifyOnRoute: boolean;
   confirmBeforeRescan: boolean;
+  startOnLogin: boolean;
   logRetentionDays: number;
 }
 
@@ -23,6 +24,7 @@ function formFromConfig(config: AppConfig): Form {
     groupByPlatform: config.preferences.groupByPlatform,
     notifyOnRoute: config.preferences.notifyOnRoute,
     confirmBeforeRescan: config.preferences.confirmBeforeRescan,
+    startOnLogin: config.preferences.startOnLogin,
     logRetentionDays: config.preferences.logRetentionDays,
   };
 }
@@ -228,6 +230,7 @@ export function SettingsApp() {
           groupByPlatform: form.groupByPlatform,
           notifyOnRoute: form.notifyOnRoute,
           confirmBeforeRescan: form.confirmBeforeRescan,
+          startOnLogin: form.startOnLogin,
           logRetentionDays: form.logRetentionDays,
         },
       });
@@ -366,6 +369,13 @@ export function SettingsApp() {
             onChange={(v) => update('confirmBeforeRescan', v)}
             label="Confirmer avant rescan (dry run)"
             hint="Désactiver une fois confiant : Rescan déplacera directement les fichiers."
+          />
+
+          <ToggleRow
+            checked={form.startOnLogin}
+            onChange={(v) => update('startOnLogin', v)}
+            label="Démarrer au login"
+            hint="Shift-K se lance silencieusement avec le tray icon. Disponible uniquement sur l'app installée (pas en dev)."
           />
 
           <Field label="Rétention des logs (jours)">

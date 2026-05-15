@@ -81,6 +81,7 @@ export const AppConfigSchema = z.object({
       logRetentionDays: z.number().int().positive().default(30),
       notifyOnRoute: z.boolean().default(true),
       confirmBeforeRescan: z.boolean().default(true),
+      startOnLogin: z.boolean().default(true),
       overlay: z
         .object({ x: z.number().default(100), y: z.number().default(100) })
         .default({ x: 100, y: 100 }),
@@ -102,6 +103,7 @@ export const AppConfigSchema = z.object({
       logRetentionDays: 30,
       notifyOnRoute: true,
       confirmBeforeRescan: true,
+      startOnLogin: true,
       overlay: { x: 100, y: 100 },
       openFoldersLast: { src: true, img: false, out: false, ost: false, liv: false },
       openFoldersToday: true,

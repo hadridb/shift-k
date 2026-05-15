@@ -10,11 +10,18 @@ import {
 } from './services/watcher-manager';
 import { registerShortcuts, unregisterShortcuts } from './shortcuts';
 import { createTray, destroyTray } from './tray';
-import { getConfig } from '@core/config/store';
+import { applyAutostart, wasOpenedAtLogin } from './services/autostart';
+import { getConfig, onConfigChange } from '@core/config/store';
 
 function isConfigComplete(): boolean {
   const config = getConfig();
   return Boolean(config.root && config.downloadsPath);
+}
+
+// Hidden launch detection: either the OS-reported wasOpenedAtLogin flag
+// or the explicit --hidden arg we add to the login-item command line.
+function wasLaunchedHidden(): boolean {
+  return wasOpenedAtLogin() || process.argv.includes('--hidden');
 }
 
 function notifyRouted(platform: string, destinationPath: string): void {
@@ -45,10 +52,25 @@ app.whenReady().then(() => {
   registerShortcuts();
   createTray();
 
+  // Reconcile the OS login-item state with the user's preference on every
+  // launch (cheap, idempotent). Also re-apply whenever the pref changes.
+  applyAutostart(getConfig().preferences.startOnLogin);
+  let lastStartOnLogin = getConfig().preferences.startOnLogin;
+  onConfigChange((cfg) => {
+    if (cfg.preferences.startOnLogin !== lastStartOnLogin) {
+      lastStartOnLogin = cfg.preferences.startOnLogin;
+      applyAutostart(lastStartOnLogin);
+    }
+  });
+
+  const hidden = wasLaunchedHidden();
+
   if (isConfigComplete()) {
-    createOverlayWindow();
+    if (!hidden) createOverlayWindow();
     void syncWatcher();
   } else {
+    // Onboarding always shows even on autostart — config is incomplete,
+    // there's nothing useful for the user to do via the tray alone.
     createOnboardingWindow();
   }
 

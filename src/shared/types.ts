@@ -13,6 +13,7 @@ export interface Preferences {
   logRetentionDays: number;
   notifyOnRoute: boolean;
   confirmBeforeRescan: boolean;
+  startOnLogin: boolean;
   overlay: { x: number; y: number };
   openFoldersLast: Record<Stage, boolean>;
   openFoldersToday: boolean;

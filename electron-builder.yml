@@ -1,4 +1,4 @@
-appId: app.shift-k
+appId: com.shiftk.app
 productName: Shift-K
 copyright: Copyright © 2026 Hadrien Durand-Baissas
 
@@ -18,14 +18,15 @@ win:
     - target: nsis
       arch:
         - x64
-  # icon: electron/resources/icon.ico  # Uncomment once icon.ico is added
+  icon: electron/resources/icon.png
 
 nsis:
   oneClick: false
+  perMachine: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  installerIcon: null
-  uninstallerIcon: null
+  shortcutName: Shift-K
+  deleteAppDataOnUninstall: false
 
 publish: null
