@@ -13,11 +13,11 @@ export const AppConfigSchema = z.object({
   activeStage: StageSchema.default('out'),
   stages: z
     .object({
-      src: z.string(),
-      img: z.string(),
-      out: z.string(),
-      ost: z.string(),
-      liv: z.string(),
+      src: z.string().default('01_SRC Inits'),
+      img: z.string().default('02_IMG Inits'),
+      out: z.string().default('03_Outputs'),
+      ost: z.string().default('04_OST'),
+      liv: z.string().default('05_Renders'),
     })
     .default({
       src: '01_SRC Inits',
@@ -81,20 +81,29 @@ export const AppConfigSchema = z.object({
       logRetentionDays: z.number().int().positive().default(30),
       notifyOnRoute: z.boolean().default(true),
       overlay: z
-        .object({ x: z.number(), y: z.number() })
+        .object({ x: z.number().default(100), y: z.number().default(100) })
         .default({ x: 100, y: 100 }),
       openFoldersLast: z
         .object({
-          src: z.boolean(),
-          img: z.boolean(),
-          out: z.boolean(),
-          ost: z.boolean(),
-          liv: z.boolean(),
+          src: z.boolean().default(true),
+          img: z.boolean().default(false),
+          out: z.boolean().default(false),
+          ost: z.boolean().default(false),
+          liv: z.boolean().default(false),
         })
         .default({ src: true, img: false, out: false, ost: false, liv: false }),
       openFoldersToday: z.boolean().default(true),
     })
-    .default({}),
+    .default({
+      dailyFolderFormat: 'J{yyyy-MM-dd}',
+      lazyDailyFolders: true,
+      groupByPlatform: false,
+      logRetentionDays: 30,
+      notifyOnRoute: true,
+      overlay: { x: 100, y: 100 },
+      openFoldersLast: { src: true, img: false, out: false, ost: false, liv: false },
+      openFoldersToday: true,
+    }),
 });
 
 // Verify the inferred type matches AppConfig at compile time
