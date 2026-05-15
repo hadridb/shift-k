@@ -140,7 +140,15 @@ shift-k/
 - [x] EditSlotsModal : 9 dropdowns charges depuis filesystem (bouton Settings pour l'instant)
 - [x] OpenFoldersModal : checkboxes stages + toggle "dossier du jour" (ost toujours stage root), shell.openPath
 
-**Sprint 4 (prochain)** : A definir — Settings panel, tray icon, globalShortcut Ctrl+Alt+1..9, notifications natives.
+**Sprint 4 (en cours)** : Configuration & raccourcis.
+- [x] Settings BrowserWindow 540x720 non-modal (general / stages / preferences)
+- [x] IPC dialog:pick-folder, config:update, window:open-settings
+- [x] services/watcher-manager : syncWatcher() redemarre chokidar quand downloadsPath change
+- [x] FooterBar reorganise : 6 boutons, EditSlots (Sliders) separe de Settings (gear)
+- [ ] globalShortcut Ctrl+Alt+1..9 (switch slot), Ctrl+Alt+S (cycle stage), Ctrl+Alt+P (pause)
+- [ ] Tray icon + menu contextuel quit/show/hide
+- [ ] Notifications natives sur routage (Notification API Electron)
+- [ ] Onboarding wizard premier lancement (root + downloadsPath)
 
 ## Contacts
 
