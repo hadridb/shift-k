@@ -1,5 +1,6 @@
 import { globalShortcut } from 'electron';
 import { activateSlot, cycleStage, toggleRouting } from './services/actions';
+import { toggleOverlayWindow } from './windows/overlay';
 import type { SlotKey } from '@shared/types';
 
 const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -20,7 +21,12 @@ function register(accelerator: string, callback: () => void): void {
 }
 
 export function registerShortcuts(): void {
-  // Ctrl+Alt+1..9 — activate slot
+  // Ctrl+Shift+K — signature shortcut: toggle overlay show/hide
+  register('Control+Shift+K', () => {
+    toggleOverlayWindow();
+  });
+
+  // Ctrl+Alt+1..9 — activate slot directly
   for (const key of SLOT_KEYS) {
     register(`Control+Alt+${key}`, () => {
       activateSlot(key);

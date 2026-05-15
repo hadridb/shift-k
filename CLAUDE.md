@@ -147,6 +147,8 @@ shift-k/
 - [x] FooterBar reorganise : 6 boutons, EditSlots (Sliders) separe de Settings (gear)
 - [x] globalShortcut Ctrl+Alt+1..9 (switch slot), Ctrl+Alt+S (cycle stage), Ctrl+Alt+P (pause)
 - [x] services/actions extrait (DRY entre IPC handlers et shortcuts)
+- [x] Ctrl+Shift+K (global) toggle overlay
+- [x] Shift+J/K/L (overlay focused) navigation NLE-style — voir ADR-021 + docs/SHORTCUTS.md
 - [ ] Tray icon + menu contextuel quit/show/hide
 - [ ] Notifications natives sur routage (Notification API Electron)
 - [x] Onboarding wizard premier lancement (root + downloadsPath, 3 etapes : welcome/paths/recap)

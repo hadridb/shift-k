@@ -84,7 +84,7 @@ export function FooterBar({
 
       <IconButton
         onClick={onTogglePause}
-        title={`${routingEnabled ? 'Pause routing' : 'Reprendre routing'} (Ctrl+Alt+P)`}
+        title={`${routingEnabled ? 'Pause routing' : 'Reprendre routing'} (Ctrl+Alt+P · Shift+K)`}
       >
         {routingEnabled ? <Pause size={14} /> : <Play size={14} />}
       </IconButton>

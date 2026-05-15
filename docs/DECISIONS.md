@@ -332,3 +332,47 @@
 - node_modules plus volumineux (comme npm)
 - Fonctionnellement identique en dev et en prod
 - Si Hadrien migre vers un drive NTFS, retirer cette option pour retrouver les benefices pnpm natifs
+
+---
+
+## ADR-021 : Shift+J/K/L pour navigation slot (overlay focused)
+
+**Date :** 2026-05-15
+**Statut :** Acceptee
+
+**Contexte :** Le persona cible (AI director freelance luxe) passe sa journee dans un NLE — DaVinci Resolve, Premiere, Avid, Final Cut. Dans tous les NLE depuis ~30 ans, **J-K-L est le raccourci universel de transport video** :
+- J = reverse / precedent
+- K = stop / pause
+- L = forward / suivant
+
+C'est une muscle memory profonde, reflexe sans pensee. Le persona pense JKL comme "lire / arreter / avancer".
+
+**Decision :** En complement des raccourcis globaux Ctrl+Alt+1..9 (acces direct slot), on ajoute trois raccourcis fenetre-locale (overlay focused) :
+- **Shift+J** : slot precedent (cycle slots non-vides uniquement)
+- **Shift+K** : pause / reprise routing
+- **Shift+L** : slot suivant (cycle slots non-vides uniquement)
+
+Le nom "Shift-K" du produit devient un double-meaning explicite : la touche centrale du transport (Shift+K = pause) ET le verbe "switch clients" (shift = bascule).
+
+**Pourquoi Shift- comme modifier ?**
+- J/K/L seuls inutilisables (l'utilisateur tape du texte ailleurs dans l'OS)
+- Cmd/Ctrl+J/K/L pris par browser (downloads, focus location bar) et editeurs (jump to definition, etc.)
+- Shift+J/K/L libre, naturel, et **renforce** la memoire JKL plutot que la contourner
+
+**Pourquoi pas global ?**
+- Un globalShortcut sur Shift+J/K/L bloquerait toute saisie majuscule des lettres J/K/L dans l'OS entier — inacceptable
+- Le scope "overlay focused" est suffisant : quand le persona veut switcher, il fait Ctrl+Shift+K pour faire surgir l'overlay, puis enchaine sur JKL
+
+**Implementation :**
+- Listener `document.keydown` dans `OverlayApp.tsx` (renderer)
+- Skip si `e.target.tagName` est `INPUT` / `TEXTAREA` / `SELECT` (modals NewProject, EditSlots, Settings preservent leur saisie)
+- Skip si une modal est ouverte (hook `useJklShortcuts(modal === null)`)
+- Pas de `globalShortcut` cote main process
+
+**Consequences :**
+- Trois modes d'acces aux slots, gradues par frequence :
+  1. Memoriser le mapping → Ctrl+Alt+1..9 (global, direct)
+  2. Parcourir → Shift+J / Shift+L (overlay, sequentiel)
+  3. Decouvrir / occasionnel → clic souris
+- Documentation : `docs/SHORTCUTS.md` agrege tous les raccourcis
+- Le combo signature **Ctrl+Shift+K** (surgir) + **Shift+J/K/L** (manipuler) = flow sans souris complet

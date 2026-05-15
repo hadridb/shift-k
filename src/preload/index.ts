@@ -12,6 +12,10 @@ const bridge: ShiftKBridge = {
 
   toggleRouting: () => ipcRenderer.invoke('config:toggle-routing'),
 
+  previousSlot: () => ipcRenderer.invoke('config:previous-slot'),
+
+  nextSlot: () => ipcRenderer.invoke('config:next-slot'),
+
   triggerRescan: () => ipcRenderer.invoke('scanner:rescan'),
 
   onConfigChange: (callback) => {

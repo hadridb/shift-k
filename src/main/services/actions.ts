@@ -1,8 +1,20 @@
 import { BrowserWindow } from 'electron';
 import { getConfig, setConfigKey } from '@core/config/store';
-import type { Stage, SlotKey } from '@shared/types';
+import type { AppConfig, Stage, SlotKey } from '@shared/types';
 
 const STAGE_ORDER: Stage[] = ['src', 'img', 'out', 'ost', 'liv'];
+const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+interface FilledSlot {
+  key: SlotKey;
+  client: string;
+}
+
+function getFilledSlots(config: AppConfig): FilledSlot[] {
+  return SLOT_KEYS
+    .map((key) => ({ key, client: config.slots[key] }))
+    .filter((s): s is FilledSlot => s.client !== null);
+}
 
 export function broadcastConfigChange(): void {
   const config = getConfig();
@@ -41,4 +53,44 @@ export function toggleRouting(): boolean {
   setConfigKey('routingEnabled', next);
   broadcastConfigChange();
   return next;
+}
+
+/**
+ * Navigate to the slot before the currently active one, cycling through
+ * filled slots only. No-op if no slot is filled. Wraps around at the
+ * boundary (Shift+J on first filled slot → last filled slot).
+ */
+export function previousSlot(): string | null {
+  const config = getConfig();
+  const slots = getFilledSlots(config);
+  if (slots.length === 0) return null;
+
+  const currentIdx = config.activeClient
+    ? slots.findIndex((s) => s.client === config.activeClient)
+    : -1;
+  const newIdx =
+    currentIdx === -1 ? slots.length - 1 : (currentIdx - 1 + slots.length) % slots.length;
+
+  const newClient = slots[newIdx]?.client ?? null;
+  setActiveClient(newClient);
+  return newClient;
+}
+
+/**
+ * Navigate to the slot after the currently active one. Cycles through
+ * filled slots only, wraps around.
+ */
+export function nextSlot(): string | null {
+  const config = getConfig();
+  const slots = getFilledSlots(config);
+  if (slots.length === 0) return null;
+
+  const currentIdx = config.activeClient
+    ? slots.findIndex((s) => s.client === config.activeClient)
+    : -1;
+  const newIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % slots.length;
+
+  const newClient = slots[newIdx]?.client ?? null;
+  setActiveClient(newClient);
+  return newClient;
 }

@@ -7,7 +7,19 @@ const OVERLAY_HEIGHT = 468;
 
 const isDev = !app.isPackaged;
 
+let overlayWindow: BrowserWindow | null = null;
+
+export function getOverlayWindow(): BrowserWindow | null {
+  return overlayWindow && !overlayWindow.isDestroyed() ? overlayWindow : null;
+}
+
 export function createOverlayWindow(): BrowserWindow {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.show();
+    overlayWindow.focus();
+    return overlayWindow;
+  }
+
   const config = getConfig();
   const { x: storedX, y: storedY } = config.preferences.overlay;
 
@@ -19,7 +31,7 @@ export function createOverlayWindow(): BrowserWindow {
   const x = storedX > 0 ? storedX : defaultX;
   const y = storedY > 0 ? storedY : defaultY;
 
-  const win = new BrowserWindow({
+  overlayWindow = new BrowserWindow({
     width: OVERLAY_WIDTH,
     height: OVERLAY_HEIGHT,
     x,
@@ -37,22 +49,41 @@ export function createOverlayWindow(): BrowserWindow {
     },
   });
 
-  win.setAlwaysOnTop(true, 'floating');
+  overlayWindow.setAlwaysOnTop(true, 'floating');
 
   if (isDev) {
-    void win.loadURL('http://localhost:5173/overlay.html');
+    void overlayWindow.loadURL('http://localhost:5173/overlay.html');
   } else {
-    void win.loadFile(path.join(__dirname, '../../renderer/overlay.html'));
+    void overlayWindow.loadFile(path.join(__dirname, '../../renderer/overlay.html'));
   }
 
   // Persist position on move
-  win.on('moved', () => {
-    const [winX, winY] = win.getPosition();
+  overlayWindow.on('moved', () => {
+    if (!overlayWindow) return;
+    const [winX, winY] = overlayWindow.getPosition();
     setConfigKey('preferences', {
       ...getConfig().preferences,
       overlay: { x: winX ?? 0, y: winY ?? 0 },
     });
   });
 
-  return win;
+  overlayWindow.on('closed', () => {
+    overlayWindow = null;
+  });
+
+  return overlayWindow;
+}
+
+export function toggleOverlayWindow(): void {
+  const win = getOverlayWindow();
+  if (!win) {
+    createOverlayWindow();
+    return;
+  }
+  if (win.isVisible()) {
+    win.hide();
+  } else {
+    win.show();
+    win.focus();
+  }
 }

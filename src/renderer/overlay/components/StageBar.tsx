@@ -17,7 +17,7 @@ export function StageBar({ stages, activeStage, routingEnabled, onCycle }: Props
         onClick={onCycle}
         className="flex items-center gap-2 px-2 py-1 rounded transition-colors duration-100 focus:outline-none"
         style={{ background: 'transparent' }}
-        title="Cycle stage (Ctrl+Alt+S)"
+        title="Cycle stage (Ctrl+Alt+S) — Shift+J/L pour slot précédent/suivant"
       >
         <span style={{ fontSize: 11, color: '#666666' }}>STAGE</span>
         <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>{label}</span>

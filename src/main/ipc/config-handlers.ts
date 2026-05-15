@@ -13,6 +13,8 @@ import {
   setActiveClient,
   cycleStage,
   toggleRouting,
+  previousSlot,
+  nextSlot,
 } from '@main/services/actions';
 import type { AppConfig, Stage, SlotKey } from '@shared/types';
 
@@ -26,6 +28,10 @@ export function registerConfigHandlers(): void {
   ipcMain.handle('config:cycle-stage', () => cycleStage());
 
   ipcMain.handle('config:toggle-routing', () => toggleRouting());
+
+  ipcMain.handle('config:previous-slot', () => previousSlot());
+
+  ipcMain.handle('config:next-slot', () => nextSlot());
 
   ipcMain.handle('config:set-slots', (_e, slots: Record<SlotKey, string | null>) => {
     setConfigKey('slots', slots);

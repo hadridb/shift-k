@@ -5,6 +5,8 @@ export interface ShiftKBridge {
   setActiveClient: (client: string | null) => Promise<void>;
   cycleStage: () => Promise<Stage>;
   toggleRouting: () => Promise<boolean>;
+  previousSlot: () => Promise<string | null>;
+  nextSlot: () => Promise<string | null>;
   triggerRescan: () => Promise<ScanResult>;
   onConfigChange: (callback: (config: AppConfig) => void) => () => void;
 

@@ -20,9 +20,42 @@ function useConfig() {
   return config;
 }
 
+function useJklShortcuts(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      // Skip when typing in any form control (modal inputs).
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      // Plain Shift + J/K/L — no other modifiers.
+      if (!e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+
+      if (e.code === 'KeyJ') {
+        e.preventDefault();
+        void window.shiftK.previousSlot();
+      } else if (e.code === 'KeyK') {
+        e.preventDefault();
+        void window.shiftK.toggleRouting();
+      } else if (e.code === 'KeyL') {
+        e.preventDefault();
+        void window.shiftK.nextSlot();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [enabled]);
+}
+
 export function OverlayApp() {
   const config = useConfig();
   const [modal, setModal] = useState<ModalType>(null);
+
+  // Suspend J/K/L while a modal is open so users can type freely.
+  useJklShortcuts(modal === null);
 
   const closeModal = useCallback(() => setModal(null), []);
 
