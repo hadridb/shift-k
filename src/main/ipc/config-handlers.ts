@@ -6,6 +6,7 @@ import { scanDownloads } from '@core/scanner/scanner';
 import { createProject, listProjects } from '@core/projects/scaffolder';
 import { formatDailyFolderName } from '@core/router/daily-path';
 import { createSettingsWindow } from '@main/windows/settings';
+import { createOverlayWindow } from '@main/windows/overlay';
 import { syncWatcher } from '@main/services/watcher-manager';
 import {
   broadcastConfigChange,
@@ -52,6 +53,13 @@ export function registerConfigHandlers(): void {
 
   ipcMain.handle('window:open-settings', () => {
     createSettingsWindow();
+  });
+
+  ipcMain.handle('onboarding:complete', (e) => {
+    const senderWin = BrowserWindow.fromWebContents(e.sender);
+    createOverlayWindow();
+    syncWatcher();
+    senderWin?.close();
   });
 
   ipcMain.handle('scanner:rescan', async () => {

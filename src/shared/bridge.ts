@@ -16,4 +16,5 @@ export interface ShiftKBridge {
   updateConfig: (updates: Partial<AppConfig>) => Promise<void>;
   pickFolder: (title?: string) => Promise<string | null>;
   openSettings: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }

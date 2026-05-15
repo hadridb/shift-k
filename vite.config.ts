@@ -23,6 +23,7 @@ export default defineConfig({
         main: 'index.html',
         overlay: 'overlay.html',
         settings: 'settings.html',
+        onboarding: 'onboarding.html',
       },
     },
   },

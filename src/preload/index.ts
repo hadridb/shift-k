@@ -34,6 +34,8 @@ const bridge: ShiftKBridge = {
   pickFolder: (title) => ipcRenderer.invoke('dialog:pick-folder', title),
 
   openSettings: () => ipcRenderer.invoke('window:open-settings'),
+
+  completeOnboarding: () => ipcRenderer.invoke('onboarding:complete'),
 };
 
 contextBridge.exposeInMainWorld('shiftK', bridge);
