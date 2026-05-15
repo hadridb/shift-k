@@ -12,6 +12,7 @@ export interface Preferences {
   groupByPlatform: boolean;
   logRetentionDays: number;
   notifyOnRoute: boolean;
+  confirmBeforeRescan: boolean;
   overlay: { x: number; y: number };
   openFoldersLast: Record<Stage, boolean>;
   openFoldersToday: boolean;
@@ -45,6 +46,23 @@ export interface RouteResult {
 
 export interface ScanResult {
   routed: RouteResult[];
+  skipped: number;
+  errors: Array<{ file: string; error: string }>;
+}
+
+export interface RescanPreviewItem {
+  sourcePath: string;
+  fileName: string;
+  size: number;
+  modifiedAt: Date;
+  platform: string;
+  stageKey: Stage;
+  stageFolderName: string;
+  destDir: string;
+}
+
+export interface RescanPreview {
+  items: RescanPreviewItem[];
   skipped: number;
   errors: Array<{ file: string; error: string }>;
 }

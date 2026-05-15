@@ -9,6 +9,7 @@ interface Form {
   lazyDailyFolders: boolean;
   groupByPlatform: boolean;
   notifyOnRoute: boolean;
+  confirmBeforeRescan: boolean;
   logRetentionDays: number;
 }
 
@@ -21,6 +22,7 @@ function formFromConfig(config: AppConfig): Form {
     lazyDailyFolders: config.preferences.lazyDailyFolders,
     groupByPlatform: config.preferences.groupByPlatform,
     notifyOnRoute: config.preferences.notifyOnRoute,
+    confirmBeforeRescan: config.preferences.confirmBeforeRescan,
     logRetentionDays: config.preferences.logRetentionDays,
   };
 }
@@ -225,6 +227,7 @@ export function SettingsApp() {
           lazyDailyFolders: form.lazyDailyFolders,
           groupByPlatform: form.groupByPlatform,
           notifyOnRoute: form.notifyOnRoute,
+          confirmBeforeRescan: form.confirmBeforeRescan,
           logRetentionDays: form.logRetentionDays,
         },
       });
@@ -356,6 +359,13 @@ export function SettingsApp() {
             checked={form.notifyOnRoute}
             onChange={(v) => update('notifyOnRoute', v)}
             label="Notification système à chaque routage"
+          />
+
+          <ToggleRow
+            checked={form.confirmBeforeRescan}
+            onChange={(v) => update('confirmBeforeRescan', v)}
+            label="Confirmer avant rescan (dry run)"
+            hint="Désactiver une fois confiant : Rescan déplacera directement les fichiers."
           />
 
           <Field label="Rétention des logs (jours)">

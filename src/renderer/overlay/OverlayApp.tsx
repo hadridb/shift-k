@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { AppConfig } from '../../shared/types';
+import type { AppConfig, RescanPreview } from '../../shared/types';
 import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
 import { FooterBar } from './components/FooterBar';
 import { NewProjectModal } from './modals/NewProjectModal';
 import { EditSlotsModal } from './modals/EditSlotsModal';
 import { OpenFoldersModal } from './modals/OpenFoldersModal';
+import { RescanModal } from './modals/RescanModal';
 
-type ModalType = 'new-project' | 'edit-slots' | 'open-folders' | null;
+type ModalType = 'new-project' | 'edit-slots' | 'open-folders' | 'rescan' | null;
 
 function useConfig() {
   const [config, setConfig] = useState<AppConfig | null>(null);
@@ -53,11 +54,17 @@ function useJklShortcuts(enabled: boolean) {
 export function OverlayApp() {
   const config = useConfig();
   const [modal, setModal] = useState<ModalType>(null);
+  const [rescanPreview, setRescanPreview] = useState<RescanPreview | null>(null);
 
   // Suspend J/K/L while a modal is open so users can type freely.
   useJklShortcuts(modal === null);
 
-  const closeModal = useCallback(() => setModal(null), []);
+  const closeModal = useCallback(() => {
+    setModal(null);
+    setRescanPreview(null);
+  }, []);
+
+  const confirmBefore = config?.preferences.confirmBeforeRescan ?? true;
 
   const handleSelectClient = useCallback((client: string | null) => {
     void window.shiftK.setActiveClient(client);
@@ -71,9 +78,15 @@ export function OverlayApp() {
     void window.shiftK.toggleRouting();
   }, []);
 
-  const handleRescan = useCallback(() => {
-    void window.shiftK.triggerRescan();
-  }, []);
+  const handleRescan = useCallback(async () => {
+    if (confirmBefore) {
+      const preview = await window.shiftK.previewRescan();
+      setRescanPreview(preview);
+      setModal('rescan');
+    } else {
+      await window.shiftK.triggerRescan();
+    }
+  }, [confirmBefore]);
 
   if (!config) {
     return (
@@ -166,7 +179,7 @@ export function OverlayApp() {
       <FooterBar
         routingEnabled={config.routingEnabled}
         onTogglePause={handleTogglePause}
-        onRescan={handleRescan}
+        onRescan={() => void handleRescan()}
         onOpenFolders={() => setModal('open-folders')}
         onNewProject={() => setModal('new-project')}
         onEditSlots={() => setModal('edit-slots')}
@@ -177,6 +190,9 @@ export function OverlayApp() {
       {modal === 'new-project' && <NewProjectModal onClose={closeModal} />}
       {modal === 'edit-slots' && <EditSlotsModal config={config} onClose={closeModal} />}
       {modal === 'open-folders' && <OpenFoldersModal config={config} onClose={closeModal} />}
+      {modal === 'rescan' && rescanPreview && (
+        <RescanModal preview={rescanPreview} onClose={closeModal} />
+      )}
     </div>
   );
 }

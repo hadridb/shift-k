@@ -1,4 +1,11 @@
-import type { AppConfig, Stage, SlotKey, ScanResult } from './types';
+import type {
+  AppConfig,
+  Stage,
+  SlotKey,
+  ScanResult,
+  RescanPreview,
+  RescanPreviewItem,
+} from './types';
 
 export interface ShiftKBridge {
   getConfig: () => Promise<AppConfig>;
@@ -8,6 +15,8 @@ export interface ShiftKBridge {
   previousSlot: () => Promise<string | null>;
   nextSlot: () => Promise<string | null>;
   triggerRescan: () => Promise<ScanResult>;
+  previewRescan: () => Promise<RescanPreview>;
+  executeRescan: (items: RescanPreviewItem[]) => Promise<ScanResult>;
   onConfigChange: (callback: (config: AppConfig) => void) => () => void;
 
   setSlots: (slots: Record<SlotKey, string | null>) => Promise<void>;

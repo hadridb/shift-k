@@ -18,6 +18,10 @@ const bridge: ShiftKBridge = {
 
   triggerRescan: () => ipcRenderer.invoke('scanner:rescan'),
 
+  previewRescan: () => ipcRenderer.invoke('scanner:preview'),
+
+  executeRescan: (items) => ipcRenderer.invoke('scanner:execute', items),
+
   onConfigChange: (callback) => {
     const handler = (_event: IpcRendererEvent, config: AppConfig) => callback(config);
     ipcRenderer.on('config:changed', handler);

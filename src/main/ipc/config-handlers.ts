@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { ipcMain, BrowserWindow, shell, dialog } from 'electron';
 import { getConfig, setConfig, setConfigKey } from '@core/config/store';
-import { scanDownloads } from '@core/scanner/scanner';
+import { scanDownloads, previewRescan, executeRescan } from '@core/scanner/scanner';
 import { createProject, listProjects } from '@core/projects/scaffolder';
 import { formatDailyFolderName } from '@core/router/daily-path';
 import { createSettingsWindow } from '@main/windows/settings';
@@ -16,7 +16,12 @@ import {
   previousSlot,
   nextSlot,
 } from '@main/services/actions';
-import type { AppConfig, Stage, SlotKey } from '@shared/types';
+import type {
+  AppConfig,
+  Stage,
+  SlotKey,
+  RescanPreviewItem,
+} from '@shared/types';
 
 export function registerConfigHandlers(): void {
   ipcMain.handle('config:get', () => getConfig());
@@ -71,6 +76,15 @@ export function registerConfigHandlers(): void {
   ipcMain.handle('scanner:rescan', async () => {
     const config = getConfig();
     return scanDownloads(config);
+  });
+
+  ipcMain.handle('scanner:preview', async () => {
+    const config = getConfig();
+    return previewRescan(config);
+  });
+
+  ipcMain.handle('scanner:execute', async (_e, items: RescanPreviewItem[]) => {
+    return executeRescan(items);
   });
 
   ipcMain.handle('projects:create', async (_e, client: string, mission: string) => {
