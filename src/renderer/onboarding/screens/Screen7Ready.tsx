@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ScreenLayout, ScreenItem, SCREEN_EASE } from '../ScreenLayout';
-import { ParticleBurst } from '@renderer/overlay/components/ParticleBurst';
+import { ScreenLayout, ScreenItem } from '../ScreenLayout';
+import {
+  ParticleField,
+  PARTICLE_FIELD_BURST_MS,
+  PARTICLE_FIELD_IMPLODE_MS,
+  type ParticleFieldPhase,
+} from '../components/ParticleField';
 
 interface Props {
   onLaunch: () => void;
@@ -9,53 +13,53 @@ interface Props {
 }
 
 /**
- * Final screen — particle burst as visual payoff.
- *
- * Sprint 8 iter 1: the burst fired at mount (0 ms) while the screen
- * itself was still mid-transition (slide-up 350 ms + content stagger).
- * The particle motion is 700 ms total, so it was over before the user
- * even registered the screen. Iter 2 delays the first burst to 1100 ms
- * (after all cascading content has settled) and increases scale 2.4 → 3.2
- * so the motes carry visibly across the canvas.
+ * Final screen. The visual lead is a 140-particle Touch Designer-style
+ * point cloud that fills the whole window: bursts out from centre on
+ * mount, settles into an infinite slow drift, and implodes back to a
+ * single point when the user clicks "Lancer Shift-K". Text content
+ * sits above the field on z-index 1.
  */
 export function Screen7Ready({ onLaunch, onBack }: Props) {
-  const [burstSeq, setBurstSeq] = useState(0);
+  const [phase, setPhase] = useState<ParticleFieldPhase>('burst');
 
-  // Defer the first burst until the screen entrance is over.
+  // burst → idle once every particle has finished its outward animation.
   useEffect(() => {
-    const id = window.setTimeout(() => setBurstSeq(1), 1100);
+    if (phase !== 'burst') return;
+    const id = window.setTimeout(() => setPhase('idle'), PARTICLE_FIELD_BURST_MS);
     return () => window.clearTimeout(id);
-  }, []);
+  }, [phase]);
+
+  function handleLaunch() {
+    setPhase('implode');
+    window.setTimeout(onLaunch, PARTICLE_FIELD_IMPLODE_MS);
+  }
 
   return (
     <ScreenLayout
       step={7}
       totalSteps={7}
       back={{ onClick: onBack }}
-      primary={{
-        label: 'Lancer Shift-K',
-        onClick: () => {
-          setBurstSeq((n) => n + 1);
-          // Hold a bit longer than before so the second burst is unmistakable
-          // before the window destroys.
-          window.setTimeout(onLaunch, 650);
-        },
-      }}
+      primary={{ label: 'Lancer Shift-K', onClick: handleLaunch }}
     >
+      {/* Particle field — absolute, behind the content. */}
+      <ParticleField phase={phase} />
+
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 28,
-          maxWidth: 640,
+          gap: 18,
+          maxWidth: 540,
           textAlign: 'center',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <ScreenItem index={0}>
           <h1
             style={{
-              fontSize: 36,
+              fontSize: 32,
               fontWeight: 500,
               margin: 0,
               letterSpacing: '-0.02em',
@@ -72,7 +76,7 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
               color: 'rgba(245,245,245,0.6)',
               lineHeight: 1.6,
               margin: 0,
-              maxWidth: 480,
+              maxWidth: 440,
             }}
           >
             Shift-K va maintenant surveiller tes téléchargements et router chaque
@@ -80,35 +84,7 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
           </p>
         </ScreenItem>
 
-        {/* Burst container — 3.2× scale so the particles read across the
-            canvas, not as a 16 px confetti puff. Wrapper is 96×96 so
-            absolute child sizing stays predictable. */}
-        <ScreenItem index={2} style={{ marginTop: 28 }}>
-          <div
-            style={{
-              width: 96,
-              height: 96,
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <div
-              style={{
-                transform: 'scale(3.2)',
-                transformOrigin: 'center',
-                position: 'relative',
-                width: 16,
-                height: 16,
-              }}
-            >
-              <ParticleBurst trigger={burstSeq} />
-            </div>
-          </div>
-        </ScreenItem>
-
-        <ScreenItem index={3} style={{ marginTop: 8 }}>
+        <ScreenItem index={2} style={{ marginTop: 24 }}>
           <p
             style={{
               fontSize: 11,
@@ -116,12 +92,11 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
               margin: 0,
             }}
           >
-            L'overlay s'ouvrira en haut à droite. Clic droit sur l'icône tray pour quitter.
+            L'overlay s'ouvrira en haut à droite. Clic droit sur l'icône tray
+            pour quitter.
           </p>
         </ScreenItem>
       </div>
     </ScreenLayout>
   );
 }
-
-void SCREEN_EASE;

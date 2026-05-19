@@ -7,14 +7,13 @@ interface Props {
 }
 
 /**
- * Welcome screen — sober. Hand-set typography rather than text-heavy
- * marketing copy. The original (Sprint 8 iter 1) was too verbose and
- * promised "directeurs IA luxury" which read like a brochure. This
- * version sticks to one word + one factual line + button.
+ * Welcome — sober. Iter 2 cues from user feedback:
  *
- * Ambient motion: a single dim dot pulses slowly at the bottom of the
- * canvas. Subtle, never distracting — the kind of micro-detail
- * Apple Keynote uses to make a static screen feel alive.
+ *  • Wordmark cut to 48 px (down from 64) so it reads as identity,
+ *    not as a billboard.
+ *  • Tagline presents what the tool does rather than re-branding it.
+ *    "Réalisateur IA" instead of "Directeur IA luxury".
+ *  • Single thin pulsing dot under the body — sole ambient motion.
  */
 export function Screen1Welcome({ onNext }: Props) {
   return (
@@ -29,19 +28,17 @@ export function Screen1Welcome({ onNext }: Props) {
           flexDirection: 'column',
           alignItems: 'center',
           gap: 28,
-          maxWidth: 720,
+          maxWidth: 580,
           textAlign: 'center',
         }}
       >
-        {/* Hero wordmark — UPPERCASE, no underline, smaller than iter 1
-            so it stops shouting and starts reading as identity. */}
         <ScreenItem index={0}>
           <motion.div
-            initial={{ opacity: 0, y: 8, letterSpacing: '0.08em' }}
+            initial={{ opacity: 0, y: 8, letterSpacing: '0.10em' }}
             animate={{ opacity: 1, y: 0, letterSpacing: '0.04em' }}
-            transition={{ duration: 1.1, delay: 0.1, ease: SCREEN_EASE }}
+            transition={{ duration: 1.2, delay: 0.1, ease: SCREEN_EASE }}
             style={{
-              fontSize: 64,
+              fontSize: 48,
               fontWeight: 700,
               letterSpacing: '0.04em',
               color: '#F5F5F5',
@@ -52,8 +49,15 @@ export function Screen1Welcome({ onNext }: Props) {
           </motion.div>
         </ScreenItem>
 
-        <ScreenItem index={2} style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 18, fontWeight: 400, lineHeight: 1.4 }}>
+        <ScreenItem index={2} style={{ marginTop: 4 }}>
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 400,
+              lineHeight: 1.4,
+              color: '#F5F5F5',
+            }}
+          >
             Bienvenue.
           </div>
         </ScreenItem>
@@ -62,22 +66,23 @@ export function Screen1Welcome({ onNext }: Props) {
           <div
             style={{
               fontSize: 13,
-              color: 'rgba(245,245,245,0.5)',
-              lineHeight: 1.6,
-              maxWidth: 420,
+              color: 'rgba(245,245,245,0.55)',
+              lineHeight: 1.7,
+              maxWidth: 460,
             }}
           >
-            Deux dossiers à configurer pour démarrer.
+            Le compagnon de bureau des réalisateurs IA.
+            <br />
+            Capte tes générations, range les fichiers, garde tes projets clairs.
           </div>
         </ScreenItem>
 
-        {/* Ambient pulse — single dim dot drifting in opacity. Pure
-            visual breath. */}
+        {/* Ambient pulse */}
         <motion.div
           animate={{ opacity: [0.1, 0.35, 0.1] }}
           transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
           style={{
-            marginTop: 56,
+            marginTop: 48,
             width: 4,
             height: 4,
             borderRadius: 999,
