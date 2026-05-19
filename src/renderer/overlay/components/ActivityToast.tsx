@@ -1,8 +1,8 @@
-import React, { useEffect, useReducer, useRef } from 'react';
+import React, { useEffect, useReducer, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ActivityEntry, ActivityType, Stage } from '@shared/types';
 import { formatActivityLine } from '@shared/i18n/activity';
-import { ActivitySpinner } from './ActivitySpinner';
+import { ParticleBurst } from './ParticleBurst';
 
 // Aggregation map key — one bucket per (type × stage) combination.
 type BucketKey = `${ActivityType}:${Stage}`;
@@ -120,14 +120,16 @@ export function ActivityToast() {
     // phase transition either schedules a new timer or none.
   }, [state.phase]);
 
-  // A new entry while fading should pull us back to visible (reset hold).
+  // Fire a particle burst at toast appearance (visible) and dissolution
+  // (fading). Between the two the toast sits quiet — no spinning, no
+  // motion. Each transition bumps a counter; ParticleBurst remounts on
+  // the new value with a fresh random seed.
+  const [burstSeq, setBurstSeq] = useState(0);
   useEffect(() => {
-    if (state.phase === 'fading') {
-      // If buckets got mutated during fade, dispatch was 'entry' which keeps
-      // phase=fading. Detect by checking bucket size against a ref? Simpler:
-      // we already keep phase=fading on entry. Could enhance later if needed.
+    if (state.phase === 'visible' || state.phase === 'fading') {
+      setBurstSeq((n) => n + 1);
     }
-  }, [state.buckets, state.phase]);
+  }, [state.phase]);
 
   // Cleanup on unmount.
   useEffect(() => {
@@ -171,7 +173,7 @@ export function ActivityToast() {
             pointerEvents: 'none',
           }}
         >
-          <ActivitySpinner dispersing={state.phase === 'fading'} />
+          <ParticleBurst trigger={burstSeq} />
 
           <div style={{ flex: 1, minWidth: 0 }}>
             {lines.map((b) => (
