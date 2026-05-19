@@ -93,6 +93,10 @@ export function createOverlayWindow(): BrowserWindow {
 
   if (isDev) {
     void overlayWindow.loadURL('http://localhost:5173/overlay.html');
+    // Auto-open detached devtools in dev — the overlay is frameless so
+    // the user can't right-click → Inspect. Detached mode keeps the
+    // 290×460 frame intact while the devtools panel floats next to it.
+    overlayWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     void overlayWindow.loadFile(path.join(__dirname, '../../renderer/overlay.html'));
   }
