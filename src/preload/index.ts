@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
 import type { ShiftKBridge } from '../shared/bridge';
-import type { AppConfig } from '../shared/types';
+import type { AppConfig, ActivityEntry } from '../shared/types';
 
 const bridge: ShiftKBridge = {
   getConfig: () => ipcRenderer.invoke('config:get') as Promise<AppConfig>,
@@ -46,6 +46,14 @@ const bridge: ShiftKBridge = {
   openSettings: () => ipcRenderer.invoke('window:open-settings'),
 
   completeOnboarding: () => ipcRenderer.invoke('onboarding:complete'),
+
+  getRecentActivity: () => ipcRenderer.invoke('activity:get-recent') as Promise<ActivityEntry[]>,
+
+  onActivityRouted: (callback) => {
+    const handler = (_event: IpcRendererEvent, entry: ActivityEntry) => callback(entry);
+    ipcRenderer.on('activity:routed', handler);
+    return () => ipcRenderer.removeListener('activity:routed', handler);
+  },
 };
 
 contextBridge.exposeInMainWorld('shiftK', bridge);

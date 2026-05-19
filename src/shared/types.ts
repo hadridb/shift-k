@@ -71,3 +71,12 @@ export interface RescanPreview {
   skipped: number;
   errors: Array<{ file: string; error: string }>;
 }
+
+export interface ActivityEntry {
+  filename: string;
+  client: string;
+  stage: Stage;
+  stageFolderName: string;
+  platform: string;
+  timestamp: number;
+}

@@ -3,6 +3,7 @@ import type { AppConfig, RescanPreview, Stage } from '../../shared/types';
 import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
 import { FooterBar } from './components/FooterBar';
+import { ActivityFeed } from './components/ActivityFeed';
 import { NewProjectModal } from './modals/NewProjectModal';
 import { EditSlotsModal } from './modals/EditSlotsModal';
 import { OpenFoldersModal } from './modals/OpenFoldersModal';
@@ -166,6 +167,11 @@ export function OverlayApp() {
         activeClient={config.activeClient}
         onSelect={handleSelectClient}
       />
+
+      {divider}
+
+      {/* Activity feed — last 5 routed files */}
+      <ActivityFeed />
 
       {divider}
 

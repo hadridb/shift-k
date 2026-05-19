@@ -8,6 +8,7 @@ import { formatDailyFolderName } from '@core/router/daily-path';
 import { createSettingsWindow } from '@main/windows/settings';
 import { createOverlayWindow } from '@main/windows/overlay';
 import { syncWatcher } from '@main/services/watcher-manager';
+import { getRecentActivity } from '@main/services/activity-log';
 import {
   broadcastConfigChange,
   setActiveClient,
@@ -33,6 +34,8 @@ export function registerConfigHandlers(): void {
 
   ipcMain.handle('config:cycle-stage', () => cycleStage());
   ipcMain.handle('config:set-active-stage', (_e, stage: Stage) => setActiveStage(stage));
+
+  ipcMain.handle('activity:get-recent', () => getRecentActivity());
 
   ipcMain.handle('config:toggle-routing', () => toggleRouting());
 

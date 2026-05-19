@@ -5,6 +5,7 @@ import type {
   ScanResult,
   RescanPreview,
   RescanPreviewItem,
+  ActivityEntry,
 } from './types';
 
 export interface ShiftKBridge {
@@ -29,4 +30,7 @@ export interface ShiftKBridge {
   pickFolder: (title?: string) => Promise<string | null>;
   openSettings: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+
+  getRecentActivity: () => Promise<ActivityEntry[]>;
+  onActivityRouted: (callback: (entry: ActivityEntry) => void) => () => void;
 }

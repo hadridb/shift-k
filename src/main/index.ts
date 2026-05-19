@@ -11,6 +11,7 @@ import {
 import { registerShortcuts, unregisterShortcuts } from './shortcuts';
 import { createTray, destroyTray } from './tray';
 import { applyAutostart, wasOpenedAtLogin } from './services/autostart';
+import { addActivity } from './services/activity-log';
 import { getConfig, onConfigChange } from '@core/config/store';
 
 function isConfigComplete(): boolean {
@@ -44,9 +45,22 @@ app.whenReady().then(() => {
 
   setWatcherEventHandler((event) => {
     if (event.type === 'routed') {
-      if (getConfig().preferences.notifyOnRoute) {
+      const cfg = getConfig();
+      if (cfg.preferences.notifyOnRoute) {
         notifyRouted(event.result.platform, event.result.destinationPath);
       }
+      const entry = {
+        filename: path.basename(event.result.destinationPath),
+        client: cfg.activeClient ?? '',
+        stage: event.result.stageKey,
+        stageFolderName: event.result.stageFolderName,
+        platform: event.result.platform,
+        timestamp: event.result.movedAt.getTime(),
+      };
+      addActivity(entry);
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send('activity:routed', entry);
+      });
     }
   });
   registerShortcuts();
