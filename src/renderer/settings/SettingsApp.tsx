@@ -5,6 +5,7 @@ interface Form {
   root: string;
   downloadsPath: string;
   stages: StageLabels;
+  dailyFoldersEnabled: boolean;
   dailyFolderFormat: string;
   lazyDailyFolders: boolean;
   groupByPlatform: boolean;
@@ -19,6 +20,7 @@ function formFromConfig(config: AppConfig): Form {
     root: config.root,
     downloadsPath: config.downloadsPath,
     stages: { ...config.stages },
+    dailyFoldersEnabled: config.preferences.dailyFoldersEnabled,
     dailyFolderFormat: config.preferences.dailyFolderFormat,
     lazyDailyFolders: config.preferences.lazyDailyFolders,
     groupByPlatform: config.preferences.groupByPlatform,
@@ -27,6 +29,27 @@ function formFromConfig(config: AppConfig): Form {
     startOnLogin: config.preferences.startOnLogin,
     logRetentionDays: config.preferences.logRetentionDays,
   };
+}
+
+const FORMAT_PRESETS = [
+  { key: 'simple', label: 'Simple — J<date>', format: 'J{yyyy-MM-dd}' },
+  { key: 'stage', label: 'Avec stage — <stage> J<date>', format: '{stage} J{yyyy-MM-dd}' },
+  { key: 'stage-hyphen', label: 'Avec stage hyphen — <stage>-<date>', format: '{stage}-{yyyy-MM-dd}' },
+  { key: 'custom', label: 'Personnalisé', format: '' },
+] as const;
+
+type FormatKey = (typeof FORMAT_PRESETS)[number]['key'];
+
+function detectFormatKey(format: string): FormatKey {
+  const match = FORMAT_PRESETS.find((p) => p.key !== 'custom' && p.format === format);
+  return match ? match.key : 'custom';
+}
+
+function previewDailyFolder(format: string, stageName: string, date: Date): string {
+  const yyyy = date.getFullYear().toString();
+  const MM = (date.getMonth() + 1).toString().padStart(2, '0');
+  const dd = date.getDate().toString().padStart(2, '0');
+  return format.replace('{stage}', stageName).replace('{yyyy-MM-dd}', `${yyyy}-${MM}-${dd}`);
 }
 
 const inputStyle: React.CSSProperties = {
@@ -225,6 +248,7 @@ export function SettingsApp() {
         stages: form.stages,
         preferences: {
           ...original.preferences,
+          dailyFoldersEnabled: form.dailyFoldersEnabled,
           dailyFolderFormat: form.dailyFolderFormat,
           lazyDailyFolders: form.lazyDailyFolders,
           groupByPlatform: form.groupByPlatform,
@@ -244,7 +268,7 @@ export function SettingsApp() {
     window.close();
   }
 
-  if (!form) {
+  if (!form || !original) {
     return (
       <div
         style={{
@@ -331,19 +355,83 @@ export function SettingsApp() {
           ))}
         </Section>
 
-        <Section title="PRÉFÉRENCES">
-          <Field
-            label="Format des dossiers journaliers"
-            hint="Utilise {yyyy-MM-dd}. Ex : J{yyyy-MM-dd} → J2026-05-15."
-          >
-            <input
-              style={inputStyle}
-              value={form.dailyFolderFormat}
-              onChange={(e) => update('dailyFolderFormat', e.target.value)}
-              spellCheck={false}
-            />
-          </Field>
+        <Section title="DOSSIERS PAR JOUR">
+          <ToggleRow
+            checked={form.dailyFoldersEnabled}
+            onChange={(v) => update('dailyFoldersEnabled', v)}
+            label="Créer un sous-dossier par jour"
+            hint="Si désactivé, les fichiers sont rangés directement dans le dossier du stage, sans hiérarchie par date."
+          />
 
+          {form.dailyFoldersEnabled && (() => {
+            const activeStageName = form.stages[original.activeStage];
+            const formatKey = detectFormatKey(form.dailyFolderFormat);
+            const sampleDate = new Date();
+            const sampleFolder = previewDailyFolder(form.dailyFolderFormat, activeStageName, sampleDate);
+            return (
+              <>
+                <Field
+                  label="Format du nom"
+                  hint="Le placeholder {stage} se remplace par le nom du stage actif, {yyyy-MM-dd} par la date du jour."
+                >
+                  <select
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                    value={formatKey}
+                    onChange={(e) => {
+                      const key = e.target.value as FormatKey;
+                      const preset = FORMAT_PRESETS.find((p) => p.key === key);
+                      if (!preset) return;
+                      if (key === 'custom') {
+                        if (detectFormatKey(form.dailyFolderFormat) !== 'custom') {
+                          update('dailyFolderFormat', form.dailyFolderFormat || 'J{yyyy-MM-dd}');
+                        }
+                      } else {
+                        update('dailyFolderFormat', preset.format);
+                      }
+                    }}
+                  >
+                    {FORMAT_PRESETS.map((p) => (
+                      <option key={p.key} value={p.key}>{p.label}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                {formatKey === 'custom' && (
+                  <Field label="Format personnalisé">
+                    <input
+                      style={inputStyle}
+                      value={form.dailyFolderFormat}
+                      onChange={(e) => update('dailyFolderFormat', e.target.value)}
+                      placeholder="ex : {stage}_{yyyy-MM-dd}"
+                      spellCheck={false}
+                    />
+                  </Field>
+                )}
+
+                <div
+                  style={{
+                    marginTop: 6,
+                    padding: '10px 12px',
+                    background: '#0c0c0c',
+                    border: '1px solid #1c1c1c',
+                    borderRadius: 6,
+                    fontSize: 11,
+                    color: '#888',
+                  }}
+                >
+                  <div style={{ fontSize: 9, letterSpacing: '0.15em', color: '#555', marginBottom: 4 }}>
+                    EXEMPLE POUR AUJOURD'HUI
+                  </div>
+                  <code style={{ fontSize: 11, color: '#cfcfcf' }}>
+                    {activeStageName}/{sampleFolder}/Gen-4_demo.mp4
+                  </code>
+                </div>
+              </>
+            );
+          })()}
+        </Section>
+
+        <Section title="PRÉFÉRENCES">
           <ToggleRow
             checked={form.lazyDailyFolders}
             onChange={(v) => update('lazyDailyFolders', v)}

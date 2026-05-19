@@ -421,3 +421,35 @@ Si l'un ou l'autre echoue, le build casse — impossible de re-livrer un install
 - Toute nouvelle sous-arborescence ajoutee a `src/` et importee par le main (ex: `src/extension/`, `src/lib/`, `src/services/...`) doit etre ajoutee a `files:` **en plus** de l'`include` de `tsconfig.main.json`. Les deux listes sont independantes mais doivent rester en phase.
 - Convention : la PR qui ajoute un nouveau dossier sous `src/` doit toucher les deux fichiers dans le meme commit.
 - Si on consolide un jour le bundling main (ex: esbuild en single-file), ce piege disparait — l'asar contiendrait un seul `dist/main/index.js` auto-suffisant. A reconsiderer si on accumule plus de pieges du genre.
+
+---
+
+## ADR-023 : Toggle `dailyFoldersEnabled` + placeholder `{stage}` dans `dailyFolderFormat`
+
+**Date :** 2026-05-19
+**Statut :** Acceptee
+
+**Contexte :** En V1 et jusqu'a maintenant en V2, chaque fichier route etait place dans un sous-dossier journalier au sein du stage (ex: `YSL/03_Outputs/J2026-05-19/Gen-4_clip.mp4`). Le format etait limite a `{yyyy-MM-dd}`. Deux limites :
+1. Certains workflows preferent une hierarchie plate `<Client>/<stage>/<file>` (peu de fichiers/jour, ou archivage automatique en bout de chaine).
+2. Quand le user a plusieurs apps qui ouvrent des dossiers cote-a-cote (DaVinci import bins, Finder/Explorer tabs), le nom `J2026-05-19` est ambigu — impossible de distinguer le dossier `03_Outputs/J2026-05-19/` du dossier `01_SRC Inits/J2026-05-19/` au coup d'oeil dans une barre d'onglets.
+
+**Decision :** Ajouter deux prefs orthogonales dans `preferences` :
+
+- **`dailyFoldersEnabled: boolean`** (default `true`) — controle l'existence meme du sous-dossier journalier. Quand `false`, `buildDailyPath()` retourne `<root>/<client>/<stage>/` (+ platform si `groupByPlatform`), et `createProject()` ne pre-cree pas les sous-dossiers de jour. Le toggle est un seul point de verite : aucune autre logique n'a besoin de le connaitre, le router fait foi.
+
+- **`dailyFolderFormat`** etendu pour supporter le placeholder `{stage}`, substitue par le nom du stage actif (`config.stages[stageKey]`). Combine avec `{yyyy-MM-dd}`. Exemples :
+  - `J{yyyy-MM-dd}` → `J2026-05-19` (defaut, retrocompatible)
+  - `{stage} J{yyyy-MM-dd}` → `03_Outputs J2026-05-19`
+  - `{stage}-{yyyy-MM-dd}` → `03_Outputs-2026-05-19`
+
+**Pourquoi pas un seul flag a 3 etats (off / simple / stage-prefixed) ?** Le choix du format et l'activation sont des decisions independantes — un user qui passe en mode "pas de dossier jour" puis reactive ne veut pas perdre son format custom. Les deux prefs sont stockees separement, et l'UI rend le champ format invisible quand `dailyFoldersEnabled === false`. La pref `dailyFolderFormat` reste dans la config meme quand le toggle est off.
+
+**Migration :** Aucun code de migration manuel — les `.default()` Zod injectent automatiquement la nouvelle pref a la prochaine lecture pour les configs persistees avant ce commit. Defaults retrocompatibles : `dailyFoldersEnabled = true`, `dailyFolderFormat = 'J{yyyy-MM-dd}'`. Aucun fichier ne se retrouve route differemment apres l'upgrade.
+
+**Consequences :**
+- La signature de `formatDailyFolderName(format, date)` devient `formatDailyFolderName(format, stageName, date)`. Tous les callers (router, scaffolder, open-folders handler) passent le nom du stage. La compute est par-stage dans le scaffolder, donc le dossier journalier peut differer entre stages quand `{stage}` est utilise.
+- La pref pre-existante `lazyDailyFolders` (default `true`) reste presente dans le schema mais n'est encore utilisee nulle part dans le code — orthogonale a `dailyFoldersEnabled` (lazy = quand creer, enabled = si creer). A wirer separement quand on en aura besoin (l'idee : creer le dossier journalier au premier routage plutot qu'au scaffold), ou a retirer si on conclut que l'eager-create du scaffolder est satisfaisant.
+- L'UI Settings expose une section "DOSSIERS PAR JOUR" avec :
+  1. Toggle pour `dailyFoldersEnabled`.
+  2. Quand active : un `<select>` proposant les 3 presets + "Personnalise" qui revele un champ texte libre.
+  3. Une preview live `<stage>/<dossier-genere>/Gen-4_demo.mp4` recalculee a chaque keystroke.
