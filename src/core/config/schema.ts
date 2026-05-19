@@ -100,6 +100,11 @@ export const AppConfigSchema = z.object({
         (val) => (val === 'mica' || val === 'aurora' ? 'obsidian' : val),
         z.enum(['obsidian', 'carbon', 'ivory', 'liquid-glass']).default('obsidian'),
       ),
+      // Sprint 8: gate the cinematic onboarding to the first launch only.
+      // Defaults to false so brand-new users see the flow; existing users
+      // whose config already has root + downloadsPath set get this flipped
+      // to true automatically on next boot (see migration in store.ts).
+      firstLaunchCompleted: z.boolean().default(false),
       dailyFolderFormat: z.string().default('J{yyyy-MM-dd}'),
       dailyFoldersEnabled: z.boolean().default(true),
       lazyDailyFolders: z.boolean().default(true),
@@ -128,6 +133,7 @@ export const AppConfigSchema = z.object({
     })
     .default({
       theme: 'obsidian',
+      firstLaunchCompleted: false,
       dailyFolderFormat: 'J{yyyy-MM-dd}',
       dailyFoldersEnabled: true,
       lazyDailyFolders: true,

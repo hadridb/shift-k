@@ -12,6 +12,7 @@ export type ThemeId = 'obsidian' | 'carbon' | 'ivory' | 'liquid-glass';
 
 export interface Preferences {
   theme: ThemeId;
+  firstLaunchCompleted: boolean;
   dailyFolderFormat: string;
   dailyFoldersEnabled: boolean;
   lazyDailyFolders: boolean;

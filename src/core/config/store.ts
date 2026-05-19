@@ -10,10 +10,21 @@ const store = new ElectronStore<AppConfig>({
 
 function migrate(): void {
   const raw = store.store as Partial<AppConfig>;
+
+  // 1. Merge audio platforms into pre-v0.2 configs.
   const existing = (raw.platforms ?? {}) as Record<string, string[]>;
   const merged = mergeNewPlatformPatterns(existing, POST_V1_PLATFORM_PATTERNS);
   if (Object.keys(merged).length !== Object.keys(existing).length) {
     store.set('platforms', merged);
+  }
+
+  // 2. Sprint 8: gate the new cinematic onboarding to first launch only.
+  // Existing users whose config already has root + downloadsPath set should
+  // not see the onboarding — flip firstLaunchCompleted to true silently.
+  const prefs = (raw.preferences ?? {}) as Partial<AppConfig['preferences']>;
+  const hasCompleteConfig = Boolean(raw.root && raw.downloadsPath);
+  if (hasCompleteConfig && prefs.firstLaunchCompleted !== true) {
+    store.set('preferences', { ...prefs, firstLaunchCompleted: true });
   }
 }
 

@@ -13,6 +13,7 @@ import { createTray, destroyTray } from './tray';
 import { applyAutostart, wasOpenedAtLogin } from './services/autostart';
 import { addActivity } from './services/activity-log';
 import { applyTheme } from './services/theme-applier';
+import { showSplash } from './windows/splash';
 import {
   logDiagnosticsAtStartup,
   registerThemeDiagnosticsIpc,
@@ -95,17 +96,32 @@ app.whenReady().then(() => {
   });
 
   const hidden = wasLaunchedHidden();
+  // Sprint 8: optional dev-mode override to force the onboarding flow
+  // even on configs that have already completed it. Set via
+  // `npm run dev:onboarding` (see scripts/dev-onboarding.js).
+  const forceOnboarding = process.env['SHIFTK_FORCE_ONBOARDING'] === '1';
+  const firstLaunch =
+    forceOnboarding || !getConfig().preferences.firstLaunchCompleted;
 
-  if (isConfigComplete()) {
-    if (!hidden) createOverlayWindow();
-    void syncWatcher();
-    // Apply the persisted theme's native material once the overlay exists.
-    applyTheme(getConfig().preferences.theme);
-  } else {
-    // Onboarding always shows even on autostart — config is incomplete,
-    // there's nothing useful for the user to do via the tray alone.
-    createOnboardingWindow();
-  }
+  void (async () => {
+    // Splash on every normal launch — skipped on hidden / autostart since
+    // a flash of UI would be jarring with no overlay following.
+    if (!hidden) {
+      await showSplash();
+    }
+
+    if (firstLaunch && !hidden) {
+      // First launch (or replay) — go straight to the cinematic onboarding.
+      // The overlay is created when the user clicks "Lancer Shift-K" on
+      // screen 7 (onboarding:complete IPC).
+      createOnboardingWindow();
+    } else {
+      // Standard launch path — overlay + watcher + native theme effects.
+      if (!hidden) createOverlayWindow();
+      void syncWatcher();
+      applyTheme(getConfig().preferences.theme);
+    }
+  })();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

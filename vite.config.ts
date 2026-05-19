@@ -24,6 +24,7 @@ export default defineConfig({
         overlay: 'overlay.html',
         settings: 'settings.html',
         onboarding: 'onboarding.html',
+        splash: 'splash.html',
         // Dev-only playground for iterating on ParticleBurst. Registered
         // so Vite serves it at /particle-demo.html during `npm run dev`.
         // The production build still emits it, but Electron never loads it.

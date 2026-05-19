@@ -8,6 +8,7 @@ import { createProject, listProjects } from '@core/projects/scaffolder';
 import { formatDailyFolderName } from '@core/router/daily-path';
 import { createSettingsWindow } from '@main/windows/settings';
 import { createOverlayWindow } from '@main/windows/overlay';
+import { createOnboardingWindow } from '@main/windows/onboarding';
 import { syncWatcher } from '@main/services/watcher-manager';
 import { getRecentActivity } from '@main/services/activity-log';
 import { applyTheme } from '@main/services/theme-applier';
@@ -99,9 +100,25 @@ export function registerConfigHandlers(): void {
 
   ipcMain.handle('onboarding:complete', async (e) => {
     const senderWin = BrowserWindow.fromWebContents(e.sender);
+    // Flip the first-launch flag so subsequent boots skip the cinematic
+    // onboarding and go straight to splash → overlay (see Sprint 8 /
+    // main/index.ts boot flow). Persisted via the existing config store.
+    const cfg = getConfig();
+    setConfig({
+      preferences: { ...cfg.preferences, firstLaunchCompleted: true },
+    });
     createOverlayWindow();
     await syncWatcher();
+    applyTheme(cfg.preferences.theme);
     senderWin?.close();
+  });
+
+  // Sprint 8: replay the onboarding from Settings → À PROPOS. Doesn't
+  // reset firstLaunchCompleted — the user explicitly asked to see the
+  // flow again, the flag stays true so a quit / relaunch still goes
+  // straight to overlay.
+  ipcMain.handle('onboarding:replay', () => {
+    createOnboardingWindow();
   });
 
   ipcMain.handle('scanner:rescan', async () => {
