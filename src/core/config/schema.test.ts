@@ -159,4 +159,23 @@ describe('AppConfigSchema', () => {
       customSection: true,
     });
   });
+
+  it('preferences.theme defaults to "obsidian"', () => {
+    expect(defaultConfig.preferences.theme).toBe('obsidian');
+    const parsed = AppConfigSchema.parse({});
+    expect(parsed.preferences.theme).toBe('obsidian');
+  });
+
+  it('preferences.theme accepts each of the 6 valid theme ids', () => {
+    for (const id of ['obsidian', 'carbon', 'ivory', 'mica', 'liquid-glass', 'aurora']) {
+      const parsed = AppConfigSchema.parse({ preferences: { theme: id } });
+      expect(parsed.preferences.theme).toBe(id);
+    }
+  });
+
+  it('preferences.theme rejects unknown values', () => {
+    expect(() =>
+      AppConfigSchema.parse({ preferences: { theme: 'midnight-blue' } }),
+    ).toThrow();
+  });
 });

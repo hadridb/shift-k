@@ -1,0 +1,118 @@
+/* Theme CSS variables — mirrored from src/renderer/styles/themes.ts.
+   Switching a theme is one DOM mutation: setAttribute('data-theme', id)
+   on <html>. Every component that reads `var(--*)` updates instantly.
+   See ADR-029 for the architecture. */
+
+/* Fallback / default — obsidian also lives under :root unscoped so that
+   pages with no data-theme attribute set still render correctly. */
+:root,
+:root[data-theme='obsidian'] {
+  --bg-primary: #0A0A0A;
+  --bg-elevated: #141414;
+  --bg-hover: #161616;
+  --bg-modal: rgba(10, 10, 10, 0.95);
+  --border-subtle: #1A1A1A;
+  --border-divider: #191919;
+  --text-primary: #F5F5F5;
+  --text-secondary: #9A9A9A;
+  --text-muted: #666666;
+  --text-disabled: #444444;
+  --accent: #FFFFFF;
+  --shadow-overlay: 0 8px 40px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='carbon'] {
+  --bg-primary: #13141A;
+  --bg-elevated: #1B1D24;
+  --bg-hover: #232530;
+  --bg-modal: rgba(19, 20, 26, 0.95);
+  --border-subtle: #252830;
+  --border-divider: #1F2128;
+  --text-primary: #F4ECD8;
+  --text-secondary: #A8A294;
+  --text-muted: #6B665C;
+  --text-disabled: #4A453E;
+  --accent: #F4ECD8;
+  --shadow-overlay: 0 8px 40px rgba(50, 30, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='ivory'] {
+  --bg-primary: #FAF8F3;
+  --bg-elevated: #F2EFE8;
+  --bg-hover: #EAE6DC;
+  --bg-modal: rgba(250, 248, 243, 0.96);
+  --border-subtle: #E0DBCF;
+  --border-divider: #D8D2C4;
+  --text-primary: #1A1A1A;
+  --text-secondary: #5C5650;
+  --text-muted: #8C857B;
+  --text-disabled: #B5AFA3;
+  --accent: #A28C5B;
+  --shadow-overlay: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme='mica'] {
+  --bg-primary: transparent;
+  --bg-elevated: rgba(20, 20, 20, 0.65);
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-modal: rgba(20, 20, 20, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-divider: rgba(255, 255, 255, 0.06);
+  --text-primary: #F5F5F5;
+  --text-secondary: rgba(245, 245, 245, 0.65);
+  --text-muted: rgba(245, 245, 245, 0.4);
+  --text-disabled: rgba(245, 245, 245, 0.25);
+  --accent: #FFFFFF;
+  --shadow-overlay: 0 8px 40px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme='liquid-glass'] {
+  --bg-primary: rgba(20, 20, 20, 0.55);
+  --bg-elevated: rgba(20, 20, 20, 0.55);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-modal: rgba(20, 20, 20, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-divider: rgba(255, 255, 255, 0.08);
+  --text-primary: #F5F5F5;
+  --text-secondary: rgba(245, 245, 245, 0.7);
+  --text-muted: rgba(245, 245, 245, 0.45);
+  --text-disabled: rgba(245, 245, 245, 0.3);
+  --accent: #FFFFFF;
+  --shadow-overlay:
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* On macOS we let the native vibrancy do the heavy lifting; on Windows /
+   Linux we fall back to backdrop-filter. The selector below scopes the
+   blur ONLY when the OS isn't doing it natively — marked via a
+   `data-glass-fallback="true"` attribute set by the theme-applier. */
+:root[data-theme='liquid-glass'][data-glass-fallback='true'] .overlay-root {
+  backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+}
+
+:root[data-theme='aurora'] {
+  --bg-primary: transparent;
+  --bg-elevated: rgba(0, 0, 0, 0.4);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-modal: rgba(0, 0, 0, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-divider: rgba(255, 255, 255, 0.06);
+  --text-primary: #F5F5F5;
+  --text-secondary: rgba(245, 245, 245, 0.7);
+  --text-muted: rgba(245, 245, 245, 0.45);
+  --text-disabled: rgba(245, 245, 245, 0.3);
+  --accent: #FFFFFF;
+  --shadow-overlay: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes aurora-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}

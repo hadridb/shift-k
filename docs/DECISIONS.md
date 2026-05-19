@@ -560,6 +560,99 @@ Defini de facto dans le code, a respecter pour toute nouvelle animation :
 
 ---
 
+## ADR-029 : Systeme de themes — CSS variables + materiaux natifs OS
+
+**Date :** 2026-05-19
+**Statut :** Acceptee
+
+**Contexte :** Sprint 7 introduit 6 themes premium (Obsidian, Carbon, Ivory, Mica, Liquid Glass, Aurora) avec switching live, integration native Mica sur Windows 11 et vibrancy sur macOS, et un fallback CSS pour les plateformes sans natif. Question architecturale : ou vit la source de verite des couleurs ? Comment integrer les materiaux OS sans casser le rendu sur les plateformes sans natif ?
+
+**Decision :**
+
+### 1. Source unique : `src/renderer/styles/themes.ts` + miroir CSS
+
+Chaque theme est un objet TypeScript expose dans `THEMES` :
+```ts
+{ id, label, description, category, availability, cssVars, windowBackgroundMaterial?, vibrancy?, animatedBackground? }
+```
+
+`themes.css` mirrore les `cssVars` dans des selecteurs `:root[data-theme='<id>']`. Le switching est une seule mutation DOM : `document.documentElement.setAttribute('data-theme', id)`. Tous les composants qui consomment `var(--bg-primary)`, `var(--text-secondary)`, etc. se mettent a jour instantanement (cascade CSS, pas de re-render React force).
+
+**Pourquoi miroir TS+CSS et pas TS injecte dynamiquement ?** L'injection dynamique de `<style>` au runtime fonctionnerait, mais (a) on perd la HMR et le linting CSS, (b) le premier paint a un flash sur le default avant que JS s'execute. Le miroir permet le rendu themed au tout premier paint (CSS charge avant JS).
+
+Les tests asserent que les deux miroirs sont coherents (THEME registry vs CSS blocks).
+
+### 2. Tokens canoniques
+
+12 tokens, namespaces `--<scope>-<role>` :
+- `--bg-primary` / `--bg-elevated` / `--bg-hover` / `--bg-modal`
+- `--border-subtle` / `--border-divider`
+- `--text-primary` / `--text-secondary` / `--text-muted` / `--text-disabled`
+- `--accent`
+- `--shadow-overlay`
+
+Chaque theme DOIT definir tous les tokens (assert par `themes.test.ts`). Convention : composants consomment via inline `style={{ background: 'var(--bg-primary)' }}` ou via Tailwind classes mappees aux vars.
+
+### 3. Materiaux OS via API natives
+
+Effets impossibles a exprimer en CSS pur :
+- **Mica** sur Windows 11 (build ≥ 22000) : `BrowserWindow.setBackgroundMaterial('mica')`. Effet visuel pilote par le compositeur Windows (DWM) — couleurs derriere la fenetre qui transpirent a travers le materiau translucide.
+- **Vibrancy** sur macOS : `BrowserWindow.setVibrancy('hud')`. Effet visuel pilote par Core Animation — flou de fond + saturation, qui inclut la refraction subtile typique de macOS.
+
+Service `src/main/services/theme-applier.ts` : ecoute l'IPC `theme:apply`, plan le materiau approprie selon (theme.id, process.platform, os.release()), applique sur la BrowserWindow active. Re-appel idempotent — peut etre appele a chaque switch sans accumuler d'etat.
+
+`isWindowsAtLeast(currentRelease, minRelease)` parse les versions `os.release()` et compare numeriquement. Gate Mica sur ≥ `10.0.22000`.
+
+### 4. Fallback CSS pour Liquid Glass sur non-macOS
+
+Sur Windows et Linux, pas de vibrancy native equivalente. Le theme Liquid Glass conserve sa `cssVars` translucide (`rgba(20,20,20,0.55)` pour `--bg-primary`), et le theme-applier emet un event IPC `theme:glass-fallback` au renderer. Le renderer (via `useApplyTheme`) flippe l'attribut `data-glass-fallback="true"` sur `<html>`, et un selecteur CSS scope un `backdrop-filter: blur(40px) saturate(180%) brightness(110%)` sur la container racine :
+
+```css
+:root[data-theme='liquid-glass'][data-glass-fallback='true'] .overlay-root {
+  backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+}
+```
+
+Le rendu n'est pas la vraie refraction Apple (qui inclut chromatic aberration au bord, distortion radiale), mais visuellement convaincant. Documente dans le tooltip du picker : "Fallback CSS — rendu optimal sur macOS".
+
+### 5. BrowserWindow toujours `transparent: true` + `backgroundColor: '#00000000'`
+
+Pour que Mica/vibrancy puissent "voir" derriere la fenetre, elle doit etre transparente cote Electron. Les themes opaques (Obsidian, Carbon, Ivory) peignent leur `--bg-primary` sur la container racine, qui masque la transparence. Les themes translucides (Mica, Liquid Glass) ont `--bg-primary: transparent`, laissant le materiau OS voir a travers.
+
+Cela impose que `globals.css` mette `body { background-color: transparent }` — la couleur de fond vient toujours de la container racine, jamais du body.
+
+### 6. Aurora — gradient anime CSS
+
+Pas de native API. Pure CSS keyframes :
+```css
+@keyframes aurora-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+```
+
+Avec `background-size: 400% 400%` sur un linear-gradient, l'animation balaye lentement les color stops (60 s par cycle). Acceleration GPU forcee via `transform: translateZ(0)` + `will-change: background-position`. Composant `AuroraBackground.tsx` monte conditionnellement quand le theme actif expose `animatedBackground`.
+
+**Pourquoi pas une bibliotheque de particules pour Aurora ?** L'effet souhaite est lisse, contemplatif — pas du mouvement nerveux. Un gradient anime est exactement le bon outil. Ajouter `react-tsparticles` ou similar serait du sur-ingenierie.
+
+### 7. Disponibilite per-theme — fonction pure `checkAvailability`
+
+```ts
+checkAvailability(theme, platform, osRelease) → { available, usesFallback, reason }
+```
+
+Retourne `available: false` pour Mica sur autre que Windows 11+ (pas de fallback). Retourne `available: true, usesFallback: true` pour Liquid Glass sur Windows/Linux. Universelles : toujours `{ available: true, usesFallback: false }`. Le picker UI grise les cards `!available` et affiche le `reason` en tooltip.
+
+### Consequences
+
+- **Migration des configs existantes** : Zod injecte `preferences.theme = 'obsidian'` automatiquement pour les configs persistees avant ce sprint. Aucune action utilisateur.
+- **Bundle renderer** : ~9 kB ajoutes (themes.ts + .css). Negligeable.
+- **Tous les composants** doivent consommer `var(--*)` — l'audit du sprint a migre 171 occurrences de couleurs hardcodees sur 17 fichiers vers les tokens. Tout futur composant doit suivre cette convention.
+- **Test de coherence** assure que chaque theme definit tous les tokens. Si un futur theme oublie un token, le test echoue au CI.
+- **Le screenshot `docs/themes-preview.png` est a generer manuellement** — Claude ne peut pas captures-screenshot. Solution : ouvrir Settings > APPARENCE et capturer la grille 2×3, puis ajouter au repo.
+
+---
+
 ## ADR-026 : Activity feed remplace par un toast agregat avec debounce 3 s
 
 **Date :** 2026-05-19

@@ -10,8 +10,11 @@
 
 body {
   margin: 0;
-  background-color: #000;
-  color: #fff;
+  /* Transparent so themes that need the OS material to show through
+     (Mica, vibrancy) work. The renderer's root container paints
+     `--bg-primary` for opaque themes, hiding this transparency. */
+  background-color: transparent;
+  color: var(--text-primary);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
