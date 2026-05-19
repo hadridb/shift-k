@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import type { AppConfig, StageLabels, Stage } from '@shared/types';
 
+const AUDIO_PLATFORM_KEYS = [
+  'suno', 'elevenlabs', 'udio', 'stable_audio', 'aiva',
+  'mubert', 'soundraw', 'splice', 'loopcloud', 'cymatics',
+] as const;
+
+const AUDIO_PLATFORM_LABELS: Record<string, string> = {
+  suno: 'Suno',
+  elevenlabs: 'ElevenLabs',
+  udio: 'Udio',
+  stable_audio: 'Stable Audio',
+  aiva: 'AIVA',
+  mubert: 'Mubert',
+  soundraw: 'Soundraw',
+  splice: 'Splice',
+  loopcloud: 'Loopcloud',
+  cymatics: 'Cymatics',
+};
+
 interface Form {
   root: string;
   downloadsPath: string;
@@ -9,6 +27,9 @@ interface Form {
   dailyFolderFormat: string;
   lazyDailyFolders: boolean;
   groupByPlatform: boolean;
+  routeAllAudio: boolean;
+  audioExtensions: string[];
+  audioPlatforms: Record<string, string[]>;
   notifyOnRoute: boolean;
   confirmBeforeRescan: boolean;
   startOnLogin: boolean;
@@ -16,6 +37,10 @@ interface Form {
 }
 
 function formFromConfig(config: AppConfig): Form {
+  const audioPlatforms: Record<string, string[]> = {};
+  for (const key of AUDIO_PLATFORM_KEYS) {
+    audioPlatforms[key] = [...(config.platforms[key] ?? [])];
+  }
   return {
     root: config.root,
     downloadsPath: config.downloadsPath,
@@ -24,11 +49,20 @@ function formFromConfig(config: AppConfig): Form {
     dailyFolderFormat: config.preferences.dailyFolderFormat,
     lazyDailyFolders: config.preferences.lazyDailyFolders,
     groupByPlatform: config.preferences.groupByPlatform,
+    routeAllAudio: config.preferences.routeAllAudio,
+    audioExtensions: [...config.audioExtensions],
+    audioPlatforms,
     notifyOnRoute: config.preferences.notifyOnRoute,
     confirmBeforeRescan: config.preferences.confirmBeforeRescan,
     startOnLogin: config.preferences.startOnLogin,
     logRetentionDays: config.preferences.logRetentionDays,
   };
+}
+
+function normalizeExtension(value: string): string | null {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+  return trimmed.startsWith('.') ? trimmed : `.${trimmed}`;
 }
 
 const FORMAT_PRESETS = [
@@ -152,6 +186,115 @@ function PathInput({
   );
 }
 
+function ChipList({
+  values,
+  onAdd,
+  onRemove,
+  placeholder,
+  normalize,
+}: {
+  values: string[];
+  onAdd: (v: string) => void;
+  onRemove: (index: number) => void;
+  placeholder: string;
+  normalize?: (raw: string) => string | null;
+}) {
+  const [input, setInput] = useState('');
+
+  function commit() {
+    const raw = input;
+    const value = normalize ? normalize(raw) : raw.trim();
+    if (!value) return;
+    if (values.includes(value)) {
+      setInput('');
+      return;
+    }
+    onAdd(value);
+    setInput('');
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+        {values.length === 0 && (
+          <span style={{ color: '#444', fontSize: 11, fontStyle: 'italic' }}>
+            (vide — aucun motif)
+          </span>
+        )}
+        {values.map((v, i) => (
+          <span
+            key={`${v}-${i}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              background: '#1a1a1a',
+              border: '1px solid #2a2a2a',
+              borderRadius: 4,
+              padding: '3px 6px 3px 8px',
+              fontSize: 11,
+              color: '#cfcfcf',
+              fontFamily: 'ui-monospace, monospace',
+            }}
+          >
+            {v}
+            <button
+              onClick={() => onRemove(i)}
+              title="Retirer"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#666',
+                cursor: 'pointer',
+                fontSize: 12,
+                lineHeight: 1,
+                padding: 0,
+                width: 14,
+                height: 14,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          style={{ ...inputStyle, flex: 1, fontSize: 12 }}
+          value={input}
+          placeholder={placeholder}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commit();
+            }
+          }}
+          spellCheck={false}
+        />
+        <button
+          onClick={commit}
+          disabled={!input.trim()}
+          style={{
+            background: '#1a1a1a',
+            border: '1px solid #2a2a2a',
+            borderRadius: 6,
+            color: input.trim() ? '#cccccc' : '#444',
+            fontSize: 11,
+            cursor: input.trim() ? 'pointer' : 'default',
+            padding: '0 12px',
+          }}
+        >
+          Ajouter
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ToggleRow({
   checked,
   onChange,
@@ -238,19 +381,33 @@ export function SettingsApp() {
     setDirty(true);
   }
 
+  function mutate(mutator: (f: Form) => Form) {
+    setForm((prev) => (prev ? mutator(prev) : prev));
+    setDirty(true);
+  }
+
   async function handleSave() {
     if (!form || !original || saving) return;
     setSaving(true);
     try {
+      // Merge audio platforms back into the full platforms map, preserving
+      // any non-audio entry the user may have customized in the store.
+      const mergedPlatforms: Record<string, string[]> = { ...original.platforms };
+      for (const key of AUDIO_PLATFORM_KEYS) {
+        mergedPlatforms[key] = form.audioPlatforms[key] ?? [];
+      }
       await window.shiftK.updateConfig({
         root: form.root,
         downloadsPath: form.downloadsPath,
         stages: form.stages,
+        audioExtensions: form.audioExtensions,
+        platforms: mergedPlatforms,
         preferences: {
           ...original.preferences,
           dailyFoldersEnabled: form.dailyFoldersEnabled,
           dailyFolderFormat: form.dailyFolderFormat,
           lazyDailyFolders: form.lazyDailyFolders,
+          routeAllAudio: form.routeAllAudio,
           groupByPlatform: form.groupByPlatform,
           notifyOnRoute: form.notifyOnRoute,
           confirmBeforeRescan: form.confirmBeforeRescan,
@@ -427,6 +584,111 @@ export function SettingsApp() {
                   </code>
                 </div>
               </>
+            );
+          })()}
+        </Section>
+
+        <Section title="AUDIO">
+          <Field
+            label="Extensions reconnues comme audio"
+            hint="Les fichiers avec ces extensions sont routés vers le stage OST si la plateforme matche (Suno, ElevenLabs, etc.)."
+          >
+            <ChipList
+              values={form.audioExtensions}
+              onAdd={(v) =>
+                mutate((f) => ({ ...f, audioExtensions: [...f.audioExtensions, v] }))
+              }
+              onRemove={(idx) =>
+                mutate((f) => ({
+                  ...f,
+                  audioExtensions: f.audioExtensions.filter((_, i) => i !== idx),
+                }))
+              }
+              placeholder="ex : .mp3, mp3 ou .opus"
+              normalize={normalizeExtension}
+            />
+          </Field>
+
+          <Field
+            label="Motifs de détection par plateforme audio"
+            hint="Chaque motif est cherché en sous-chaîne case-insensitive dans le nom du fichier. Premier match gagnant."
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {AUDIO_PLATFORM_KEYS.map((key) => (
+                <div key={key}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: '#cfcfcf',
+                      marginBottom: 6,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {AUDIO_PLATFORM_LABELS[key]}{' '}
+                    <span style={{ color: '#555', fontFamily: 'ui-monospace, monospace', fontSize: 10 }}>
+                      ({key})
+                    </span>
+                  </div>
+                  <ChipList
+                    values={form.audioPlatforms[key] ?? []}
+                    onAdd={(v) =>
+                      mutate((f) => ({
+                        ...f,
+                        audioPlatforms: {
+                          ...f.audioPlatforms,
+                          [key]: [...(f.audioPlatforms[key] ?? []), v],
+                        },
+                      }))
+                    }
+                    onRemove={(idx) =>
+                      mutate((f) => ({
+                        ...f,
+                        audioPlatforms: {
+                          ...f.audioPlatforms,
+                          [key]: (f.audioPlatforms[key] ?? []).filter((_, i) => i !== idx),
+                        },
+                      }))
+                    }
+                    placeholder="motif (ex : SUNO_)"
+                  />
+                </div>
+              ))}
+            </div>
+          </Field>
+
+          <ToggleRow
+            checked={form.routeAllAudio}
+            onChange={(v) => update('routeAllAudio', v)}
+            label="Capturer tous les fichiers audio vers OST"
+            hint="Active uniquement si ton Downloads ne contient JAMAIS d'audio personnel (musique perso, podcasts). Sinon laisse off — seules les plateformes reconnues seront routées."
+          />
+
+          {(() => {
+            const sampleDate = new Date();
+            const ostStageName = form.stages['ost'];
+            const dailyFolder = form.dailyFoldersEnabled
+              ? `/${previewDailyFolder(form.dailyFolderFormat, ostStageName, sampleDate)}`
+              : '';
+            const sampleClient = original.activeClient ?? '<Client>';
+            return (
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: '10px 12px',
+                  background: '#0c0c0c',
+                  border: '1px solid #1c1c1c',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  color: '#888',
+                }}
+              >
+                <div style={{ fontSize: 9, letterSpacing: '0.15em', color: '#555', marginBottom: 4 }}>
+                  EXEMPLE
+                </div>
+                <code style={{ fontSize: 11, color: '#cfcfcf' }}>
+                  ElevenLabs_voice.mp3 → {sampleClient}/{ostStageName}{dailyFolder}/
+                </code>
+              </div>
             );
           })()}
         </Section>
