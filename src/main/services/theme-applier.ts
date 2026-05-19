@@ -43,43 +43,60 @@ function planFor(themeId: ThemeId): Plan {
   }
 }
 
-function applyToWindow(win: BrowserWindow, plan: Plan): void {
+function applyToWindow(win: BrowserWindow, themeId: ThemeId, plan: Plan): void {
+  console.log(
+    '[theme] applying',
+    themeId,
+    '— platform=', process.platform,
+    'os.release=', os.release(),
+    'plan=', plan,
+  );
+
   if (process.platform === 'win32') {
-    if (plan.windowsMaterial !== 'none' && isWindows11OrLater()) {
-      // setBackgroundMaterial is gated on Win 11 build 22000+.
+    const win11 = isWindows11OrLater();
+    console.log('[theme] win11 detected:', win11, '(build threshold', MICA_MIN_BUILD, ')');
+    if (plan.windowsMaterial !== 'none' && win11) {
       try {
         win.setBackgroundMaterial?.(plan.windowsMaterial);
-      } catch {
-        // Older Electron / unsupported — silently ignore.
+        console.log('[theme] setBackgroundMaterial(', plan.windowsMaterial, ') succeeded');
+      } catch (err) {
+        console.error('[theme] setBackgroundMaterial failed:', err);
       }
     } else {
       try {
         win.setBackgroundMaterial?.('none');
-      } catch {
-        // ignore
+        console.log('[theme] setBackgroundMaterial(none) — cleared');
+      } catch (err) {
+        console.error('[theme] setBackgroundMaterial(none) failed:', err);
       }
     }
   } else if (process.platform === 'darwin') {
     try {
       // setVibrancy(null) explicitly clears any previous vibrancy.
       win.setVibrancy(plan.macosVibrancy as Parameters<BrowserWindow['setVibrancy']>[0]);
-    } catch {
-      // ignore
+      console.log('[theme] setVibrancy(', plan.macosVibrancy, ') applied');
+    } catch (err) {
+      console.error('[theme] setVibrancy failed:', err);
     }
   }
 
   // Tell the renderer whether to draw the CSS backdrop-filter fallback.
   win.webContents.send('theme:glass-fallback', plan.cssGlassFallback);
+  console.log('[theme] glass-fallback signal sent:', plan.cssGlassFallback);
 }
 
 export function applyTheme(themeId: ThemeId): void {
   const plan = planFor(themeId);
   const overlay = getOverlayWindow();
-  if (overlay) applyToWindow(overlay, plan);
+  if (!overlay) {
+    console.warn('[theme] applyTheme called but no overlay window');
+    return;
+  }
+  applyToWindow(overlay, themeId, plan);
 }
 
 /** Re-apply on every newly created window so toggling Mica before the
  *  settings window is opened still produces the right look. */
 export function applyThemeToWindow(win: BrowserWindow, themeId: ThemeId): void {
-  applyToWindow(win, planFor(themeId));
+  applyToWindow(win, themeId, planFor(themeId));
 }
