@@ -41,21 +41,27 @@ export function StagePopover({ open, stages, activeStage, onSelect, onClose }: P
       {open && (
         <motion.div
           ref={ref}
-          initial={{ opacity: 0, scale: 0.96, y: -4 }}
+          initial={{ opacity: 0, scale: 0.96, y: 4 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: -4 }}
+          exit={{ opacity: 0, scale: 0.96, y: 4 }}
           transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
           style={{
+            // Opens UPWARD from the chevron, with scale-origin at the bottom
+            // so the popover blooms out of the button rather than into it.
+            // 44 px = StageBar height (40) + 4 px gap.
             position: 'absolute',
-            top: 36,
+            bottom: 44,
             left: 8,
             zIndex: 50,
+            transformOrigin: 'bottom left',
             background: '#0F0F0F',
             border: '1px solid #1F1F1F',
             borderRadius: 8,
             boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
             padding: '4px 0',
             minWidth: 160,
+            maxHeight: 200,
+            overflowY: 'auto',
           }}
           role="menu"
         >
