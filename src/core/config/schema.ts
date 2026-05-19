@@ -40,6 +40,17 @@ export const AppConfigSchema = z.object({
       topaz: ['topaz', 'Topaz', '_enhance_', '_upscale_'],
       photoshop: ['.psd'],
       premiere: ['.prproj'],
+      suno: ['suno', 'Suno', 'SUNO_'],
+      elevenlabs: ['elevenlabs', 'ElevenLabs', 'eleven_', 'EL_'],
+      // stable_audio before udio: 'udio' is a substring of 'stable-audio'
+      stable_audio: ['stable-audio', 'stable_audio', 'StableAudio'],
+      udio: ['udio', 'Udio'],
+      aiva: ['aiva', 'AIVA'],
+      mubert: ['mubert', 'Mubert'],
+      soundraw: ['soundraw', 'Soundraw'],
+      splice: ['splice', 'Splice', '_splice_'],
+      loopcloud: ['loopcloud', 'Loopcloud', '_LC_'],
+      cymatics: ['cymatics', 'Cymatics'],
     }),
   videoExtensions: z
     .array(z.string())
@@ -47,6 +58,9 @@ export const AppConfigSchema = z.object({
   imageExtensions: z
     .array(z.string())
     .default(['.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff', '.exr']),
+  audioExtensions: z
+    .array(z.string())
+    .default(['.mp3', '.wav', '.flac', '.aac', '.m4a', '.ogg', '.opus', '.aiff']),
   projectExtensions: z.array(z.string()).default(['.psd', '.ai', '.prproj', '.aep']),
   ignoreExtensions: z.array(z.string()).default(['.drp', '.dra']),
   slots: z

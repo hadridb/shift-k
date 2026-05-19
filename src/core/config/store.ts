@@ -1,11 +1,23 @@
 import ElectronStore from 'electron-store';
 import { AppConfigSchema, defaultConfig } from './schema';
+import { POST_V1_PLATFORM_PATTERNS, mergeNewPlatformPatterns } from './migrations';
 import type { AppConfig } from '@shared/types';
 
 const store = new ElectronStore<AppConfig>({
   name: 'config',
   defaults: defaultConfig,
 });
+
+function migrate(): void {
+  const raw = store.store as Partial<AppConfig>;
+  const existing = (raw.platforms ?? {}) as Record<string, string[]>;
+  const merged = mergeNewPlatformPatterns(existing, POST_V1_PLATFORM_PATTERNS);
+  if (Object.keys(merged).length !== Object.keys(existing).length) {
+    store.set('platforms', merged);
+  }
+}
+
+migrate();
 
 export function getConfig(): AppConfig {
   return AppConfigSchema.parse(store.store);

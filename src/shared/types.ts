@@ -30,6 +30,7 @@ export interface AppConfig {
   platforms: Record<string, string[]>;
   videoExtensions: string[];
   imageExtensions: string[];
+  audioExtensions: string[];
   projectExtensions: string[];
   ignoreExtensions: string[];
   slots: Record<SlotKey, string | null>;

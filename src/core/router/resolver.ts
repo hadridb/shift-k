@@ -6,6 +6,25 @@ import { buildDailyPath } from './daily-path';
 // Browser temp files — never route these
 const BROWSER_TEMP_EXTENSIONS = new Set(['.crdownload', '.part', '.tmp', '.opdownload']);
 
+// Platforms that always route to a specific stage, regardless of the
+// currently active stage. Audio platforms all go to OST (musique,
+// dialogue, sound design). Photoshop/Premiere project files go to src.
+// See ADR-024 for the rationale and the routeAllAudio fallback.
+export const PLATFORM_STAGE_OVERRIDES: Readonly<Record<string, Stage>> = {
+  suno: 'ost',
+  elevenlabs: 'ost',
+  udio: 'ost',
+  stable_audio: 'ost',
+  aiva: 'ost',
+  mubert: 'ost',
+  soundraw: 'ost',
+  splice: 'ost',
+  loopcloud: 'ost',
+  cymatics: 'ost',
+  photoshop: 'src',
+  premiere: 'src',
+};
+
 export interface DestinationInfo {
   destDir: string;
   platform: string;
@@ -31,30 +50,40 @@ export function resolveDestination(
   if (BROWSER_TEMP_EXTENSIONS.has(ext)) return null;
   if (config.ignoreExtensions.includes(ext)) return null;
 
+  const isVideo = config.videoExtensions.includes(ext);
+  const isImage = config.imageExtensions.includes(ext);
+  const isAudio = config.audioExtensions.includes(ext);
+  const isProject = config.projectExtensions.includes(ext);
+
   const platform = resolvePlatform(fileName, config.platforms);
-  if (!platform) return null;
 
-  // Project files (PSD, AI, PRPROJ, AEP) always go to src stage
-  if (config.projectExtensions.includes(ext)) {
-    const stageKey: Stage = 'src';
-    return {
-      destDir: buildDailyPath(config, stageKey, platform, date),
-      platform,
-      stageKey,
-      stageFolderName: config.stages[stageKey],
-    };
+  // No platform match: route only known media types via project-file rule,
+  // otherwise leave in Downloads. The routeAllAudio toggle (ADR-024) hooks
+  // in here in a later commit to capture orphan audio files.
+  if (!platform) {
+    if (isProject) {
+      const stageKey: Stage = 'src';
+      return {
+        destDir: buildDailyPath(config, stageKey, null, date),
+        platform: 'project',
+        stageKey,
+        stageFolderName: config.stages[stageKey],
+      };
+    }
+    return null;
   }
 
-  // Image / video files go to the active stage
-  if (config.imageExtensions.includes(ext) || config.videoExtensions.includes(ext)) {
-    const stageKey = config.activeStage;
-    return {
-      destDir: buildDailyPath(config, stageKey, platform, date),
-      platform,
-      stageKey,
-      stageFolderName: config.stages[stageKey],
-    };
-  }
+  // Platform matched but extension is unknown to us — don't route.
+  if (!isVideo && !isImage && !isAudio && !isProject) return null;
 
-  return null;
+  // Platforms with a forced stage win over the active stage.
+  const overrideStage = PLATFORM_STAGE_OVERRIDES[platform];
+  const stageKey: Stage = overrideStage ?? (isProject ? 'src' : config.activeStage);
+
+  return {
+    destDir: buildDailyPath(config, stageKey, platform, date),
+    platform,
+    stageKey,
+    stageFolderName: config.stages[stageKey],
+  };
 }

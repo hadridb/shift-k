@@ -166,4 +166,62 @@ describe('resolveDestination', () => {
       path.join('E:\\Projects', 'YSL - PURESHOTS', '03_Outputs', '03_Outputs-2026-05-15'),
     );
   });
+
+  // Audio routing + per-platform stage map (ADR-024)
+
+  it('routes Suno mp3 to OST regardless of active stage', () => {
+    const cfg = { ...baseConfig, activeStage: 'out' as const };
+    const result = resolveDestination('Suno_track_01.mp3', cfg, FIXED_DATE);
+    expect(result!.platform).toBe('suno');
+    expect(result!.stageKey).toBe('ost');
+    expect(result!.stageFolderName).toBe('04_OST');
+  });
+
+  it('routes ElevenLabs wav to OST', () => {
+    const result = resolveDestination('ElevenLabs_voice.wav', baseConfig, FIXED_DATE);
+    expect(result!.platform).toBe('elevenlabs');
+    expect(result!.stageKey).toBe('ost');
+  });
+
+  it('routes Splice loop via _splice_ infix pattern', () => {
+    const result = resolveDestination('drums_splice_kit_03.wav', baseConfig, FIXED_DATE);
+    expect(result!.platform).toBe('splice');
+    expect(result!.stageKey).toBe('ost');
+  });
+
+  it('routes stable-audio file to OST', () => {
+    const result = resolveDestination('stable-audio_pad.flac', baseConfig, FIXED_DATE);
+    expect(result!.platform).toBe('stable_audio');
+    expect(result!.stageKey).toBe('ost');
+  });
+
+  it('returns null for an audio file with no platform match (routeAllAudio off by default)', () => {
+    // Pure orphan audio — no pattern, no toggle yet (routeAllAudio added in next commit)
+    expect(resolveDestination('my_personal_song.mp3', baseConfig, FIXED_DATE)).toBeNull();
+  });
+
+  it('returns null when extension is audio but not in audioExtensions list', () => {
+    // .opus is in default audioExtensions, simulate a config that removed it
+    const cfg: AppConfig = {
+      ...baseConfig,
+      audioExtensions: ['.mp3', '.wav'], // .opus excluded
+    };
+    // file matches suno pattern, but extension isn't recognized as audio/video/image/project
+    expect(resolveDestination('Suno_track.opus', cfg, FIXED_DATE)).toBeNull();
+  });
+
+  it('regression: Gen-4 mp4 still routes to active stage (video unaffected by audio map)', () => {
+    const cfg = { ...baseConfig, activeStage: 'img' as const };
+    const result = resolveDestination('Gen-4_scene.mp4', cfg, FIXED_DATE);
+    expect(result!.platform).toBe('runway');
+    expect(result!.stageKey).toBe('img'); // active stage wins for non-overridden platforms
+  });
+
+  it('audio file matching a non-audio platform stays on active stage', () => {
+    // Edge case: a .mp3 named "Gen-4_voiceover.mp3" matches runway first.
+    // Runway is not in the override map → audio extension does NOT force OST here.
+    const result = resolveDestination('Gen-4_voiceover.mp3', baseConfig, FIXED_DATE);
+    expect(result!.platform).toBe('runway');
+    expect(result!.stageKey).toBe('out'); // active stage, not 'ost'
+  });
 });

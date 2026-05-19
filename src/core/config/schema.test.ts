@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AppConfigSchema, defaultConfig } from './schema';
+import { mergeNewPlatformPatterns, POST_V1_PLATFORM_PATTERNS } from './migrations';
 
 describe('AppConfigSchema', () => {
   it('parses an empty object into full defaults', () => {
@@ -13,13 +14,48 @@ describe('AppConfigSchema', () => {
     expect(result.slots['1']).toBeNull();
   });
 
-  it('includes all 11 platforms with correct patterns', () => {
+  it('includes all 21 platforms (11 visual + 10 audio) with correct patterns', () => {
     const { platforms } = defaultConfig;
     expect(platforms['runway']).toContain('Gen-4');
     expect(platforms['higgsfield']).toContain('HF_');
     expect(platforms['midjourney']).toContain('MJ_');
     expect(platforms['topaz']).toContain('_enhance_');
-    expect(Object.keys(platforms)).toHaveLength(11);
+    expect(platforms['suno']).toContain('Suno');
+    expect(platforms['elevenlabs']).toContain('eleven_');
+    expect(platforms['splice']).toContain('_splice_');
+    expect(Object.keys(platforms)).toHaveLength(21);
+  });
+
+  it('audioExtensions defaults include common audio formats', () => {
+    expect(defaultConfig.audioExtensions).toEqual(
+      ['.mp3', '.wav', '.flac', '.aac', '.m4a', '.ogg', '.opus', '.aiff'],
+    );
+  });
+
+  it('migration: V1 platforms missing audio entries get them back-filled', () => {
+    const v1Platforms: Record<string, string[]> = {
+      runway: ['Gen-4', 'my-custom-pattern'],
+      kling: ['kling'],
+      photoshop: ['.psd'],
+    };
+    const merged = mergeNewPlatformPatterns(v1Platforms, POST_V1_PLATFORM_PATTERNS);
+    // Existing keys: untouched, including user custom pattern
+    expect(merged['runway']).toEqual(['Gen-4', 'my-custom-pattern']);
+    // New audio keys: present
+    expect(merged['suno']).toEqual(['suno', 'Suno', 'SUNO_']);
+    expect(merged['splice']).toEqual(['splice', 'Splice', '_splice_']);
+    // No platforms dropped
+    expect(merged['kling']).toEqual(['kling']);
+    expect(merged['photoshop']).toEqual(['.psd']);
+  });
+
+  it('migration: never overwrites a user-customized platform entry', () => {
+    const v1Platforms: Record<string, string[]> = {
+      // user already added a custom 'suno' entry before upgrade (unlikely but possible)
+      suno: ['my_suno_only'],
+    };
+    const merged = mergeNewPlatformPatterns(v1Platforms, POST_V1_PLATFORM_PATTERNS);
+    expect(merged['suno']).toEqual(['my_suno_only']); // user wins
   });
 
   it('preserves user-supplied values', () => {
