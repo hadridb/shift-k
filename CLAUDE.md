@@ -174,6 +174,15 @@ shift-k/
 - [x] Animations : `framer-motion@^12` installe. Slot indicator slide via `layoutId`, modales fade+scale 180ms, stage badge flip rotateX 180ms, pause badge scale+fade. ADR-025 fixe les durations/easings canoniques (Material standard `[0.4, 0, 0.2, 1]`).
 - [x] Tests : 66 verts (54 → 66). +4 activity-log (FIFO, max, copy, empty), +2 accordion state (defaults, round-trip), +6 useEscapeClose (Escape vs autres touches × INPUT/TEXTAREA/SELECT/DIV).
 
+**Sprint 7.6 (termine — Sprint 7 ferme)** : Cleanup final themes.
+- [x] Mica retire (rendu Electron/Chromium insuffisant vs WinUI 3 natif). Aurora retire (animation CSS instable, ROI faible).
+- [x] 4 themes finaux : Obsidian, Carbon, Ivory, Liquid Glass.
+- [x] Liquid Glass renomme "Transparency" sur Windows/Linux via `getThemeLabel(theme, platform)` (ADR-030). Label/description macOS inchanges.
+- [x] Settings window passe a `transparent: true` + `backgroundColor: '#00000000'`. SettingsApp container peint `var(--bg-primary)`. La fenetre Reglages suit maintenant le theme actif (avant elle restait dark).
+- [x] Migration auto : configs persistees avec `theme: 'mica'` ou `theme: 'aurora'` sont coercees a `'obsidian'` via Zod `preprocess`. Tests dedies.
+- [x] Docs : ADR-029 update (Sprint 7.6 supersede partiellement), ADR-030 (label per-platform), docs/THEMES.md (reference des 4 themes), docs/THEME_LIMITS.md (limites structurelles).
+- [x] 118 tests verts.
+
 **Sprint 7 (termine)** : Système de thèmes complet.
 - [x] 6 thèmes premium dans `src/renderer/styles/themes.ts` + miroir CSS dans `themes.css`. Obsidian (défaut), Carbon, Ivory, Mica, Liquid Glass, Aurora.
 - [x] Architecture : CSS variables sur `<html data-theme="...">`. 12 tokens canoniques (--bg-primary, --bg-elevated, --bg-hover, --bg-modal, --border-subtle/divider, --text-primary/secondary/muted/disabled, --accent, --shadow-overlay). Switching = une mutation DOM, pas de re-render React.
@@ -217,4 +226,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 19 mai 2026 (Sprint 7 — systeme de themes complet 6 themes premium + native materials ; ADR-022 a ADR-029). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 20 mai 2026 (Sprint 7.6 — 4 themes finaux apres retrait Mica/Aurora ; ADR-022 a ADR-030). A maintenir a jour a chaque decision structurante.*

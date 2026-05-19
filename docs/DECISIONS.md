@@ -799,3 +799,44 @@ Convention :
 - Toute future modale ou overlay flottant doit suivre la convention `position: absolute` confinee au container racine. Pas d'exception.
 - Le test de regression bloque les patterns dangereux dans `overlay.ts` (`setSize`, `setBounds`, `setContentSize`, `did-finish-load`). Si un changement legitime de window dimensions devient necessaire un jour, le test doit etre mis a jour avec un ADR nouveau qui supersede 028.
 - L'identite visuelle "luxe arrondi" (preservation des coins, transparence subtile autour) est protegee par construction — un modal qui passerait en `fixed` casserait le test au CI, pas en production.
+
+---
+
+## ADR-029 (revisited Sprint 7.6) : Mica et Aurora retires
+
+**Date :** 2026-05-20
+**Statut :** Acceptee, supersede partiellement ADR-029 (Sprint 7 initial)
+
+**Contexte :** Sprint 7 livrait 6 themes. Apres Sprint 7.1 → 7.5 et tests en condition reelle :
+- **Mica** ne s'applique pas visuellement de maniere fiable. L'API Electron `BrowserWindow.setBackgroundMaterial('mica')` repond sans erreur (`succeeded` dans nos logs), mais le rendu final reste un gris opaque ou un materiau tres faible — rien a voir avec le rendu Mica fluide d'une vraie app WinUI 3 (Settings Windows 11, par exemple). Le moteur Chromium d'Electron ne supporte qu'imparfaitement le pipeline DWM Mica, et chaque release Electron change subtilement le comportement. Maintenir un thema qui promet du Mica mais delivre du grise est une promesse non tenue.
+- **Aurora** : l'animation CSS keyframes ne s'enclenche pas systematiquement au premier mount (constate Sprint 7.1, contourne avec framer-motion, encore instable). Le ROI design est faible : un gradient anime sur un overlay de 290x460 ne se voit quasiment pas, et quand il se voit il distrait.
+
+**Decision :** Retirer Mica et Aurora du registre. Garder Obsidian, Carbon, Ivory, Liquid Glass. 4 themes maintenables, tous testes visuellement OK.
+
+**Consequences :**
+- `ThemeId` enum reduit a 4 valeurs.
+- Configs persistees avec `theme: 'mica'` ou `theme: 'aurora'` coercees a `'obsidian'` via `z.preprocess` — silencieux, sans erreur utilisateur.
+- `theme-applier.ts` simplifie : plus de branche Mica, juste vibrancy macOS + signal CSS fallback pour Liquid Glass.
+- `AuroraBackground.tsx` supprime, keyframes `@aurora-shift` retires de globals.css.
+- Card picker passe de 6 a 4. Le picker reste en grille 2x3 visuelle (les 2 dernieres slots sont juste vides ou la grille devient 2x2 — voir picker actuel).
+- La detection `isWindows11OrLater` reste exportee dans `theme-applier.ts` pour un futur sprint qui reintroduirait un effet Win-build-gated avec une approche differente.
+
+---
+
+## ADR-030 : Liquid Glass renomme "Transparency" sur Windows/Linux
+
+**Date :** 2026-05-20
+**Statut :** Acceptee
+
+**Contexte :** Le thema `liquid-glass` utilise la vibrancy native AppKit sur macOS (vraie refraction GPU + sampling inter-fenetres) et un CSS `backdrop-filter: blur + saturate` sur Windows/Linux (gaussian blur sur ce qui est visible derriere la fenetre transparente, sans refraction). Les deux rendus sont differents : Apple delivre "Liquid Glass", nous delivrons "verre translucide flou". Appeler les deux "Liquid Glass" survend le rendu Windows et frustre l'utilisateur qui s'attend a l'effet macOS.
+
+**Decision :** Le `Theme.label` et `Theme.description` deviennent platform-dependent via les helpers `getThemeLabel(theme, platform)` et `getThemeDescription(theme, platform)`. Pour `liquid-glass` :
+- macOS → label = `"Liquid Glass"`, description = `"Vibrancy native macOS, profondeur translucide."`
+- Windows / Linux → label = `"Transparency"`, description = `"Verre depoli translucide. Approximation CSS."`
+
+L'`id` interne reste `'liquid-glass'` — la migration de config ne change rien, et l'affichage est purement cosmetique au picker.
+
+**Consequences :**
+- 2 fonctions pures testables (`getThemeLabel` / `getThemeDescription`) dans `themes.ts`, 2 tests dedies dans `themes.test.ts`.
+- Le picker SettingsApp consomme ces helpers via `platformInfo` (deja recupere par IPC `system:platform-info` au mount).
+- Les futurs themes pourront suivre le meme pattern s'ils ont besoin de noms differents par plateforme — l'opt-in vit dans le helper, pas dans le type `Theme`.
