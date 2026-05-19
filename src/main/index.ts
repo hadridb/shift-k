@@ -13,6 +13,10 @@ import { createTray, destroyTray } from './tray';
 import { applyAutostart, wasOpenedAtLogin } from './services/autostart';
 import { addActivity } from './services/activity-log';
 import { applyTheme } from './services/theme-applier';
+import {
+  logDiagnosticsAtStartup,
+  registerThemeDiagnosticsIpc,
+} from './debug/theme-diagnostics';
 import { classifyExtension } from '@shared/i18n/activity';
 import { getConfig, onConfigChange } from '@core/config/store';
 
@@ -42,13 +46,16 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.shiftk.app');
 }
 
-// Make sure Chromium's backdrop-filter implementation is enabled for the
+// Make sure Chromium's backdrop-filter + Skia renderer are enabled for the
 // Liquid Glass CSS fallback on Windows / Linux. Recent Chromium versions
-// ship it on by default, but bundled Electron sometimes lags; the explicit
-// switch is a no-op if already enabled. Must be set BEFORE app is ready.
-app.commandLine.appendSwitch('enable-features', 'CSSBackdropFilter');
+// ship them on by default, but bundled Electron sometimes lags; the
+// explicit switches are no-ops when already enabled. Must be set BEFORE
+// app is ready.
+app.commandLine.appendSwitch('enable-features', 'CSSBackdropFilter,UseSkiaRenderer');
 
 app.whenReady().then(() => {
+  logDiagnosticsAtStartup();
+  registerThemeDiagnosticsIpc();
   registerConfigHandlers();
 
   setWatcherEventHandler((event) => {
