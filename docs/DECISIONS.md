@@ -504,3 +504,56 @@ Pour les configs existantes (v0.1.0 → maintenant), la fonction pure `mergeNewP
 - Photoshop/Premiere → src est maintenant **double-couvert** : par `projectExtensions` (extension-driven) ET par `PLATFORM_STAGE_OVERRIDES` (platform-driven). Redondant mais defensif : si un user retire `.psd` de `projectExtensions` par erreur, la regle plateforme prend le relais.
 - 21 plateformes par defaut (11 visuelles + 10 audio). La complexite de l'UI Settings monte d'un cran — l'ADR ne prescrit pas encore d'editeur generique pour `platforms`, juste un editeur scope aux 10 plateformes audio (commit #3).
 - Quand on ajoutera la prochaine plateforme apres v0.2.0, refaire le meme pattern : ajouter dans `schema.ts` defaults, ajouter dans `migrations.ts` `POST_V1_PLATFORM_PATTERNS` (renommer si la version cible change), ajouter dans `PLATFORM_STAGE_OVERRIDES` si le stage est forced. Trois fichiers a synchroniser.
+
+---
+
+## ADR-025 : Animations — `framer-motion` + design system de durations/easings
+
+**Date :** 2026-05-19
+**Statut :** Acceptee
+
+**Contexte :** Sprint 6 introduit des micro-animations partout dans l'overlay et les modales (accordion, popover, indicateur slot qui glisse, fade+scale des modales, flip stage badge, fade-in activity feed, fade-to-grey apres 30s). Sans cadre, on accumule du CSS one-off et des incoherences (un fade en 100ms, un autre en 250ms, un easing different par composant).
+
+**Decision :**
+
+### 1. Bibliotheque : `framer-motion`
+
+Plutot que CSS pur + `@keyframes` + `transition`. Raisons :
+- **Layout animations (`layoutId`)** — l'indicateur de slot actif (la barre verticale 2x14px qui marque le client courant) doit **glisser** entre les positions des 9 slots quand on switch. En CSS pur, ca demande de mesurer manuellement les positions avec `getBoundingClientRect()` puis d'animer `top` — chiant. Avec `<motion.div layoutId="slot-active-indicator">` dans le slot actif, framer-motion gere la transition automatiquement quand le `layoutId` change de parent DOM.
+- **AnimatePresence** pour les exit-animations des modales et du popover. Une modale qui sort en fade+scale demande que le composant reste monte pendant l'animation puis se demonte — `<AnimatePresence>` automatise ce cycle. En CSS, il faut un state local `closing`, un setTimeout de la duree de l'anim, puis `setMounted(false)`. Erreur-prone.
+- **Variants** pour les `mode="wait"` (stage badge flip a l'update).
+
+Cout : ~32 kB gzip. Acceptable pour une desktop app pro (l'app pese ~140 kB renderer total).
+
+CSS Tailwind reste utilise pour les hover-color transitions simples (`transition-colors duration-150 ease-out`) — pas besoin d'invoquer framer-motion pour passer de `transparent` a `#161616`.
+
+### 2. Design system — duree + easing canoniques
+
+Defini de facto dans le code, a respecter pour toute nouvelle animation :
+
+| Cas                                      | Duration | Easing                       |
+|------------------------------------------|----------|------------------------------|
+| Hover (color/background fade)            | 150 ms   | `ease-out`                   |
+| Toggle chevron rotation (accordion)      | 150 ms   | `[0.4, 0, 0.2, 1]`           |
+| Layout animation (slot indicator slide)  | 200 ms   | `[0.4, 0, 0.2, 1]`           |
+| Modal open/close (opacity + scale 0.96)  | 180 ms   | `[0.4, 0, 0.2, 1]`           |
+| Popover open/close (opacity + scale + y) | 180 ms   | `[0.4, 0, 0.2, 1]`           |
+| Stage badge flip (rotateX)               | 180 ms   | `[0.4, 0, 0.2, 1]`           |
+| Activity feed entry fade-in              | 150 ms   | (default)                    |
+| Activity feed fade-to-grey (30s tick)    | 800 ms   | (default)                    |
+| Accordion content reveal (height+opacity)| 180 ms   | `[0.4, 0, 0.2, 1]`           |
+
+`[0.4, 0, 0.2, 1]` est l'easing standard Material "standard". On l'a choisi parce qu'il est familier, lisible (rapide au depart, decelere), et un seul easing partout vaut mieux que cinq qui se ressemblent.
+
+### 3. Ce qu'on n'anime PAS
+
+- **Slot text color change** quand on switch (le texte ne fade pas du gris au blanc — c'est le slide de la barre indicateur qui porte la transition).
+- **Stage button cycle** au-dela du flip badge — pas d'animation sur le STAGE label lui-meme.
+- **Notification natives** — relevent de l'OS, pas du renderer.
+
+### Consequences
+
+- Toute nouvelle animation doit prendre l'une des durations/easings du tableau. Si un cas legitime ne fitte aucune, mettre a jour le tableau dans cet ADR plutot que d'introduire une valeur ad-hoc.
+- Le bundle renderer passe de ~144 kB a ~176 kB (gzip 46 → 56 kB) — acceptable.
+- En cas de probleme de performance sur des machines plus modestes, le toggle `prefers-reduced-motion` du navigateur sera honore via les API natives de framer-motion (`useReducedMotion`). Pas implemente pour l'instant — `prefers-reduced-motion` n'est pas signale par Windows en mode "performance" classique, donc gain marginal.
+- Les tests Vitest qui touchent a des composants animes ne testent que la logique (predicats, hooks purs comme `isEscapeForClose`), pas le rendering ou les transitions — la suite ne charge pas RTL+JSDOM.

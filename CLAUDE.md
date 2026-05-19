@@ -167,6 +167,13 @@ shift-k/
 - [x] Personnalisation des dossiers journaliers (19/05/2026) — ajout de `preferences.dailyFoldersEnabled` (toggle on/off complet, route directement vers `<Client>/<stage>/` si off) + placeholder `{stage}` dans `dailyFolderFormat` (`{stage} J{yyyy-MM-dd}` → `03_Outputs J2026-05-19`). Section "DOSSIERS PAR JOUR" dans Settings avec select 4-options (presets + Personnalise) et live preview. Voir ADR-023. 40 tests Vitest (36 → 40, 4 nouveaux : toggle on/off × format simple/stage-prefixed).
 - [x] Routage audio (19/05/2026) — support des plateformes audio (Suno, ElevenLabs, Udio, Stable Audio, AIVA, Mubert, Soundraw, Splice, Loopcloud, Cymatics) avec `audioExtensions` config + `PLATFORM_STAGE_OVERRIDES` (10 audio → OST, photoshop/premiere → src). Toggle `preferences.routeAllAudio` (default off) capture les orphelins audio vers OST. Migration auto-merge des nouveaux patterns dans configs existantes via `migrations.ts` (testable hors Electron). Section AUDIO dans Settings (chips editables pour extensions + patterns par plateforme + toggle + preview). Voir ADR-024. 54 tests Vitest (40 → 54, 14 nouveaux).
 
+**Sprint 6 (termine)** : Polish quotidien.
+- [x] Settings : sections Audio / Images / Vidéo / Fichiers projet wrappées dans `AccordionSection` (chevron rotatif framer-motion + height/opacity reveal). Etat persiste dans `preferences.settingsAccordionState` (audio open par defaut, autres closed). Sections IMAGES/VIDEO/PROJECT FILES nouvelles — auparavant les listes d'extensions etaient config-only.
+- [x] Overlay : Stage selector peek popover. Chevron-down a cote du bouton STAGE → liste des 5 stages avec indicateur barre verticale 2px sur l'actif. ESC + click-outside ferment. Hook pur `useEscapeClose` + predicate `isEscapeForClose` testable hors RTL.
+- [x] Overlay : Activity feed sous SlotList. Service `src/main/services/activity-log.ts` (ring buffer in-memory max 20, FIFO). IPC event `activity:routed` push depuis watcher + IPC handle `activity:get-recent` pour bootstrap. Composant `ActivityFeed.tsx` affiche les 5 derniers avec timestamp relatif (il y a 12s / 2 min / 1 h), fade-in puis fade-to-grey apres 30s.
+- [x] Animations : `framer-motion@^12` installe. Slot indicator slide via `layoutId`, modales fade+scale 180ms, stage badge flip rotateX 180ms, pause badge scale+fade. ADR-025 fixe les durations/easings canoniques (Material standard `[0.4, 0, 0.2, 1]`).
+- [x] Tests : 66 verts (54 → 66). +4 activity-log (FIFO, max, copy, empty), +2 accordion state (defaults, round-trip), +6 useEscapeClose (Escape vs autres touches × INPUT/TEXTAREA/SELECT/DIV).
+
 **Sprint 5b (prochain)** : A definir parmi :
 - Code signing Windows (cert Sectigo EV) pour faire disparaitre SmartScreen warning
 - electron-updater + GitHub Releases feed pour auto-update silencieux
@@ -180,4 +187,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 19 mai 2026 (Sprint 5a — fix asar packaging + customisation dossiers journaliers + routage audio, ADR-022 a ADR-024). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 19 mai 2026 (Sprint 6 — polish quotidien : accordion settings, stage popover, activity feed, micro-animations framer-motion ; ADR-022 a ADR-025). A maintenir a jour a chaque decision structurante.*

@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import type { SlotKey } from '@shared/types';
 
 const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -20,23 +21,36 @@ export function SlotList({ slots, activeClient, onSelect }: Props) {
         return (
           <button
             key={key}
-            className="no-drag w-full flex items-center h-9 px-0 text-left transition-colors duration-100 focus:outline-none"
-            style={{ background: 'transparent' }}
+            className="no-drag w-full flex items-center h-9 px-0 text-left transition-colors duration-150 hover:bg-[#161616] focus:outline-none disabled:hover:bg-transparent"
+            style={{ background: 'transparent', position: 'relative' }}
             onClick={() => !isEmpty && onSelect(client)}
             disabled={isEmpty}
             title={`Ctrl+Alt+${key}${client ? ` — ${client}` : ''}`}
           >
-            {/* Active indicator — 2px × 14px white bar */}
+            {/* Active indicator — animated slide via shared layoutId */}
             <div
-              className="flex-shrink-0 rounded-full"
               style={{
                 width: 2,
                 height: 14,
                 marginLeft: 12,
                 marginRight: 10,
-                background: isActive ? '#FFFFFF' : 'transparent',
+                flexShrink: 0,
+                position: 'relative',
               }}
-            />
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="slot-active-indicator"
+                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: '#FFFFFF',
+                    borderRadius: 999,
+                  }}
+                />
+              )}
+            </div>
 
             {/* Slot number */}
             <span

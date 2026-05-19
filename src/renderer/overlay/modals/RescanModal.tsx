@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import type { RescanPreview, RescanPreviewItem } from '@shared/types';
+
+const MODAL_TRANSITION = { duration: 0.18, ease: [0.4, 0, 0.2, 1] } as const;
+const MODAL_VARIANTS = {
+  initial: { opacity: 0, scale: 0.96 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.96 },
+};
 
 interface Props {
   preview: RescanPreview;
@@ -94,7 +102,11 @@ export function RescanModal({ preview, onClose }: Props) {
   }
 
   return (
-    <div
+    <motion.div
+      initial={MODAL_VARIANTS.initial}
+      animate={MODAL_VARIANTS.animate}
+      exit={MODAL_VARIANTS.exit}
+      transition={MODAL_TRANSITION}
       style={{
         position: 'fixed',
         inset: 0,
@@ -291,6 +303,6 @@ export function RescanModal({ preview, onClose }: Props) {
           </button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import type { AppConfig, RescanPreview, Stage } from '../../shared/types';
 import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
@@ -197,13 +198,19 @@ export function OverlayApp() {
         onSettings={() => void window.shiftK.openSettings()}
       />
 
-      {/* Modals */}
-      {modal === 'new-project' && <NewProjectModal onClose={closeModal} />}
-      {modal === 'edit-slots' && <EditSlotsModal config={config} onClose={closeModal} />}
-      {modal === 'open-folders' && <OpenFoldersModal config={config} onClose={closeModal} />}
-      {modal === 'rescan' && rescanPreview && (
-        <RescanModal preview={rescanPreview} onClose={closeModal} />
-      )}
+      {/* Modals — wrapped in AnimatePresence so the fade+scale exit plays */}
+      <AnimatePresence>
+        {modal === 'new-project' && <NewProjectModal key="new-project" onClose={closeModal} />}
+        {modal === 'edit-slots' && (
+          <EditSlotsModal key="edit-slots" config={config} onClose={closeModal} />
+        )}
+        {modal === 'open-folders' && (
+          <OpenFoldersModal key="open-folders" config={config} onClose={closeModal} />
+        )}
+        {modal === 'rescan' && rescanPreview && (
+          <RescanModal key="rescan" preview={rescanPreview} onClose={closeModal} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

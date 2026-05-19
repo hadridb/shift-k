@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import type { AppConfig, SlotKey } from '@shared/types';
+
+const MODAL_TRANSITION = { duration: 0.18, ease: [0.4, 0, 0.2, 1] } as const;
+const MODAL_VARIANTS = {
+  initial: { opacity: 0, scale: 0.96 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.96 },
+};
 
 const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 const EMPTY_SENTINEL = '__null__';
@@ -45,7 +53,11 @@ export function EditSlotsModal({ config, onClose }: Props) {
   }
 
   return (
-    <div
+    <motion.div
+      initial={MODAL_VARIANTS.initial}
+      animate={MODAL_VARIANTS.animate}
+      exit={MODAL_VARIANTS.exit}
+      transition={MODAL_TRANSITION}
       style={{
         position: 'fixed',
         inset: 0,
@@ -153,6 +165,6 @@ export function EditSlotsModal({ config, onClose }: Props) {
           {saving ? '…' : 'Enregistrer'}
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

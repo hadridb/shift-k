@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface Props {
   onClose: () => void;
 }
+
+const MODAL_TRANSITION = { duration: 0.18, ease: [0.4, 0, 0.2, 1] } as const;
+const MODAL_VARIANTS = {
+  initial: { opacity: 0, scale: 0.96 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.96 },
+};
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -48,7 +56,11 @@ export function NewProjectModal({ onClose }: Props) {
   }
 
   return (
-    <div
+    <motion.div
+      initial={MODAL_VARIANTS.initial}
+      animate={MODAL_VARIANTS.animate}
+      exit={MODAL_VARIANTS.exit}
+      transition={MODAL_TRANSITION}
       style={{
         position: 'fixed',
         inset: 0,
@@ -147,6 +159,6 @@ export function NewProjectModal({ onClose }: Props) {
           {loading ? '…' : 'Créer'}
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

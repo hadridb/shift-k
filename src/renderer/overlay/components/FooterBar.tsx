@@ -35,7 +35,7 @@ function IconButton({
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className="no-drag flex items-center justify-center rounded transition-colors duration-100 focus:outline-none"
+      className="no-drag flex items-center justify-center rounded transition-colors duration-150 ease-out focus:outline-none"
       style={{
         background: 'transparent',
         color: '#666666',
