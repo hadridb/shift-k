@@ -3,11 +3,11 @@ import path from 'path';
 import { getConfig, setConfigKey } from '@core/config/store';
 
 const OVERLAY_WIDTH = 290;
-// 498 px: header 44 + 10 slots × 32 + stage 40 + footer 44 + 3 dividers + flex
-// spacer (~47 px) for the activity toast. 520 was overly tall once slots
-// dropped from 36 to 32 px; this is the new compact ratio. See ADR-028 for
-// the locking contract.
-const OVERLAY_HEIGHT = 498;
+// 460 px: header 44 + 10 slots × 32 + stage 40 + footer 44 + 3 dividers = 451.
+// 9 px of bottom buffer. Slot list is now adjacent to the stage bar (no flex
+// spacer between them) for a denser, more luxury-product look. See ADR-028
+// for the locking contract.
+const OVERLAY_HEIGHT = 460;
 
 const isDev = !app.isPackaged;
 

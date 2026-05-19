@@ -156,13 +156,16 @@ export function ActivityToast() {
             y: { duration: 0.22, ease: 'easeOut' },
           }}
           style={{
-            // bottom: 93 = footer 44 + divider 1 + stage 40 + 8 px gap.
-            // Toast hovers in the flex-spacer zone, above the stage bar.
+            // bottom: 52 = footer 44 + 8 px gap. Toast sits just above the
+            // footer; with the slot list now adjacent to the stage bar (no
+            // flex spacer), the toast briefly overlays the stage during its
+            // visible window — acceptable since the stage name is reachable
+            // any time via the chevron popover.
             position: 'absolute',
             left: 12,
             right: 12,
-            bottom: 93,
-            maxHeight: 64, // guard against multi-line overflow into slot area
+            bottom: 52,
+            maxHeight: 64,
             background: 'rgba(20, 20, 20, 0.96)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',

@@ -52,17 +52,18 @@ export function SlotList({ slots, activeClient, onSelect }: Props) {
               )}
             </div>
 
-            {/* Slot number */}
+            {/* Slot number — key '0' is displayed as "10" (10th slot) even
+                though the hotkey is Ctrl+Alt+0 (the number-row key). */}
             <span
               style={{
                 fontSize: 11,
                 color: isEmpty ? '#444444' : isActive ? '#FFFFFF' : '#9A9A9A',
                 marginRight: 8,
                 fontVariantNumeric: 'tabular-nums',
-                minWidth: 10,
+                minWidth: 14,
               }}
             >
-              {key}
+              {key === '0' ? '10' : key}
             </span>
 
             {/* Client name */}

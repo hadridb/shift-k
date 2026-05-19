@@ -178,12 +178,10 @@ export function OverlayApp() {
 
       {divider}
 
-      {/* Spacer — fills the gap between the slot list and the bottom-pinned
-          stage/footer stack. The activity toast hovers in this zone when
-          visible (see ActivityToast `bottom` calc). */}
-      <div style={{ flex: 1, minHeight: 0 }} />
-
-      {/* Stage bar */}
+      {/* Stage bar — sits immediately below the slot list (no flex spacer)
+          so the overlay reads as one compact block. The activity toast
+          overlays the stage briefly during display (transient 4–5 s),
+          which is the trade-off for a tight layout. */}
       <StageBar
         stages={config.stages}
         activeStage={config.activeStage}
