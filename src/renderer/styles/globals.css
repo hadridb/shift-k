@@ -8,12 +8,23 @@
   box-sizing: border-box;
 }
 
-body {
+html,
+body,
+#root {
   margin: 0;
-  /* Transparent so themes that need the OS material to show through
-     (Mica, vibrancy) work. The renderer's root container paints
-     `--bg-primary` for opaque themes, hiding this transparency. */
+  /* CRITICAL for translucent themes (Mica, Liquid Glass, Aurora): every
+     element between the BrowserWindow and the .overlay-root container must
+     paint NO opaque background. If html / body / #root has even a default
+     `background-color: #fff`, it covers the transparent Electron window
+     and Mica/vibrancy never reaches the user's eyes — they see a flat
+     opaque box. Explicitly nail all three to transparent. The
+     `.overlay-root` then paints `--bg-primary`, which is transparent for
+     the translucent themes (letting the OS material through) and opaque
+     for the standard ones (hiding any window translucency). */
   background-color: transparent;
+}
+
+body {
   color: var(--text-primary);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
