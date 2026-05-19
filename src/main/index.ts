@@ -42,6 +42,12 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.shiftk.app');
 }
 
+// Make sure Chromium's backdrop-filter implementation is enabled for the
+// Liquid Glass CSS fallback on Windows / Linux. Recent Chromium versions
+// ship it on by default, but bundled Electron sometimes lags; the explicit
+// switch is a no-op if already enabled. Must be set BEFORE app is ready.
+app.commandLine.appendSwitch('enable-features', 'CSSBackdropFilter');
+
 app.whenReady().then(() => {
   registerConfigHandlers();
 

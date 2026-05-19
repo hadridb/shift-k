@@ -55,7 +55,7 @@
   --bg-primary: transparent;
   --bg-elevated: rgba(20, 20, 20, 0.65);
   --bg-hover: rgba(255, 255, 255, 0.08);
-  --bg-modal: rgba(20, 20, 20, 0.85);
+  --bg-modal: rgba(20, 20, 20, 0.62);
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-divider: rgba(255, 255, 255, 0.06);
   --text-primary: #F5F5F5;
@@ -70,7 +70,7 @@
   --bg-primary: rgba(20, 20, 20, 0.55);
   --bg-elevated: rgba(20, 20, 20, 0.55);
   --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-modal: rgba(20, 20, 20, 0.85);
+  --bg-modal: rgba(20, 20, 20, 0.6);
   --border-subtle: rgba(255, 255, 255, 0.12);
   --border-divider: rgba(255, 255, 255, 0.08);
   --text-primary: #F5F5F5;
@@ -83,20 +83,30 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* On macOS we let the native vibrancy do the heavy lifting; on Windows /
-   Linux we fall back to backdrop-filter. The selector below scopes the
-   blur ONLY when the OS isn't doing it natively — marked via a
-   `data-glass-fallback="true"` attribute set by the theme-applier. */
-:root[data-theme='liquid-glass'][data-glass-fallback='true'] .overlay-root {
+/* Liquid Glass — applied UNCONDITIONALLY (not gated on data-glass-fallback)
+   because:
+   - On Windows/Linux it's the only thing producing the glass look.
+   - On macOS the native vibrancy material handles refraction; the additional
+     CSS blur is redundant but harmless (no visible artefact).
+   The data-glass-fallback attribute is still set by the theme-applier
+   for diagnostic visibility but isn't required in the selector. */
+:root[data-theme='liquid-glass'] .overlay-root {
   backdrop-filter: blur(40px) saturate(180%) brightness(110%);
   -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+}
+
+:root[data-theme='mica'] .overlay-root,
+:root[data-theme='aurora'] .overlay-root {
+  /* Both Mica and Aurora keep the root container fully transparent —
+     Mica relies on the OS material, Aurora paints its own gradient via
+     AuroraBackground.tsx. No CSS backdrop-filter needed here. */
 }
 
 :root[data-theme='aurora'] {
   --bg-primary: transparent;
   --bg-elevated: rgba(0, 0, 0, 0.4);
   --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-modal: rgba(0, 0, 0, 0.85);
+  --bg-modal: rgba(0, 0, 0, 0.55);
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-divider: rgba(255, 255, 255, 0.06);
   --text-primary: #F5F5F5;
