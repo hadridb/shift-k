@@ -70,10 +70,12 @@ export function createOverlayWindow(): BrowserWindow {
 
   if (isDev) {
     void overlayWindow.loadURL('http://localhost:5173/overlay.html');
-    // Auto-open detached devtools in dev — the overlay is frameless so
-    // the user can't right-click → Inspect. Detached mode keeps the
-    // 290×460 frame intact while the devtools panel floats next to it.
-    overlayWindow.webContents.openDevTools({ mode: 'detach' });
+    // Devtools auto-open is now opt-in (was on by default in Sprint 7.4).
+    // The overlay is frameless so manually opening them isn't trivial —
+    // set `SHIFTK_DEVTOOLS=1` when debugging.
+    if (process.env['SHIFTK_DEVTOOLS'] === '1') {
+      overlayWindow.webContents.openDevTools({ mode: 'detach' });
+    }
   } else {
     void overlayWindow.loadFile(path.join(__dirname, '../../renderer/overlay.html'));
   }

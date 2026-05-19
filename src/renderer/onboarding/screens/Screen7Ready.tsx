@@ -8,13 +8,23 @@ interface Props {
   onBack: () => void;
 }
 
+/**
+ * Final screen — particle burst as visual payoff.
+ *
+ * Sprint 8 iter 1: the burst fired at mount (0 ms) while the screen
+ * itself was still mid-transition (slide-up 350 ms + content stagger).
+ * The particle motion is 700 ms total, so it was over before the user
+ * even registered the screen. Iter 2 delays the first burst to 1100 ms
+ * (after all cascading content has settled) and increases scale 2.4 → 3.2
+ * so the motes carry visibly across the canvas.
+ */
 export function Screen7Ready({ onLaunch, onBack }: Props) {
-  // Trigger one burst on mount, then a second when the user clicks Launch
-  // (right before the window closes — the second burst plays for ~700 ms
-  // while the overlay is opening).
   const [burstSeq, setBurstSeq] = useState(0);
+
+  // Defer the first burst until the screen entrance is over.
   useEffect(() => {
-    setBurstSeq(1);
+    const id = window.setTimeout(() => setBurstSeq(1), 1100);
+    return () => window.clearTimeout(id);
   }, []);
 
   return (
@@ -26,8 +36,9 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
         label: 'Lancer Shift-K',
         onClick: () => {
           setBurstSeq((n) => n + 1);
-          // Brief delay so the burst is visible before the window closes.
-          window.setTimeout(onLaunch, 400);
+          // Hold a bit longer than before so the second burst is unmistakable
+          // before the window destroys.
+          window.setTimeout(onLaunch, 650);
         },
       }}
     >
@@ -36,7 +47,7 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 32,
+          gap: 28,
           maxWidth: 640,
           textAlign: 'center',
         }}
@@ -44,7 +55,7 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
         <ScreenItem index={0}>
           <h1
             style={{
-              fontSize: 44,
+              fontSize: 36,
               fontWeight: 500,
               margin: 0,
               letterSpacing: '-0.02em',
@@ -57,11 +68,11 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
         <ScreenItem index={1}>
           <p
             style={{
-              fontSize: 15,
+              fontSize: 13,
               color: 'rgba(245,245,245,0.6)',
               lineHeight: 1.6,
               margin: 0,
-              maxWidth: 520,
+              maxWidth: 480,
             }}
           >
             Shift-K va maintenant surveiller tes téléchargements et router chaque
@@ -69,26 +80,35 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
           </p>
         </ScreenItem>
 
-        <ScreenItem index={2} style={{ marginTop: 12 }}>
-          {/* Bigger particle burst — reuses the component from Sprint 6.
-              Scaled up via a wrapper so the same component reads bigger
-              here than it does inside the overlay's 16×16 toast slot. */}
-          <motion.div
-            initial={{ scale: 1 }}
-            animate={{ scale: 1 }}
+        {/* Burst container — 3.2× scale so the particles read across the
+            canvas, not as a 16 px confetti puff. Wrapper is 96×96 so
+            absolute child sizing stays predictable. */}
+        <ScreenItem index={2} style={{ marginTop: 28 }}>
+          <div
             style={{
-              width: 80,
-              height: 80,
-              transform: 'scale(2.4)',
-              transformOrigin: 'center',
+              width: 96,
+              height: 96,
               position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <ParticleBurst trigger={burstSeq} />
-          </motion.div>
+            <div
+              style={{
+                transform: 'scale(3.2)',
+                transformOrigin: 'center',
+                position: 'relative',
+                width: 16,
+                height: 16,
+              }}
+            >
+              <ParticleBurst trigger={burstSeq} />
+            </div>
+          </div>
         </ScreenItem>
 
-        <ScreenItem index={3} style={{ marginTop: 16 }}>
+        <ScreenItem index={3} style={{ marginTop: 8 }}>
           <p
             style={{
               fontSize: 11,
@@ -96,8 +116,7 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
               margin: 0,
             }}
           >
-            Tu trouveras l'overlay dans le coin haut-droit. Clic droit sur l'icône
-            tray pour quitter.
+            L'overlay s'ouvrira en haut à droite. Clic droit sur l'icône tray pour quitter.
           </p>
         </ScreenItem>
       </div>

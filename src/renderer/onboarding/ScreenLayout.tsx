@@ -41,6 +41,19 @@ export function ScreenLayout({
         fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
       }}
     >
+      {/* Top drag region — the window is frameless, so this strip lets the
+          user move it. Tall enough to grab without becoming a visual band. */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 28,
+          WebkitAppRegion: 'drag',
+        } as React.CSSProperties}
+      />
+
       {/* Progress dots */}
       <div
         style={{
@@ -48,6 +61,8 @@ export function ScreenLayout({
           display: 'flex',
           justifyContent: 'center',
           gap: 8,
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         {Array.from({ length: totalSteps }).map((_, i) => {

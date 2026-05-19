@@ -115,7 +115,7 @@ export function Screen4FirstProject({ onCreate, onSkip, onBack }: Props) {
           <ScreenItem index={0}>
             <h1
               style={{
-                fontSize: 28,
+                fontSize: 24,
                 fontWeight: 500,
                 margin: 0,
                 letterSpacing: '-0.01em',

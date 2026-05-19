@@ -2,17 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 /**
- * Splash content — wordmark + animated underline + tagline + fade-out.
- * Container is the full BrowserWindow (290×300, frameless, transparent).
- * Black rounded card centred inside paints `#0A0A0A`; the surrounding
- * pixels stay transparent (so the desktop shows through the rounded
- * corners — same identity as the overlay).
+ * Splash — sober black card centred in a frameless transparent window.
+ * Wordmark "SHIFT-K" (UPPERCASE, no underline) + tagline. 1.2 s total.
  *
  * Timing :
  *   0 ms     card fade-in (200 ms)
- *   200 ms   wordmark fade-in (300 ms)
- *   400 ms   underline draws left → right (400 ms ease-out)
- *   700 ms   tagline fade-in (300 ms)
+ *   200 ms   wordmark fade-in + tiny rise (400 ms)
+ *   600 ms   tagline fade-in (300 ms)
  *   900 ms   ─ hold ─
  *   1000 ms  card fade-out begins (200 ms)
  *   1200 ms  main process destroys the window
@@ -46,61 +42,38 @@ export function SplashApp() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 14,
-          paddingTop: 16,
+          gap: 18,
         }}
       >
-        {/* Wordmark with animated underline beneath "shift" */}
         <motion.div
-          initial={{ opacity: 0, y: 4 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2, ease: 'easeOut' }}
-          style={{ position: 'relative' }}
+          transition={{ duration: 0.4, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
+          style={{
+            fontSize: 48,
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            color: '#F5F5F5',
+            lineHeight: 1,
+            fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
+          }}
         >
-          <span
-            style={{
-              fontSize: 64,
-              fontWeight: 700,
-              letterSpacing: '-0.04em',
-              color: '#F5F5F5',
-              lineHeight: 1,
-              fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
-            }}
-          >
-            shift-k
-          </span>
-          {/* Underline draws left → right under "shift" (not the whole word) */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.4, delay: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            style={{
-              position: 'absolute',
-              left: 0,
-              bottom: -4,
-              // Underline only the "shift" part — approx 60 % of wordmark width.
-              width: '58%',
-              height: 2,
-              background: '#FFFFFF',
-              transformOrigin: 'left center',
-              borderRadius: 1,
-            }}
-          />
+          SHIFT-K
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.5 }}
-          transition={{ duration: 0.3, delay: 0.7, ease: 'easeOut' }}
+          animate={{ opacity: 0.45 }}
+          transition={{ duration: 0.3, delay: 0.6, ease: 'easeOut' }}
           style={{
-            fontSize: 12,
+            fontSize: 11,
             color: '#F5F5F5',
-            letterSpacing: '0.04em',
+            letterSpacing: '0.06em',
             textAlign: 'center',
-            maxWidth: 280,
+            textTransform: 'uppercase',
           }}
         >
-          Le workflow OS pour les directeurs IA
+          Workflow OS
         </motion.div>
       </motion.div>
     </div>

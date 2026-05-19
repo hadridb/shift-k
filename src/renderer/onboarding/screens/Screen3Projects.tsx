@@ -87,7 +87,7 @@ export function Screen3Projects({ initialPath, onNext, onBack }: Props) {
         }}
       >
         <ScreenItem index={0}>
-          <h1 style={{ fontSize: 32, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
             Où veux-tu que vivent tes projets ?
           </h1>
         </ScreenItem>

@@ -23,6 +23,10 @@ export function createOnboardingWindow(): BrowserWindow {
     height: ONBOARDING_HEIGHT,
     title: 'Shift-K · Bienvenue',
     backgroundColor: '#0A0A0A',
+    // Frameless — no Windows / macOS title bar. Cinematic full-bleed black
+    // canvas. A custom drag region lives at the top of OnboardingApp so
+    // the window can still be moved.
+    frame: false,
     autoHideMenuBar: true,
     minimizable: false,
     maximizable: false,

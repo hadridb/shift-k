@@ -77,7 +77,7 @@ export function Screen2Downloads({ initialPath, onNext, onBack }: Props) {
         }}
       >
         <ScreenItem index={0}>
-          <h1 style={{ fontSize: 32, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
             Où sont tes téléchargements ?
           </h1>
         </ScreenItem>

@@ -13,6 +13,7 @@
     "dev:main-watch": "concurrently -k -n tsc,alias -c blue,magenta \"tsc -p tsconfig.main.json --watch --preserveWatchOutput\" \"tsc-alias -p tsconfig.main.json --watch\"",
     "dev:electron": "wait-on tcp:5173 && electron .",
     "dev:onboarding": "cross-env SHIFTK_FORCE_ONBOARDING=1 npm run dev",
+    "dev:debug": "cross-env SHIFTK_DEVTOOLS=1 npm run dev",
     "build": "npm run build:main && npm run build:renderer",
     "build:main": "tsc -p tsconfig.main.json && tsc-alias -p tsconfig.main.json",
     "build:renderer": "vite build",

@@ -45,12 +45,12 @@ function PlatformsConverge() {
         y={75}
         textAnchor="middle"
         fontFamily="system-ui, -apple-system, sans-serif"
-        fontSize={18}
+        fontSize={16}
         fontWeight={700}
-        letterSpacing="-0.04em"
+        letterSpacing="0.04em"
         fill="#F5F5F5"
       >
-        shift-k
+        SHIFT-K
       </text>
 
       {/* Platform labels at the three perimeter points */}
@@ -100,7 +100,7 @@ export function Screen6Extension({ onNext, onBack }: Props) {
         }}
       >
         <ScreenItem index={0}>
-          <h1 style={{ fontSize: 28, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
             Capture les métadonnées de tes générations
           </h1>
         </ScreenItem>

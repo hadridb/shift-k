@@ -91,7 +91,7 @@ export function Screen5Shortcuts({ onNext, onBack }: Props) {
         }}
       >
         <ScreenItem index={0}>
-          <h1 style={{ fontSize: 32, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
             Trois raccourcis à connaître
           </h1>
         </ScreenItem>
