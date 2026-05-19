@@ -71,7 +71,7 @@ function PrimaryButton({
         background: disabled ? 'var(--bg-elevated)' : 'var(--accent)',
         border: 'none',
         borderRadius: 6,
-        color: disabled ? 'var(--text-disabled)' : 'var(--bg-primary)',
+        color: disabled ? 'var(--text-disabled)' : 'var(--accent-text)',
         fontSize: 12,
         fontWeight: 600,
         cursor: disabled ? 'default' : 'pointer',

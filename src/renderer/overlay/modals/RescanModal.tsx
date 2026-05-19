@@ -55,7 +55,7 @@ function CheckSquare({ checked, onToggle }: { checked: boolean; onToggle: () => 
     >
       {checked && (
         <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-          <path d="M1 3L3 5L7 1" stroke="var(--bg-primary)" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M1 3L3 5L7 1" stroke="var(--accent-text)" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       )}
     </div>
@@ -112,8 +112,8 @@ export function RescanModal({ preview, onClose }: Props) {
         position: 'absolute',
         inset: 0,
         background: 'var(--bg-modal)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        backdropFilter: 'blur(20px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(150%)',
         borderRadius: 14,
         zIndex: 100,
         display: 'flex',
@@ -296,7 +296,7 @@ export function RescanModal({ preview, onClose }: Props) {
               background: selectedCount > 0 && !busy ? 'var(--accent)' : 'var(--bg-elevated)',
               border: 'none',
               borderRadius: 6,
-              color: selectedCount > 0 && !busy ? 'var(--bg-primary)' : 'var(--text-disabled)',
+              color: selectedCount > 0 && !busy ? 'var(--accent-text)' : 'var(--text-disabled)',
               fontSize: 11,
               fontWeight: 600,
               cursor: selectedCount > 0 && !busy ? 'pointer' : 'default',

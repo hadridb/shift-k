@@ -21,6 +21,7 @@ const REQUIRED_TOKENS = [
   '--text-muted',
   '--text-disabled',
   '--accent',
+  '--accent-text',
   '--shadow-overlay',
 ];
 

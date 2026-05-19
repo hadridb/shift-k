@@ -81,6 +81,11 @@ const TOKEN_KEYS = [
   'text-muted',
   'text-disabled',
   'accent',
+  // Contrasting text colour for buttons / chips painted with --accent.
+  // CRITICAL for the translucent themes where --bg-primary is transparent —
+  // before this token, buttons that used `color: var(--bg-primary)` over an
+  // `--accent` background rendered as invisible-on-white.
+  'accent-text',
   'shadow-overlay',
 ] as const;
 
@@ -112,6 +117,7 @@ const obsidian: Theme = {
     'text-muted': '#666666',
     'text-disabled': '#444444',
     'accent': '#FFFFFF',
+    'accent-text': '#0A0A0A',
     'shadow-overlay': '0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
   }),
 };
@@ -136,6 +142,7 @@ const carbon: Theme = {
     'text-muted': '#6B665C',
     'text-disabled': '#4A453E',
     'accent': '#F4ECD8',
+    'accent-text': '#13141A',
     'shadow-overlay': '0 8px 40px rgba(50,30,0,0.4), 0 2px 8px rgba(0,0,0,0.5)',
   }),
 };
@@ -160,6 +167,7 @@ const ivory: Theme = {
     'text-muted': '#8C857B',
     'text-disabled': '#B5AFA3',
     'accent': '#A28C5B',
+    'accent-text': '#FAF8F3',
     'shadow-overlay': '0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
   }),
 };
@@ -186,6 +194,7 @@ const mica: Theme = {
     'text-muted': 'rgba(245,245,245,0.4)',
     'text-disabled': 'rgba(245,245,245,0.25)',
     'accent': '#FFFFFF',
+    'accent-text': '#0A0A0A',
     'shadow-overlay': '0 8px 40px rgba(0,0,0,0.4)',
   }),
 };
@@ -211,6 +220,7 @@ const liquidGlass: Theme = {
     'text-muted': 'rgba(245,245,245,0.45)',
     'text-disabled': 'rgba(245,245,245,0.3)',
     'accent': '#FFFFFF',
+    'accent-text': '#0A0A0A',
     'shadow-overlay': '0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.08)',
   }),
 };
@@ -240,6 +250,7 @@ const aurora: Theme = {
     'text-muted': 'rgba(245,245,245,0.45)',
     'text-disabled': 'rgba(245,245,245,0.3)',
     'accent': '#FFFFFF',
+    'accent-text': '#0A0A0A',
     'shadow-overlay': '0 8px 40px rgba(0,0,0,0.6)',
   }),
 };

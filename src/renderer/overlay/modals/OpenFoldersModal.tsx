@@ -54,7 +54,7 @@ function Checkbox({
           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
             <path
               d="M1 3L3 5L7 1"
-              stroke="var(--bg-primary)"
+              stroke="var(--accent-text)"
               strokeWidth="1.5"
               strokeLinecap="round"
             />
@@ -108,8 +108,8 @@ export function OpenFoldersModal({ config, onClose }: Props) {
         position: 'absolute',
         inset: 0,
         background: 'var(--bg-modal)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        backdropFilter: 'blur(20px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(150%)',
         borderRadius: 14,
         zIndex: 100,
         display: 'flex',
@@ -215,7 +215,7 @@ export function OpenFoldersModal({ config, onClose }: Props) {
             background: canOpen && !opening ? 'var(--accent)' : 'var(--bg-elevated)',
             border: 'none',
             borderRadius: 6,
-            color: canOpen && !opening ? 'var(--bg-primary)' : 'var(--text-disabled)',
+            color: canOpen && !opening ? 'var(--accent-text)' : 'var(--text-disabled)',
             fontSize: 11,
             fontWeight: 600,
             cursor: canOpen && !opening ? 'pointer' : 'default',

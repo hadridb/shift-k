@@ -412,7 +412,7 @@ function ToggleRow({
       >
         {checked && (
           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-            <path d="M1 3L3 5L7 1" stroke="var(--bg-primary)" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M1 3L3 5L7 1" stroke="var(--accent-text)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         )}
       </div>
@@ -1139,7 +1139,7 @@ export function SettingsApp() {
             background: dirty && !saving ? 'var(--accent)' : 'var(--bg-elevated)',
             border: 'none',
             borderRadius: 6,
-            color: dirty && !saving ? 'var(--bg-primary)' : 'var(--text-disabled)',
+            color: dirty && !saving ? 'var(--accent-text)' : 'var(--text-disabled)',
             fontSize: 12,
             fontWeight: 600,
             cursor: dirty && !saving ? 'pointer' : 'default',
