@@ -2,6 +2,7 @@ import React, { useEffect, useReducer, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ActivityEntry, ActivityType, Stage } from '@shared/types';
 import { formatActivityLine } from '@shared/i18n/activity';
+import { ActivitySpinner } from './ActivitySpinner';
 
 // Aggregation map key — one bucket per (type × stage) combination.
 type BucketKey = `${ActivityType}:${Stage}`;
@@ -170,6 +171,8 @@ export function ActivityToast() {
             pointerEvents: 'none',
           }}
         >
+          <ActivitySpinner dispersing={state.phase === 'fading'} />
+
           <div style={{ flex: 1, minWidth: 0 }}>
             {lines.map((b) => (
               <div
