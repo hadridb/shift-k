@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { AppConfig, StageLabels, Stage } from '@shared/types';
+import type { AppConfig, StageLabels, Stage, ThemeId } from '@shared/types';
+import {
+  THEMES,
+  THEME_ORDER,
+  DEFAULT_THEME_ID,
+  checkAvailability,
+  type Platform,
+  type Theme,
+} from '@renderer/styles/themes';
+import { useApplyTheme } from '@renderer/hooks/useApplyTheme';
 
 const AUDIO_PLATFORM_KEYS = [
   'suno', 'elevenlabs', 'udio', 'stable_audio', 'aiva',
@@ -21,6 +30,7 @@ const AUDIO_PLATFORM_LABELS: Record<string, string> = {
 };
 
 interface Form {
+  theme: ThemeId;
   root: string;
   downloadsPath: string;
   stages: StageLabels;
@@ -47,6 +57,7 @@ function formFromConfig(config: AppConfig): Form {
     audioPlatforms[key] = [...(config.platforms[key] ?? [])];
   }
   return {
+    theme: config.preferences.theme,
     root: config.root,
     downloadsPath: config.downloadsPath,
     stages: { ...config.stages },
@@ -96,10 +107,10 @@ function previewDailyFolder(format: string, stageName: string, date: Date): stri
 }
 
 const inputStyle: React.CSSProperties = {
-  background: '#141414',
-  border: '1px solid #232323',
+  background: 'var(--bg-elevated)',
+  border: '1px solid var(--border-subtle)',
   borderRadius: 6,
-  color: '#ffffff',
+  color: 'var(--text-primary)',
   fontSize: 13,
   padding: '8px 10px',
   outline: 'none',
@@ -110,20 +121,20 @@ const sectionTitleStyle: React.CSSProperties = {
   fontSize: 10,
   fontWeight: 700,
   letterSpacing: '0.18em',
-  color: '#666666',
+  color: 'var(--text-muted)',
   marginBottom: 14,
 };
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 11,
-  color: '#9a9a9a',
+  color: 'var(--text-secondary)',
   marginBottom: 6,
 };
 
 const hintStyle: React.CSSProperties = {
   fontSize: 10,
-  color: '#555555',
+  color: 'var(--text-disabled)',
   marginTop: 5,
 };
 
@@ -179,10 +190,10 @@ function PathInput({
       <button
         onClick={() => void pick()}
         style={{
-          background: '#1a1a1a',
-          border: '1px solid #2a2a2a',
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border-subtle)',
           borderRadius: 6,
-          color: '#cccccc',
+          color: 'var(--text-secondary)',
           fontSize: 11,
           cursor: 'pointer',
           padding: '0 12px',
@@ -231,7 +242,7 @@ function AccordionSection({
           transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
           style={{ flexShrink: 0 }}
         >
-          <path d="M3 2L7 5L3 8" stroke="#666666" strokeWidth="1.2" strokeLinecap="round" />
+          <path d="M3 2L7 5L3 8" stroke="var(--text-muted)" strokeWidth="1.2" strokeLinecap="round" />
         </motion.svg>
         <span style={{ ...sectionTitleStyle, marginBottom: 0 }}>{title}</span>
       </button>
@@ -284,7 +295,7 @@ function ChipList({
     <div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
         {values.length === 0 && (
-          <span style={{ color: '#444', fontSize: 11, fontStyle: 'italic' }}>
+          <span style={{ color: 'var(--text-disabled)', fontSize: 11, fontStyle: 'italic' }}>
             (vide — aucun motif)
           </span>
         )}
@@ -295,12 +306,12 @@ function ChipList({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              background: '#1a1a1a',
-              border: '1px solid #2a2a2a',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: 4,
               padding: '3px 6px 3px 8px',
               fontSize: 11,
-              color: '#cfcfcf',
+              color: 'var(--text-primary)',
               fontFamily: 'ui-monospace, monospace',
             }}
           >
@@ -311,7 +322,7 @@ function ChipList({
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#666',
+                color: 'var(--text-muted)',
                 cursor: 'pointer',
                 fontSize: 12,
                 lineHeight: 1,
@@ -346,10 +357,10 @@ function ChipList({
           onClick={commit}
           disabled={!input.trim()}
           style={{
-            background: '#1a1a1a',
-            border: '1px solid #2a2a2a',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: 6,
-            color: input.trim() ? '#cccccc' : '#444',
+            color: input.trim() ? 'var(--text-secondary)' : 'var(--text-disabled)',
             fontSize: 11,
             cursor: input.trim() ? 'pointer' : 'default',
             padding: '0 12px',
@@ -391,8 +402,8 @@ function ToggleRow({
           height: 14,
           marginTop: 1,
           borderRadius: 3,
-          border: `1px solid ${checked ? '#ffffff' : '#3a3a3a'}`,
-          background: checked ? '#ffffff' : 'transparent',
+          border: `1px solid ${checked ? 'var(--accent)' : 'var(--border-subtle)'}`,
+          background: checked ? 'var(--accent)' : 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -401,12 +412,12 @@ function ToggleRow({
       >
         {checked && (
           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-            <path d="M1 3L3 5L7 1" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M1 3L3 5L7 1" stroke="var(--bg-primary)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         )}
       </div>
       <div>
-        <div style={{ fontSize: 12, color: checked ? '#ffffff' : '#aaaaaa' }}>{label}</div>
+        <div style={{ fontSize: 12, color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{label}</div>
         {hint && <div style={hintStyle}>{hint}</div>}
       </div>
     </div>
@@ -423,17 +434,177 @@ const STAGE_LABELS_FR: Record<Stage, string> = {
 
 const STAGE_KEYS: Stage[] = ['src', 'img', 'out', 'ost', 'liv'];
 
+/**
+ * Mini-preview rendered inside each theme card. Uses the theme's actual
+ * `cssVars` (not the live `var(--*)` values) so the card shows the theme
+ * even when it's not currently active. We do this by setting an inline
+ * `style` block on the wrapper that overrides every relevant var locally.
+ */
+function ThemePreview({ theme }: { theme: Theme }) {
+  // Build an inline-style override that overrides each --* token used by
+  // the preview snippet. CSS resolves `var(--bg-elevated)` against this
+  // scope, so the preview reads the theme even when <html data-theme>
+  // is different.
+  const override = theme.cssVars as React.CSSProperties;
+  const isAurora = !!theme.animatedBackground;
+  return (
+    <div
+      style={{
+        ...override,
+        position: 'relative',
+        width: '100%',
+        height: 56,
+        borderRadius: 6,
+        overflow: 'hidden',
+        background: 'var(--bg-primary)',
+        border: '1px solid var(--border-subtle)',
+      }}
+    >
+      {isAurora && theme.animatedBackground && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `linear-gradient(135deg, ${theme.animatedBackground.colors.join(', ')})`,
+            backgroundSize: '200% 200%',
+            opacity: 0.85,
+          }}
+        />
+      )}
+      <div style={{ position: 'relative', padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {[true, false, false].map((active, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span
+              style={{
+                width: 2,
+                height: 8,
+                background: active ? 'var(--accent)' : 'transparent',
+                borderRadius: 999,
+              }}
+            />
+            <span
+              style={{
+                flex: 1,
+                height: 6,
+                background: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                borderRadius: 2,
+                opacity: active ? 0.95 : 0.35,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ThemePickerGrid({
+  value,
+  platform,
+  release,
+  onPick,
+}: {
+  value: ThemeId;
+  platform: Platform;
+  release: string;
+  onPick: (id: ThemeId) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: 10,
+      }}
+    >
+      {THEME_ORDER.map((id) => {
+        const theme = THEMES[id];
+        const avail = checkAvailability(theme, platform, release);
+        const isActive = value === id;
+        const disabled = !avail.available;
+        return (
+          <button
+            key={id}
+            onClick={() => {
+              if (!disabled) onPick(id);
+            }}
+            disabled={disabled}
+            title={avail.reason}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: 10,
+              background: 'var(--bg-elevated)',
+              border: `2px solid ${isActive ? 'var(--accent)' : 'var(--border-subtle)'}`,
+              borderRadius: 8,
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              opacity: disabled ? 0.4 : 1,
+              textAlign: 'left',
+              transition: 'border-color 150ms ease-out',
+            }}
+          >
+            <ThemePreview theme={theme} />
+            <div>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  marginBottom: 2,
+                }}
+              >
+                {theme.label}
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: 'var(--text-muted)',
+                  lineHeight: 1.3,
+                }}
+              >
+                {theme.description}
+              </div>
+              {avail.usesFallback && (
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: 'var(--text-disabled)',
+                    fontStyle: 'italic',
+                    marginTop: 4,
+                  }}
+                >
+                  Fallback CSS
+                </div>
+              )}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function SettingsApp() {
   const [form, setForm] = useState<Form | null>(null);
   const [original, setOriginal] = useState<AppConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [platformInfo, setPlatformInfo] = useState<{ platform: Platform; release: string }>({
+    platform: 'windows',
+    release: '0.0.0',
+  });
+
+  // Live theme preview — every form.theme change immediately flips
+  // <html data-theme> and triggers the main process's native effects.
+  useApplyTheme(form?.theme ?? DEFAULT_THEME_ID);
 
   useEffect(() => {
     void window.shiftK.getConfig().then((config) => {
       setForm(formFromConfig(config));
       setOriginal(config);
     });
+    void window.shiftK.getPlatformInfo().then(setPlatformInfo);
   }, []);
 
   function update<K extends keyof Form>(key: K, value: Form[K]) {
@@ -474,6 +645,7 @@ export function SettingsApp() {
         platforms: mergedPlatforms,
         preferences: {
           ...original.preferences,
+          theme: form.theme,
           dailyFoldersEnabled: form.dailyFoldersEnabled,
           dailyFolderFormat: form.dailyFolderFormat,
           lazyDailyFolders: form.lazyDailyFolders,
@@ -506,7 +678,7 @@ export function SettingsApp() {
           justifyContent: 'center',
         }}
       >
-        <span style={{ color: '#444', fontSize: 12 }}>…</span>
+        <span style={{ color: 'var(--text-disabled)', fontSize: 12 }}>…</span>
       </div>
     );
   }
@@ -523,7 +695,7 @@ export function SettingsApp() {
       <div
         style={{
           padding: '20px 28px 16px',
-          borderBottom: '1px solid #161616',
+          borderBottom: '1px solid var(--border-divider)',
         }}
       >
         <div
@@ -531,7 +703,7 @@ export function SettingsApp() {
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: '0.18em',
-            color: '#ffffff',
+            color: 'var(--text-primary)',
           }}
         >
           RÉGLAGES
@@ -546,6 +718,26 @@ export function SettingsApp() {
           padding: '24px 28px',
         }}
       >
+        <Section title="APPARENCE">
+          <ThemePickerGrid
+            value={form.theme}
+            platform={platformInfo.platform}
+            release={platformInfo.release}
+            onPick={(t) => mutate((f) => ({ ...f, theme: t }))}
+          />
+          <div
+            style={{
+              fontSize: 10,
+              color: 'var(--text-muted)',
+              marginTop: 14,
+              fontStyle: 'italic',
+            }}
+          >
+            Certains thèmes utilisent les effets natifs de votre système d'exploitation
+            pour une intégration parfaite.
+          </div>
+        </Section>
+
         <Section title="GÉNÉRAL">
           <Field
             label="Dossier racine des projets"
@@ -640,17 +832,17 @@ export function SettingsApp() {
                   style={{
                     marginTop: 6,
                     padding: '10px 12px',
-                    background: '#0c0c0c',
-                    border: '1px solid #1c1c1c',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-subtle)',
                     borderRadius: 6,
                     fontSize: 11,
-                    color: '#888',
+                    color: 'var(--text-secondary)',
                   }}
                 >
-                  <div style={{ fontSize: 9, letterSpacing: '0.15em', color: '#555', marginBottom: 4 }}>
+                  <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: 4 }}>
                     EXEMPLE POUR AUJOURD'HUI
                   </div>
-                  <code style={{ fontSize: 11, color: '#cfcfcf' }}>
+                  <code style={{ fontSize: 11, color: 'var(--text-primary)' }}>
                     {activeStageName}/{sampleFolder}/Gen-4_demo.mp4
                   </code>
                 </div>
@@ -699,13 +891,13 @@ export function SettingsApp() {
                   <div
                     style={{
                       fontSize: 11,
-                      color: '#cfcfcf',
+                      color: 'var(--text-primary)',
                       marginBottom: 6,
                       fontWeight: 500,
                     }}
                   >
                     {AUDIO_PLATFORM_LABELS[key]}{' '}
-                    <span style={{ color: '#555', fontFamily: 'ui-monospace, monospace', fontSize: 10 }}>
+                    <span style={{ color: 'var(--text-muted)', fontFamily: 'ui-monospace, monospace', fontSize: 10 }}>
                       ({key})
                     </span>
                   </div>
@@ -755,17 +947,17 @@ export function SettingsApp() {
                 style={{
                   marginTop: 8,
                   padding: '10px 12px',
-                  background: '#0c0c0c',
-                  border: '1px solid #1c1c1c',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-subtle)',
                   borderRadius: 6,
                   fontSize: 11,
-                  color: '#888',
+                  color: 'var(--text-secondary)',
                 }}
               >
-                <div style={{ fontSize: 9, letterSpacing: '0.15em', color: '#555', marginBottom: 4 }}>
+                <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: 4 }}>
                   EXEMPLE
                 </div>
-                <code style={{ fontSize: 11, color: '#cfcfcf' }}>
+                <code style={{ fontSize: 11, color: 'var(--text-primary)' }}>
                   ElevenLabs_voice.mp3 → {sampleClient}/{ostStageName}{dailyFolder}/
                 </code>
               </div>
@@ -920,7 +1112,7 @@ export function SettingsApp() {
       <div
         style={{
           padding: '14px 28px',
-          borderTop: '1px solid #161616',
+          borderTop: '1px solid var(--border-divider)',
           display: 'flex',
           justifyContent: 'flex-end',
           gap: 10,
@@ -932,7 +1124,7 @@ export function SettingsApp() {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#888888',
+            color: 'var(--text-secondary)',
             fontSize: 12,
             cursor: 'pointer',
             padding: '8px 14px',
@@ -944,10 +1136,10 @@ export function SettingsApp() {
           onClick={() => void handleSave()}
           disabled={!dirty || saving}
           style={{
-            background: dirty && !saving ? '#ffffff' : '#2a2a2a',
+            background: dirty && !saving ? 'var(--accent)' : 'var(--bg-elevated)',
             border: 'none',
             borderRadius: 6,
-            color: dirty && !saving ? '#000000' : '#555555',
+            color: dirty && !saving ? 'var(--bg-primary)' : 'var(--text-disabled)',
             fontSize: 12,
             fontWeight: 600,
             cursor: dirty && !saving ? 'pointer' : 'default',
