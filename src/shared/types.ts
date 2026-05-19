@@ -8,6 +8,7 @@ export type StageLabels = Record<Stage, string>;
 
 export interface Preferences {
   dailyFolderFormat: string;
+  dailyFoldersEnabled: boolean;
   lazyDailyFolders: boolean;
   groupByPlatform: boolean;
   logRetentionDays: number;

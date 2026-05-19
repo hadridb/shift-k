@@ -1,11 +1,17 @@
 import path from 'path';
 import type { AppConfig, Stage } from '@shared/types';
 
-export function formatDailyFolderName(format: string, date: Date = new Date()): string {
+export function formatDailyFolderName(
+  format: string,
+  stageName: string,
+  date: Date = new Date(),
+): string {
   const yyyy = date.getFullYear().toString();
   const MM = (date.getMonth() + 1).toString().padStart(2, '0');
   const dd = date.getDate().toString().padStart(2, '0');
-  return format.replace('{yyyy-MM-dd}', `${yyyy}-${MM}-${dd}`);
+  return format
+    .replace('{stage}', stageName)
+    .replace('{yyyy-MM-dd}', `${yyyy}-${MM}-${dd}`);
 }
 
 export function buildDailyPath(
@@ -18,9 +24,14 @@ export function buildDailyPath(
   if (!client) throw new Error('No active client');
 
   const stageFolderName = config.stages[stageKey];
-  const dailyFolder = formatDailyFolderName(config.preferences.dailyFolderFormat, date);
+  const parts: string[] = [config.root, client, stageFolderName];
 
-  const parts = [config.root, client, stageFolderName, dailyFolder];
+  if (config.preferences.dailyFoldersEnabled) {
+    parts.push(
+      formatDailyFolderName(config.preferences.dailyFolderFormat, stageFolderName, date),
+    );
+  }
+
   if (config.preferences.groupByPlatform && platform) {
     parts.push(platform);
   }

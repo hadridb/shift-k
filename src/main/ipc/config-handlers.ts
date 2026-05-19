@@ -123,12 +123,16 @@ export function registerConfigHandlers(): void {
       });
       broadcastConfigChange();
 
-      const dailyFolder = formatDailyFolderName(config.preferences.dailyFolderFormat);
+      const dailyEnabled = config.preferences.dailyFoldersEnabled;
       for (const stage of stages) {
         const stageFolderName = config.stages[stage];
         let folderPath = path.join(config.root, config.activeClient, stageFolderName);
 
-        if (todayOnly && stage !== 'ost') {
+        if (todayOnly && dailyEnabled && stage !== 'ost') {
+          const dailyFolder = formatDailyFolderName(
+            config.preferences.dailyFolderFormat,
+            stageFolderName,
+          );
           const dailyPath = path.join(folderPath, dailyFolder);
           await fs.mkdir(dailyPath, { recursive: true });
           folderPath = dailyPath;

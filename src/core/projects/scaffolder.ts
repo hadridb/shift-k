@@ -34,13 +34,17 @@ export async function createProject(
       await fs.mkdir(projectPath, { recursive: true });
     }
 
-    const dailyFolder = formatDailyFolderName(config.preferences.dailyFolderFormat);
+    const dailyEnabled = config.preferences.dailyFoldersEnabled;
     const stageEntries = Object.entries(config.stages) as [Stage, string][];
 
     for (const [stageKey, stageFolderName] of stageEntries) {
       const stagePath = path.join(projectPath, stageFolderName);
       await fs.mkdir(stagePath, { recursive: true });
-      if (DAILY_STAGES.includes(stageKey)) {
+      if (dailyEnabled && DAILY_STAGES.includes(stageKey)) {
+        const dailyFolder = formatDailyFolderName(
+          config.preferences.dailyFolderFormat,
+          stageFolderName,
+        );
         await fs.mkdir(path.join(stagePath, dailyFolder), { recursive: true });
       }
     }

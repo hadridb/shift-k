@@ -108,4 +108,62 @@ describe('resolveDestination', () => {
     const result = resolveDestination('Gen-4_clip.mp4', cfg, FIXED_DATE);
     expect(result!.destDir).toContain('D2026-05-15');
   });
+
+  // dailyFoldersEnabled toggle × format with/without {stage}
+
+  it('routes to stage root when dailyFoldersEnabled is false (simple format)', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: { ...baseConfig.preferences, dailyFoldersEnabled: false },
+    };
+    const result = resolveDestination('Gen-4_scene.mp4', cfg, FIXED_DATE);
+    expect(result!.destDir).toBe(
+      path.join('E:\\Projects', 'YSL - PURESHOTS', '03_Outputs'),
+    );
+  });
+
+  it('routes to stage root when dailyFoldersEnabled is false (even if format has {stage})', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: {
+        ...baseConfig.preferences,
+        dailyFoldersEnabled: false,
+        dailyFolderFormat: '{stage} J{yyyy-MM-dd}',
+      },
+    };
+    const result = resolveDestination('Gen-4_scene.mp4', cfg, FIXED_DATE);
+    expect(result!.destDir).toBe(
+      path.join('E:\\Projects', 'YSL - PURESHOTS', '03_Outputs'),
+    );
+  });
+
+  it('substitutes {stage} placeholder in daily folder name', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: {
+        ...baseConfig.preferences,
+        dailyFoldersEnabled: true,
+        dailyFolderFormat: '{stage} J{yyyy-MM-dd}',
+      },
+    };
+    const result = resolveDestination('Gen-4_scene.mp4', cfg, FIXED_DATE);
+    expect(result!.destDir).toBe(
+      path.join('E:\\Projects', 'YSL - PURESHOTS', '03_Outputs', '03_Outputs J2026-05-15'),
+    );
+  });
+
+  it('substitutes {stage} with hyphen format', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: {
+        ...baseConfig.preferences,
+        dailyFoldersEnabled: true,
+        dailyFolderFormat: '{stage}-{yyyy-MM-dd}',
+      },
+    };
+    const result = resolveDestination('Gen-4_scene.mp4', cfg, FIXED_DATE);
+    expect(result!.destDir).toBe(
+      path.join('E:\\Projects', 'YSL - PURESHOTS', '03_Outputs', '03_Outputs-2026-05-15'),
+    );
+  });
 });

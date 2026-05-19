@@ -76,6 +76,7 @@ export const AppConfigSchema = z.object({
   preferences: z
     .object({
       dailyFolderFormat: z.string().default('J{yyyy-MM-dd}'),
+      dailyFoldersEnabled: z.boolean().default(true),
       lazyDailyFolders: z.boolean().default(true),
       groupByPlatform: z.boolean().default(false),
       logRetentionDays: z.number().int().positive().default(30),
@@ -98,6 +99,7 @@ export const AppConfigSchema = z.object({
     })
     .default({
       dailyFolderFormat: 'J{yyyy-MM-dd}',
+      dailyFoldersEnabled: true,
       lazyDailyFolders: true,
       groupByPlatform: false,
       logRetentionDays: 30,
