@@ -174,6 +174,14 @@ shift-k/
 - [x] Animations : `framer-motion@^12` installe. Slot indicator slide via `layoutId`, modales fade+scale 180ms, stage badge flip rotateX 180ms, pause badge scale+fade. ADR-025 fixe les durations/easings canoniques (Material standard `[0.4, 0, 0.2, 1]`).
 - [x] Tests : 66 verts (54 → 66). +4 activity-log (FIFO, max, copy, empty), +2 accordion state (defaults, round-trip), +6 useEscapeClose (Escape vs autres touches × INPUT/TEXTAREA/SELECT/DIV).
 
+**Sprint 6.1 (termine)** : Corrections UI Sprint 6.
+- [x] StagePopover ouvre **vers le haut** (au-dessus du chevron) au lieu de vers le bas qui depassait l'overlay 468px. `bottom: 44` + `transformOrigin: 'bottom left'` pour que le scale parte du bouton. Garde-fou `maxHeight: 200 + overflowY: auto` si plus de 5 stages un jour.
+- [x] `ActivityFeed` (5 lignes par fichier) remplace par `ActivityToast` agregat. Buckets par (type × stage), une ligne `2 vidéos envoyées vers 03_Outputs` plutot que 2 lignes Gen-4_001.mp4 + Gen-4_002.mp4. State machine idle → buffering (debounce 3 s silence) → visible (4 s, reset sur nouvelle arrivee) → fading (600 ms).
+- [x] Helper FR pur `src/shared/i18n/activity.ts` : `formatActivityLine(count, type, stageFolderName)` + `classifyExtension(filename, lists)`. Accord du participe + invariabilite "audio"/"projet" gerees. 14 tests dedies.
+- [x] `ActivitySpinner` : arc rotatif accent `#9090E0` pendant l'affichage, dispersion en 6 particules `(cos, sin)·14px` + opacity/scale pendant le fade-out. ≤ 600 ms, sobriete a la Linear/Notion.
+- [x] Overlay window 468 → 520 px pour caser toast + popover + slots integralement visibles.
+- [x] Voir ADR-026. 80 tests verts (66 → 80, +14).
+
 **Sprint 5b (prochain)** : A definir parmi :
 - Code signing Windows (cert Sectigo EV) pour faire disparaitre SmartScreen warning
 - electron-updater + GitHub Releases feed pour auto-update silencieux
@@ -187,4 +195,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 19 mai 2026 (Sprint 6 — polish quotidien : accordion settings, stage popover, activity feed, micro-animations framer-motion ; ADR-022 a ADR-025). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 19 mai 2026 (Sprint 6.1 — corrections UI : popover anchor top, toast agregat avec spinner particule, overlay 468 → 520 px ; ADR-022 a ADR-026). A maintenir a jour a chaque decision structurante.*

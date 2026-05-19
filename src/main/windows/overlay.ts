@@ -3,7 +3,9 @@ import path from 'path';
 import { getConfig, setConfigKey } from '@core/config/store';
 
 const OVERLAY_WIDTH = 290;
-const OVERLAY_HEIGHT = 468;
+// 520 px (was 468) gives the toast room above the footer without overlapping
+// the slot list, and the stage popover room to open upward without clipping.
+const OVERLAY_HEIGHT = 520;
 
 const isDev = !app.isPackaged;
 
