@@ -11,20 +11,29 @@ interface Props {
   onSelect: (stage: Stage) => void;
 }
 
+function applyHover(e: React.MouseEvent, on: boolean) {
+  (e.currentTarget as HTMLElement).style.background = on ? 'var(--bg-hover)' : 'transparent';
+}
+
 export function StageBar({ stages, activeStage, routingEnabled, onCycle, onSelect }: Props) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const label = stages[activeStage];
 
   return (
-    <div className="no-drag flex items-center justify-between px-3 h-10" style={{ position: 'relative' }}>
+    <div
+      className="no-drag flex items-center justify-between px-3 h-10"
+      style={{ position: 'relative' }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <button
           onClick={onCycle}
-          className="flex items-center gap-2 px-2 py-1 rounded transition-colors duration-150 focus:outline-none hover:bg-[#161616]"
+          onMouseEnter={(e) => applyHover(e, true)}
+          onMouseLeave={(e) => applyHover(e, false)}
+          className="flex items-center gap-2 px-2 py-1 rounded transition-colors duration-150 focus:outline-none"
           style={{ background: 'transparent' }}
           title="Cycle stage (Ctrl+Alt+S) — Shift+J/L pour slot précédent/suivant"
         >
-          <span style={{ fontSize: 11, color: '#666666' }}>STAGE</span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>STAGE</span>
           {/* Flip-on-change badge */}
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
@@ -33,7 +42,12 @@ export function StageBar({ stages, activeStage, routingEnabled, onCycle, onSelec
               animate={{ opacity: 1, rotateX: 0 }}
               exit={{ opacity: 0, rotateX: 45 }}
               transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-              style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500, display: 'inline-block' }}
+              style={{
+                fontSize: 13,
+                color: 'var(--text-primary)',
+                fontWeight: 500,
+                display: 'inline-block',
+              }}
             >
               {label}
             </motion.span>
@@ -43,7 +57,9 @@ export function StageBar({ stages, activeStage, routingEnabled, onCycle, onSelec
         {/* Chevron — separate click target for the peek popover */}
         <button
           onClick={() => setPopoverOpen((o) => !o)}
-          className="rounded transition-colors duration-150 focus:outline-none hover:bg-[#161616]"
+          onMouseEnter={(e) => applyHover(e, true)}
+          onMouseLeave={(e) => applyHover(e, false)}
+          className="rounded transition-colors duration-150 focus:outline-none"
           style={{
             background: 'transparent',
             border: 'none',
@@ -66,7 +82,7 @@ export function StageBar({ stages, activeStage, routingEnabled, onCycle, onSelec
           >
             <path
               d="M3 5L6 8L9 5"
-              stroke={popoverOpen ? '#FFFFFF' : '#666666'}
+              stroke={popoverOpen ? 'var(--text-primary)' : 'var(--text-muted)'}
               strokeWidth="1.4"
               strokeLinecap="round"
             />

@@ -14,10 +14,10 @@ const MODAL_VARIANTS = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  background: '#1A1A1A',
-  border: '1px solid #2A2A2A',
+  background: 'var(--bg-elevated)',
+  border: '1px solid var(--border-subtle)',
   borderRadius: 6,
-  color: '#FFFFFF',
+  color: 'var(--text-primary)',
   fontSize: 13,
   padding: '8px 10px',
   outline: 'none',
@@ -26,7 +26,7 @@ const inputStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   fontSize: 10,
-  color: '#666666',
+  color: 'var(--text-muted)',
   letterSpacing: '0.1em',
   marginBottom: 5,
   display: 'block',
@@ -62,13 +62,10 @@ export function NewProjectModal({ onClose }: Props) {
       exit={MODAL_VARIANTS.exit}
       transition={MODAL_TRANSITION}
       style={{
-        // position: absolute so the modal is clipped by the parent overlay
-        // container's borderRadius + overflow:hidden — keeps the rounded
-        // corners visible and prevents the window from "appearing" to
-        // resize. See ADR-028.
+        // position: absolute — clipped by parent overlay container. ADR-028.
         position: 'absolute',
         inset: 0,
-        background: 'rgba(10,10,10,0.95)',
+        background: 'var(--bg-modal)',
         backdropFilter: 'blur(2px)',
         WebkitBackdropFilter: 'blur(2px)',
         borderRadius: 14,
@@ -89,7 +86,12 @@ export function NewProjectModal({ onClose }: Props) {
         }}
       >
         <span
-          style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: '#FFFFFF' }}
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            color: 'var(--text-primary)',
+          }}
         >
           NOUVEAU PROJET
         </span>
@@ -98,7 +100,7 @@ export function NewProjectModal({ onClose }: Props) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#666666',
+            color: 'var(--text-muted)',
             fontSize: 14,
             cursor: 'pointer',
             padding: 4,
@@ -141,7 +143,7 @@ export function NewProjectModal({ onClose }: Props) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#666666',
+            color: 'var(--text-muted)',
             fontSize: 11,
             cursor: 'pointer',
             padding: '8px 12px',
@@ -153,10 +155,10 @@ export function NewProjectModal({ onClose }: Props) {
           onClick={() => void handleCreate()}
           disabled={!canCreate || loading}
           style={{
-            background: canCreate && !loading ? '#FFFFFF' : '#2A2A2A',
+            background: canCreate && !loading ? 'var(--accent)' : 'var(--bg-elevated)',
             border: 'none',
             borderRadius: 6,
-            color: canCreate && !loading ? '#000000' : '#555555',
+            color: canCreate && !loading ? 'var(--bg-primary)' : 'var(--text-disabled)',
             fontSize: 11,
             fontWeight: 600,
             cursor: canCreate && !loading ? 'pointer' : 'default',

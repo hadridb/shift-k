@@ -21,8 +21,19 @@ export function SlotList({ slots, activeClient, onSelect }: Props) {
         return (
           <button
             key={key}
-            className="no-drag w-full flex items-center h-8 px-0 text-left transition-colors duration-150 hover:bg-[#161616] focus:outline-none disabled:hover:bg-transparent"
-            style={{ background: 'transparent', position: 'relative' }}
+            className="no-drag w-full flex items-center h-8 px-0 text-left transition-colors duration-150 focus:outline-none"
+            style={{
+              background: 'transparent',
+              position: 'relative',
+            }}
+            onMouseEnter={(e) => {
+              if (!isEmpty) {
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+            }}
             onClick={() => !isEmpty && onSelect(client)}
             disabled={isEmpty}
             title={`Ctrl+Alt+${key}${client ? ` — ${client}` : ''}`}
@@ -45,7 +56,7 @@ export function SlotList({ slots, activeClient, onSelect }: Props) {
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: '#FFFFFF',
+                    background: 'var(--accent)',
                     borderRadius: 999,
                   }}
                 />
@@ -57,7 +68,11 @@ export function SlotList({ slots, activeClient, onSelect }: Props) {
             <span
               style={{
                 fontSize: 11,
-                color: isEmpty ? '#444444' : isActive ? '#FFFFFF' : '#9A9A9A',
+                color: isEmpty
+                  ? 'var(--text-disabled)'
+                  : isActive
+                    ? 'var(--text-primary)'
+                    : 'var(--text-secondary)',
                 marginRight: 8,
                 fontVariantNumeric: 'tabular-nums',
                 minWidth: 14,
@@ -71,7 +86,11 @@ export function SlotList({ slots, activeClient, onSelect }: Props) {
               className="truncate"
               style={{
                 fontSize: 13,
-                color: isEmpty ? '#333333' : isActive ? '#FFFFFF' : '#9A9A9A',
+                color: isEmpty
+                  ? 'var(--text-disabled)'
+                  : isActive
+                    ? 'var(--text-primary)'
+                    : 'var(--text-secondary)',
                 fontWeight: isActive ? 500 : 400,
                 letterSpacing: isActive ? '0.01em' : '0',
               }}

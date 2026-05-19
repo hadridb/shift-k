@@ -174,6 +174,16 @@ shift-k/
 - [x] Animations : `framer-motion@^12` installe. Slot indicator slide via `layoutId`, modales fade+scale 180ms, stage badge flip rotateX 180ms, pause badge scale+fade. ADR-025 fixe les durations/easings canoniques (Material standard `[0.4, 0, 0.2, 1]`).
 - [x] Tests : 66 verts (54 → 66). +4 activity-log (FIFO, max, copy, empty), +2 accordion state (defaults, round-trip), +6 useEscapeClose (Escape vs autres touches × INPUT/TEXTAREA/SELECT/DIV).
 
+**Sprint 7 (termine)** : Système de thèmes complet.
+- [x] 6 thèmes premium dans `src/renderer/styles/themes.ts` + miroir CSS dans `themes.css`. Obsidian (défaut), Carbon, Ivory, Mica, Liquid Glass, Aurora.
+- [x] Architecture : CSS variables sur `<html data-theme="...">`. 12 tokens canoniques (--bg-primary, --bg-elevated, --bg-hover, --bg-modal, --border-subtle/divider, --text-primary/secondary/muted/disabled, --accent, --shadow-overlay). Switching = une mutation DOM, pas de re-render React.
+- [x] Mica natif sur Windows 11+ via `BrowserWindow.setBackgroundMaterial('mica')`, gate version `os.release() ≥ 10.0.22000`.
+- [x] Liquid Glass : vibrancy native macOS via `setVibrancy('hud')`, fallback CSS `backdrop-filter: blur(40px) saturate(180%) brightness(110%)` sur Windows/Linux. Signal envoye via IPC `theme:glass-fallback` → attribut `data-glass-fallback` sur `<html>`.
+- [x] Aurora : animation CSS pure `aurora-shift` 60 s ease-in-out infinite, GPU-accelerated via `translateZ(0)`. Composant `AuroraBackground.tsx` monte conditionnellement.
+- [x] Picker dans Settings (section APPARENCE en haut) : grille 2×3 cards avec mini-preview live, label, description, état actif + greyed-out pour themes indisponibles sur la plateforme. Click = live preview immédiat (`useApplyTheme(form.theme)`).
+- [x] Refactor : 171 occurrences de couleurs hardcodees migrees vers `var(--*)` sur 17 fichiers (overlay components, modals, settings, onboarding).
+- [x] Voir ADR-029. 121 tests verts (90 → 121, +31 incluant 27 sur themes.ts et 4 sur schema theme pref).
+
 **Sprint 6.3 (termine)** : 10 slots + ratio compact.
 - [x] 10e slot ajoute, surface comme "0" sur le clavier (touche 0 juste apres 9 sur la rangee numerique). Hotkey Ctrl+Alt+0 enregistre automatiquement via la boucle existante sur SLOT_KEYS.
 - [x] Migration auto : un config v0.1.0 a 9 slots se voit injecter `'0': null` au prochain `parse()` Zod (via `.default(null)` sur la cle '0' du schema). 2 tests dedies couvrent ce cas + le defaut a vide.
@@ -207,4 +217,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 19 mai 2026 (Sprint 6.3 — 10 slots + window 498 px ; ADR-022 a ADR-028). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 19 mai 2026 (Sprint 7 — systeme de themes complet 6 themes premium + native materials ; ADR-022 a ADR-029). A maintenir a jour a chaque decision structurante.*

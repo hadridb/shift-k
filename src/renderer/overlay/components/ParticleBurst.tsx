@@ -62,7 +62,7 @@ function BurstInstance() {
       <motion.circle
         cx={0}
         cy={0}
-        fill="#FFFFFF"
+        fill="var(--accent)"
         initial={{ r: FLASH_SIZE_FROM / 2, opacity: 0.9 }}
         animate={{ r: FLASH_SIZE_TO / 2, opacity: 0 }}
         transition={{ duration: FLASH_DURATION_S, ease: PARTICLE_EASE }}
@@ -74,7 +74,7 @@ function BurstInstance() {
           cx={0}
           cy={0}
           r={p.size / 2}
-          fill="#FFFFFF"
+          fill="var(--accent)"
           initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
           animate={{
             x: p.dx,

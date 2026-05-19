@@ -41,8 +41,8 @@ function Checkbox({
           width: 14,
           height: 14,
           borderRadius: 3,
-          border: `1px solid ${checked ? '#FFFFFF' : '#3A3A3A'}`,
-          background: checked ? '#FFFFFF' : 'transparent',
+          border: `1px solid ${checked ? 'var(--accent)' : 'var(--border-subtle)'}`,
+          background: checked ? 'var(--accent)' : 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -52,11 +52,23 @@ function Checkbox({
       >
         {checked && (
           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-            <path d="M1 3L3 5L7 1" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" />
+            <path
+              d="M1 3L3 5L7 1"
+              stroke="var(--bg-primary)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
           </svg>
         )}
       </div>
-      <span style={{ fontSize: 12, color: checked ? '#FFFFFF' : '#666666' }}>{label}</span>
+      <span
+        style={{
+          fontSize: 12,
+          color: checked ? 'var(--text-primary)' : 'var(--text-muted)',
+        }}
+      >
+        {label}
+      </span>
     </label>
   );
 }
@@ -93,10 +105,9 @@ export function OpenFoldersModal({ config, onClose }: Props) {
       exit={MODAL_VARIANTS.exit}
       transition={MODAL_TRANSITION}
       style={{
-        // position: absolute — clipped by parent overlay container. ADR-028.
         position: 'absolute',
         inset: 0,
-        background: 'rgba(10,10,10,0.95)',
+        background: 'var(--bg-modal)',
         backdropFilter: 'blur(2px)',
         WebkitBackdropFilter: 'blur(2px)',
         borderRadius: 14,
@@ -116,7 +127,12 @@ export function OpenFoldersModal({ config, onClose }: Props) {
         }}
       >
         <span
-          style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: '#FFFFFF' }}
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            color: 'var(--text-primary)',
+          }}
         >
           OUVRIR DOSSIERS
         </span>
@@ -125,7 +141,7 @@ export function OpenFoldersModal({ config, onClose }: Props) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#666666',
+            color: 'var(--text-muted)',
             fontSize: 14,
             cursor: 'pointer',
             padding: 4,
@@ -141,7 +157,7 @@ export function OpenFoldersModal({ config, onClose }: Props) {
         <div
           style={{
             fontSize: 10,
-            color: '#555555',
+            color: 'var(--text-muted)',
             marginBottom: 16,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -165,7 +181,7 @@ export function OpenFoldersModal({ config, onClose }: Props) {
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: '#191919', margin: '16px 0' }} />
+      <div style={{ height: 1, background: 'var(--border-divider)', margin: '16px 0' }} />
 
       {/* Today toggle */}
       <Checkbox
@@ -184,7 +200,7 @@ export function OpenFoldersModal({ config, onClose }: Props) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#666666',
+            color: 'var(--text-muted)',
             fontSize: 11,
             cursor: 'pointer',
             padding: '8px 12px',
@@ -196,10 +212,10 @@ export function OpenFoldersModal({ config, onClose }: Props) {
           onClick={() => void handleOpen()}
           disabled={!canOpen || opening}
           style={{
-            background: canOpen && !opening ? '#FFFFFF' : '#2A2A2A',
+            background: canOpen && !opening ? 'var(--accent)' : 'var(--bg-elevated)',
             border: 'none',
             borderRadius: 6,
-            color: canOpen && !opening ? '#000000' : '#555555',
+            color: canOpen && !opening ? 'var(--bg-primary)' : 'var(--text-disabled)',
             fontSize: 11,
             fontWeight: 600,
             cursor: canOpen && !opening ? 'pointer' : 'default',

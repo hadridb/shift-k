@@ -26,8 +26,8 @@ function ParticleDemo() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#0A0A0A',
-        color: '#F5F5F5',
+        background: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         display: 'flex',
         flexDirection: 'column',
@@ -41,7 +41,7 @@ function ParticleDemo() {
         style={{
           fontSize: 11,
           letterSpacing: '0.18em',
-          color: '#666',
+          color: 'var(--text-muted)',
         }}
       >
         PARTICLE BURST — DEV PLAYGROUND
@@ -52,7 +52,7 @@ function ParticleDemo() {
         style={{
           width: 160,
           height: 160,
-          border: '1px dashed #222',
+          border: '1px dashed var(--border-subtle)',
           borderRadius: 12,
           display: 'flex',
           alignItems: 'center',
@@ -67,8 +67,8 @@ function ParticleDemo() {
         <button
           onClick={() => setTrigger((n) => n + 1)}
           style={{
-            background: '#FFFFFF',
-            color: '#000',
+            background: 'var(--accent)',
+            color: 'var(--bg-primary)',
             border: 'none',
             borderRadius: 6,
             padding: '10px 18px',
@@ -82,9 +82,9 @@ function ParticleDemo() {
         <button
           onClick={() => setAuto((a) => !a)}
           style={{
-            background: auto ? '#2A2A2A' : 'transparent',
-            color: auto ? '#FFFFFF' : '#888',
-            border: '1px solid #2A2A2A',
+            background: auto ? 'var(--bg-elevated)' : 'transparent',
+            color: auto ? 'var(--text-primary)' : 'var(--text-secondary)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: 6,
             padding: '10px 18px',
             fontSize: 12,
@@ -95,7 +95,7 @@ function ParticleDemo() {
         </button>
       </div>
 
-      <div style={{ fontSize: 10, color: '#444', marginTop: 8 }}>
+      <div style={{ fontSize: 10, color: 'var(--text-disabled)', marginTop: 8 }}>
         trigger sequence: {trigger}
       </div>
     </div>

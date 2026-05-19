@@ -19,10 +19,10 @@ interface Props {
 
 const selectStyle: React.CSSProperties = {
   flex: 1,
-  background: '#1A1A1A',
-  border: '1px solid #2A2A2A',
+  background: 'var(--bg-elevated)',
+  border: '1px solid var(--border-subtle)',
   borderRadius: 5,
-  color: '#CCCCCC',
+  color: 'var(--text-primary)',
   fontSize: 11,
   padding: '5px 8px',
   outline: 'none',
@@ -62,7 +62,7 @@ export function EditSlotsModal({ config, onClose }: Props) {
         // position: absolute — clipped by parent overlay container. ADR-028.
         position: 'absolute',
         inset: 0,
-        background: 'rgba(10,10,10,0.95)',
+        background: 'var(--bg-modal)',
         backdropFilter: 'blur(2px)',
         WebkitBackdropFilter: 'blur(2px)',
         borderRadius: 14,
@@ -82,7 +82,12 @@ export function EditSlotsModal({ config, onClose }: Props) {
         }}
       >
         <span
-          style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: '#FFFFFF' }}
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            color: 'var(--text-primary)',
+          }}
         >
           SLOTS
         </span>
@@ -91,7 +96,7 @@ export function EditSlotsModal({ config, onClose }: Props) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#666666',
+            color: 'var(--text-muted)',
             fontSize: 14,
             cursor: 'pointer',
             padding: 4,
@@ -109,13 +114,13 @@ export function EditSlotsModal({ config, onClose }: Props) {
             <span
               style={{
                 fontSize: 10,
-                color: '#555555',
+                color: 'var(--text-muted)',
                 fontVariantNumeric: 'tabular-nums',
-                minWidth: 10,
+                minWidth: 14,
                 textAlign: 'right',
               }}
             >
-              {key}
+              {key === '0' ? '10' : key}
             </span>
             <select
               style={selectStyle}
@@ -123,9 +128,7 @@ export function EditSlotsModal({ config, onClose }: Props) {
               onChange={(e) => handleChange(key, e.target.value)}
               disabled={saving}
             >
-              <option value={EMPTY_SENTINEL} style={{ color: '#444' }}>
-                (vide)
-              </option>
+              <option value={EMPTY_SENTINEL}>(vide)</option>
               {projects.map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -144,7 +147,7 @@ export function EditSlotsModal({ config, onClose }: Props) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#666666',
+            color: 'var(--text-muted)',
             fontSize: 11,
             cursor: 'pointer',
             padding: '8px 12px',
@@ -156,10 +159,10 @@ export function EditSlotsModal({ config, onClose }: Props) {
           onClick={() => void handleSave()}
           disabled={saving}
           style={{
-            background: saving ? '#2A2A2A' : '#FFFFFF',
+            background: saving ? 'var(--bg-elevated)' : 'var(--accent)',
             border: 'none',
             borderRadius: 6,
-            color: saving ? '#555555' : '#000000',
+            color: saving ? 'var(--text-disabled)' : 'var(--bg-primary)',
             fontSize: 11,
             fontWeight: 600,
             cursor: saving ? 'default' : 'pointer',

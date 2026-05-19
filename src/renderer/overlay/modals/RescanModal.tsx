@@ -44,8 +44,8 @@ function CheckSquare({ checked, onToggle }: { checked: boolean; onToggle: () => 
         height: 14,
         marginTop: 2,
         borderRadius: 3,
-        border: `1px solid ${checked ? '#ffffff' : '#3a3a3a'}`,
-        background: checked ? '#ffffff' : 'transparent',
+        border: `1px solid ${checked ? 'var(--accent)' : 'var(--border-subtle)'}`,
+        background: checked ? 'var(--accent)' : 'transparent',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -55,7 +55,7 @@ function CheckSquare({ checked, onToggle }: { checked: boolean; onToggle: () => 
     >
       {checked && (
         <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-          <path d="M1 3L3 5L7 1" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M1 3L3 5L7 1" stroke="var(--bg-primary)" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       )}
     </div>
@@ -111,7 +111,7 @@ export function RescanModal({ preview, onClose }: Props) {
         // position: absolute — clipped by parent overlay container. ADR-028.
         position: 'absolute',
         inset: 0,
-        background: 'rgba(10,10,10,0.97)',
+        background: 'var(--bg-modal)',
         backdropFilter: 'blur(2px)',
         WebkitBackdropFilter: 'blur(2px)',
         borderRadius: 14,
@@ -131,7 +131,7 @@ export function RescanModal({ preview, onClose }: Props) {
         }}
       >
         <span
-          style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: '#FFFFFF' }}
+          style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: 'var(--text-primary)' }}
         >
           RESCAN · {items.length}
         </span>
@@ -140,7 +140,7 @@ export function RescanModal({ preview, onClose }: Props) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#666666',
+            color: 'var(--text-muted)',
             fontSize: 14,
             cursor: 'pointer',
             padding: 4,
@@ -162,9 +162,9 @@ export function RescanModal({ preview, onClose }: Props) {
             gap: 6,
           }}
         >
-          <div style={{ fontSize: 13, color: '#888' }}>Rien à router.</div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Rien à router.</div>
           {preview.skipped > 0 && (
-            <div style={{ fontSize: 10, color: '#555' }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
               {preview.skipped} fichier{preview.skipped > 1 ? 's' : ''} ignoré
               {preview.skipped > 1 ? 's' : ''}
             </div>
@@ -181,16 +181,16 @@ export function RescanModal({ preview, onClose }: Props) {
               gap: 8,
               padding: '6px 0 10px',
               cursor: 'pointer',
-              borderBottom: '1px solid #1a1a1a',
+              borderBottom: '1px solid var(--border-subtle)',
               userSelect: 'none',
             }}
           >
             <CheckSquare checked={allChecked} onToggle={toggleAll} />
-            <span style={{ fontSize: 10, color: '#888', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: 10, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
               {allChecked ? 'TOUT DÉCOCHER' : 'TOUT COCHER'}
             </span>
             {preview.skipped > 0 && (
-              <span style={{ marginLeft: 'auto', fontSize: 10, color: '#444' }}>
+              <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-disabled)' }}>
                 {preview.skipped} ignoré{preview.skipped > 1 ? 's' : ''}
               </span>
             )}
@@ -209,7 +209,7 @@ export function RescanModal({ preview, onClose }: Props) {
                     alignItems: 'flex-start',
                     gap: 8,
                     padding: '10px 0',
-                    borderBottom: '1px solid #141414',
+                    borderBottom: '1px solid var(--bg-elevated)',
                     cursor: 'pointer',
                     opacity: isChecked ? 1 : 0.4,
                   }}
@@ -222,7 +222,7 @@ export function RescanModal({ preview, onClose }: Props) {
                     <div
                       style={{
                         fontSize: 12,
-                        color: '#ffffff',
+                        color: 'var(--text-primary)',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -234,21 +234,21 @@ export function RescanModal({ preview, onClose }: Props) {
                     <div
                       style={{
                         fontSize: 10,
-                        color: '#888',
+                        color: 'var(--text-secondary)',
                         marginTop: 2,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <span style={{ color: '#aaa' }}>{item.platform}</span>
-                      <span style={{ margin: '0 6px', color: '#333' }}>→</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{item.platform}</span>
+                      <span style={{ margin: '0 6px', color: 'var(--text-disabled)' }}>→</span>
                       <span>{item.stageFolderName}</span>
                     </div>
                     <div
                       style={{
                         fontSize: 9,
-                        color: '#555',
+                        color: 'var(--text-muted)',
                         marginTop: 2,
                         fontVariantNumeric: 'tabular-nums',
                       }}
@@ -271,7 +271,7 @@ export function RescanModal({ preview, onClose }: Props) {
           gap: 8,
           marginTop: 12,
           paddingTop: 10,
-          borderTop: '1px solid #1a1a1a',
+          borderTop: '1px solid var(--border-subtle)',
         }}
       >
         <button
@@ -280,7 +280,7 @@ export function RescanModal({ preview, onClose }: Props) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#888',
+            color: 'var(--text-secondary)',
             fontSize: 11,
             cursor: 'pointer',
             padding: '8px 12px',
@@ -293,10 +293,10 @@ export function RescanModal({ preview, onClose }: Props) {
             onClick={() => void handleExecute()}
             disabled={selectedCount === 0 || busy}
             style={{
-              background: selectedCount > 0 && !busy ? '#FFFFFF' : '#2a2a2a',
+              background: selectedCount > 0 && !busy ? 'var(--accent)' : 'var(--bg-elevated)',
               border: 'none',
               borderRadius: 6,
-              color: selectedCount > 0 && !busy ? '#000000' : '#555555',
+              color: selectedCount > 0 && !busy ? 'var(--bg-primary)' : 'var(--text-disabled)',
               fontSize: 11,
               fontWeight: 600,
               cursor: selectedCount > 0 && !busy ? 'pointer' : 'default',

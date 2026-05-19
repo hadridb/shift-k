@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
+import { useApplyTheme } from '@renderer/hooks/useApplyTheme';
 
 type Step = 1 | 2 | 3;
 
 const inputStyle: React.CSSProperties = {
-  background: '#141414',
-  border: '1px solid #232323',
+  background: 'var(--bg-elevated)',
+  border: '1px solid var(--border-subtle)',
   borderRadius: 6,
-  color: '#ffffff',
+  color: 'var(--text-primary)',
   fontSize: 13,
   padding: '8px 10px',
   outline: 'none',
@@ -15,7 +16,7 @@ const inputStyle: React.CSSProperties = {
 
 const hintStyle: React.CSSProperties = {
   fontSize: 10,
-  color: '#555555',
+  color: 'var(--text-muted)',
   marginTop: 5,
   lineHeight: 1.5,
 };
@@ -23,7 +24,7 @@ const hintStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 11,
-  color: '#9a9a9a',
+  color: 'var(--text-secondary)',
   marginBottom: 6,
 };
 
@@ -40,7 +41,11 @@ function Stepper({ step }: { step: Step }) {
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: isActive ? '#FFFFFF' : isDone ? '#666666' : '#252525',
+              background: isActive
+                ? 'var(--accent)'
+                : isDone
+                  ? 'var(--text-muted)'
+                  : 'var(--border-subtle)',
             }}
           />
         );
@@ -63,10 +68,10 @@ function PrimaryButton({
       onClick={onClick}
       disabled={disabled}
       style={{
-        background: disabled ? '#2a2a2a' : '#FFFFFF',
+        background: disabled ? 'var(--bg-elevated)' : 'var(--accent)',
         border: 'none',
         borderRadius: 6,
-        color: disabled ? '#555555' : '#000000',
+        color: disabled ? 'var(--text-disabled)' : 'var(--bg-primary)',
         fontSize: 12,
         fontWeight: 600,
         cursor: disabled ? 'default' : 'pointer',
@@ -85,7 +90,7 @@ function SecondaryButton({ onClick, children }: { onClick: () => void; children:
       style={{
         background: 'transparent',
         border: 'none',
-        color: '#888888',
+        color: 'var(--text-secondary)',
         fontSize: 12,
         cursor: 'pointer',
         padding: '10px 14px',
@@ -128,10 +133,10 @@ function PathPicker({
         <button
           onClick={() => void pick()}
           style={{
-            background: '#1a1a1a',
-            border: '1px solid #2a2a2a',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: 6,
-            color: '#cccccc',
+            color: 'var(--text-secondary)',
             fontSize: 11,
             cursor: 'pointer',
             padding: '0 14px',
@@ -147,6 +152,9 @@ function PathPicker({
 }
 
 export function OnboardingApp() {
+  // Onboarding always uses the default theme — config isn't reachable yet.
+  useApplyTheme('obsidian');
+
   const [step, setStep] = useState<Step>(1);
   const [root, setRoot] = useState('');
   const [downloadsPath, setDownloadsPath] = useState('');
@@ -176,12 +184,20 @@ export function OnboardingApp() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        background: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+      }}
+    >
       {/* Header */}
       <div
         style={{
           padding: '20px 32px 14px',
-          borderBottom: '1px solid #161616',
+          borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -192,7 +208,7 @@ export function OnboardingApp() {
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: '0.22em',
-            color: '#FFFFFF',
+            color: 'var(--text-primary)',
           }}
         >
           SHIFT-K
@@ -209,7 +225,7 @@ export function OnboardingApp() {
                 fontSize: 22,
                 fontWeight: 500,
                 margin: '0 0 14px',
-                color: '#FFFFFF',
+                color: 'var(--text-primary)',
                 letterSpacing: '-0.01em',
               }}
             >
@@ -219,7 +235,7 @@ export function OnboardingApp() {
               style={{
                 fontSize: 13,
                 lineHeight: 1.6,
-                color: '#aaaaaa',
+                color: 'var(--text-secondary)',
                 margin: '0 0 14px',
                 maxWidth: 420,
               }}
@@ -232,7 +248,7 @@ export function OnboardingApp() {
               style={{
                 fontSize: 13,
                 lineHeight: 1.6,
-                color: '#aaaaaa',
+                color: 'var(--text-secondary)',
                 margin: 0,
                 maxWidth: 420,
               }}
@@ -249,7 +265,7 @@ export function OnboardingApp() {
                 fontSize: 14,
                 fontWeight: 600,
                 margin: '0 0 22px',
-                color: '#FFFFFF',
+                color: 'var(--text-primary)',
                 letterSpacing: '0.02em',
               }}
             >
@@ -280,15 +296,15 @@ export function OnboardingApp() {
                 fontSize: 18,
                 fontWeight: 500,
                 margin: '0 0 8px',
-                color: '#FFFFFF',
+                color: 'var(--text-primary)',
               }}
             >
               Tout est prêt.
             </h2>
-            <p style={{ fontSize: 13, color: '#888888', margin: '0 0 22px' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 22px' }}>
               L'overlay s'ouvrira juste après. Créez un projet via le bouton{' '}
-              <code style={{ color: '#cccccc' }}>+</code>, assignez-le à un slot, puis
-              utilisez les raccourcis :
+              <code style={{ color: 'var(--text-primary)' }}>+</code>, assignez-le à un
+              slot, puis utilisez les raccourcis :
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -308,11 +324,11 @@ export function OnboardingApp() {
                 >
                   <code
                     style={{
-                      background: '#1a1a1a',
-                      border: '1px solid #2a2a2a',
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: 4,
                       padding: '3px 8px',
-                      color: '#ffffff',
+                      color: 'var(--text-primary)',
                       fontSize: 11,
                       fontFamily:
                         'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
@@ -322,7 +338,7 @@ export function OnboardingApp() {
                   >
                     {keys}
                   </code>
-                  <span style={{ color: '#aaaaaa' }}>{desc}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{desc}</span>
                 </div>
               ))}
             </div>
@@ -334,7 +350,7 @@ export function OnboardingApp() {
       <div
         style={{
           padding: '14px 32px',
-          borderTop: '1px solid #161616',
+          borderTop: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',

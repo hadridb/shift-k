@@ -46,22 +46,23 @@ export function StagePopover({ open, stages, activeStage, onSelect, onClose }: P
           exit={{ opacity: 0, scale: 0.96, y: 4 }}
           transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
           style={{
-            // Opens UPWARD from the chevron, with scale-origin at the bottom
-            // so the popover blooms out of the button rather than into it.
-            // 44 px = StageBar height (40) + 4 px gap.
+            // Opens UPWARD from the chevron (see ADR-028 for context on the
+            // anchor flip). 44 px = StageBar height (40) + 4 px gap.
             position: 'absolute',
             bottom: 44,
             left: 8,
             zIndex: 50,
             transformOrigin: 'bottom left',
-            background: '#0F0F0F',
-            border: '1px solid #1F1F1F',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: 8,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
             padding: '4px 0',
             minWidth: 160,
             maxHeight: 200,
             overflowY: 'auto',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
           }}
           role="menu"
         >
@@ -75,6 +76,12 @@ export function StagePopover({ open, stages, activeStage, onSelect, onClose }: P
                   onSelect(stage);
                   onClose();
                 }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -84,7 +91,7 @@ export function StagePopover({ open, stages, activeStage, onSelect, onClose }: P
                   padding: '8px 12px 8px 0',
                   cursor: 'pointer',
                   textAlign: 'left',
-                  color: isActive ? '#FFFFFF' : '#9A9A9A',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                   fontSize: 12,
                   fontWeight: isActive ? 500 : 400,
                 }}
@@ -96,7 +103,7 @@ export function StagePopover({ open, stages, activeStage, onSelect, onClose }: P
                     marginLeft: 8,
                     marginRight: 10,
                     borderRadius: 1,
-                    background: isActive ? '#FFFFFF' : 'transparent',
+                    background: isActive ? 'var(--accent)' : 'transparent',
                   }}
                 />
                 {stages[stage]}

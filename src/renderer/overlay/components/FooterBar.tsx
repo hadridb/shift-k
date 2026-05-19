@@ -38,20 +38,20 @@ function IconButton({
       className="no-drag flex items-center justify-center rounded transition-colors duration-150 ease-out focus:outline-none"
       style={{
         background: 'transparent',
-        color: '#666666',
+        color: 'var(--text-muted)',
         cursor: disabled ? 'default' : 'pointer',
         width: 32,
         height: 32,
       }}
       onMouseEnter={(e) => {
         if (!disabled) {
-          (e.currentTarget as HTMLButtonElement).style.background = '#161616';
-          (e.currentTarget as HTMLButtonElement).style.color = '#FFFFFF';
+          (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+          (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
         }
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-        (e.currentTarget as HTMLButtonElement).style.color = '#666666';
+        (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
       }}
     >
       {children}

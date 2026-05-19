@@ -166,10 +166,10 @@ export function ActivityToast() {
             right: 12,
             bottom: 52,
             maxHeight: 64,
-            background: 'rgba(20, 20, 20, 0.96)',
+            background: 'var(--bg-modal)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid #1F1F1F',
+            border: '1px solid var(--border-subtle)',
             borderRadius: 8,
             padding: '12px 14px',
             display: 'flex',
@@ -187,7 +187,7 @@ export function ActivityToast() {
                 key={b.key}
                 style={{
                   fontSize: 11,
-                  color: '#F5F5F5',
+                  color: 'var(--text-primary)',
                   lineHeight: '16px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
