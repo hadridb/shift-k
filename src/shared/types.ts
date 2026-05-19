@@ -19,6 +19,7 @@ export interface Preferences {
   overlay: { x: number; y: number };
   openFoldersLast: Record<Stage, boolean>;
   openFoldersToday: boolean;
+  settingsAccordionState: Record<string, boolean>;
 }
 
 export interface AppConfig {

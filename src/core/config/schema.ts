@@ -111,6 +111,9 @@ export const AppConfigSchema = z.object({
         })
         .default({ src: true, img: false, out: false, ost: false, liv: false }),
       openFoldersToday: z.boolean().default(true),
+      settingsAccordionState: z
+        .record(z.string(), z.boolean())
+        .default({ audio: true, image: false, video: false, project: false }),
     })
     .default({
       dailyFolderFormat: 'J{yyyy-MM-dd}',
@@ -125,6 +128,7 @@ export const AppConfigSchema = z.object({
       overlay: { x: 100, y: 100 },
       openFoldersLast: { src: true, img: false, out: false, ost: false, liv: false },
       openFoldersToday: true,
+      settingsAccordionState: { audio: true, image: false, video: false, project: false },
     }),
 });
 

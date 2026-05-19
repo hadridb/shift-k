@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { AppConfig, StageLabels, Stage } from '@shared/types';
 
 const AUDIO_PLATFORM_KEYS = [
@@ -29,11 +30,15 @@ interface Form {
   groupByPlatform: boolean;
   routeAllAudio: boolean;
   audioExtensions: string[];
+  imageExtensions: string[];
+  videoExtensions: string[];
+  projectExtensions: string[];
   audioPlatforms: Record<string, string[]>;
   notifyOnRoute: boolean;
   confirmBeforeRescan: boolean;
   startOnLogin: boolean;
   logRetentionDays: number;
+  accordion: Record<string, boolean>;
 }
 
 function formFromConfig(config: AppConfig): Form {
@@ -51,11 +56,15 @@ function formFromConfig(config: AppConfig): Form {
     groupByPlatform: config.preferences.groupByPlatform,
     routeAllAudio: config.preferences.routeAllAudio,
     audioExtensions: [...config.audioExtensions],
+    imageExtensions: [...config.imageExtensions],
+    videoExtensions: [...config.videoExtensions],
+    projectExtensions: [...config.projectExtensions],
     audioPlatforms,
     notifyOnRoute: config.preferences.notifyOnRoute,
     confirmBeforeRescan: config.preferences.confirmBeforeRescan,
     startOnLogin: config.preferences.startOnLogin,
     logRetentionDays: config.preferences.logRetentionDays,
+    accordion: { ...config.preferences.settingsAccordionState },
   };
 }
 
@@ -182,6 +191,64 @@ function PathInput({
       >
         Choisir…
       </button>
+    </div>
+  );
+}
+
+function AccordionSection({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <button
+        onClick={onToggle}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          background: 'transparent',
+          border: 'none',
+          padding: '6px 0 6px 0',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <motion.svg
+          width={10}
+          height={10}
+          viewBox="0 0 10 10"
+          fill="none"
+          animate={{ rotate: open ? 90 : 0 }}
+          transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+          style={{ flexShrink: 0 }}
+        >
+          <path d="M3 2L7 5L3 8" stroke="#666666" strokeWidth="1.2" strokeLinecap="round" />
+        </motion.svg>
+        <span style={{ ...sectionTitleStyle, marginBottom: 0 }}>{title}</span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ paddingTop: 8, paddingLeft: 18 }}>{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -401,6 +468,9 @@ export function SettingsApp() {
         downloadsPath: form.downloadsPath,
         stages: form.stages,
         audioExtensions: form.audioExtensions,
+        imageExtensions: form.imageExtensions,
+        videoExtensions: form.videoExtensions,
+        projectExtensions: form.projectExtensions,
         platforms: mergedPlatforms,
         preferences: {
           ...original.preferences,
@@ -413,6 +483,7 @@ export function SettingsApp() {
           confirmBeforeRescan: form.confirmBeforeRescan,
           startOnLogin: form.startOnLogin,
           logRetentionDays: form.logRetentionDays,
+          settingsAccordionState: form.accordion,
         },
       });
       window.close();
@@ -588,7 +659,16 @@ export function SettingsApp() {
           })()}
         </Section>
 
-        <Section title="AUDIO">
+        <AccordionSection
+          title="AUDIO"
+          open={form.accordion.audio ?? true}
+          onToggle={() =>
+            mutate((f) => ({
+              ...f,
+              accordion: { ...f.accordion, audio: !(f.accordion.audio ?? true) },
+            }))
+          }
+        >
           <Field
             label="Extensions reconnues comme audio"
             hint="Les fichiers avec ces extensions sont routés vers le stage OST si la plateforme matche (Suno, ElevenLabs, etc.)."
@@ -691,7 +771,100 @@ export function SettingsApp() {
               </div>
             );
           })()}
-        </Section>
+        </AccordionSection>
+
+        <AccordionSection
+          title="IMAGES"
+          open={form.accordion.image ?? false}
+          onToggle={() =>
+            mutate((f) => ({
+              ...f,
+              accordion: { ...f.accordion, image: !(f.accordion.image ?? false) },
+            }))
+          }
+        >
+          <Field
+            label="Extensions reconnues comme image"
+            hint="Les images matchant une plateforme visuelle (Runway, Kling, Midjourney, etc.) sont routées vers le stage actif."
+          >
+            <ChipList
+              values={form.imageExtensions}
+              onAdd={(v) =>
+                mutate((f) => ({ ...f, imageExtensions: [...f.imageExtensions, v] }))
+              }
+              onRemove={(idx) =>
+                mutate((f) => ({
+                  ...f,
+                  imageExtensions: f.imageExtensions.filter((_, i) => i !== idx),
+                }))
+              }
+              placeholder="ex : .png, png ou .webp"
+              normalize={normalizeExtension}
+            />
+          </Field>
+        </AccordionSection>
+
+        <AccordionSection
+          title="VIDÉO"
+          open={form.accordion.video ?? false}
+          onToggle={() =>
+            mutate((f) => ({
+              ...f,
+              accordion: { ...f.accordion, video: !(f.accordion.video ?? false) },
+            }))
+          }
+        >
+          <Field
+            label="Extensions reconnues comme vidéo"
+            hint="Les vidéos matchant une plateforme (Runway, Kling, Luma, Veo, etc.) sont routées vers le stage actif."
+          >
+            <ChipList
+              values={form.videoExtensions}
+              onAdd={(v) =>
+                mutate((f) => ({ ...f, videoExtensions: [...f.videoExtensions, v] }))
+              }
+              onRemove={(idx) =>
+                mutate((f) => ({
+                  ...f,
+                  videoExtensions: f.videoExtensions.filter((_, i) => i !== idx),
+                }))
+              }
+              placeholder="ex : .mp4, mp4 ou .mov"
+              normalize={normalizeExtension}
+            />
+          </Field>
+        </AccordionSection>
+
+        <AccordionSection
+          title="FICHIERS PROJET"
+          open={form.accordion.project ?? false}
+          onToggle={() =>
+            mutate((f) => ({
+              ...f,
+              accordion: { ...f.accordion, project: !(f.accordion.project ?? false) },
+            }))
+          }
+        >
+          <Field
+            label="Extensions de fichiers projet"
+            hint="Ces fichiers (PSD, AI, PRPROJ, AEP…) sont toujours routés vers le stage Sources (01_SRC Inits), quel que soit le stage actif."
+          >
+            <ChipList
+              values={form.projectExtensions}
+              onAdd={(v) =>
+                mutate((f) => ({ ...f, projectExtensions: [...f.projectExtensions, v] }))
+              }
+              onRemove={(idx) =>
+                mutate((f) => ({
+                  ...f,
+                  projectExtensions: f.projectExtensions.filter((_, i) => i !== idx),
+                }))
+              }
+              placeholder="ex : .psd, psd ou .aep"
+              normalize={normalizeExtension}
+            />
+          </Field>
+        </AccordionSection>
 
         <Section title="PRÉFÉRENCES">
           <ToggleRow

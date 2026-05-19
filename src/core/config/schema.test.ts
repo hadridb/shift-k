@@ -100,4 +100,35 @@ describe('AppConfigSchema', () => {
     expect(defaultConfig.projectExtensions).toContain('.prproj');
     expect(defaultConfig.projectExtensions).toContain('.aep');
   });
+
+  it('settingsAccordionState defaults: audio open, others closed', () => {
+    expect(defaultConfig.preferences.settingsAccordionState).toEqual({
+      audio: true,
+      image: false,
+      video: false,
+      project: false,
+    });
+  });
+
+  it('settingsAccordionState round-trips arbitrary keys (forward-compat)', () => {
+    const parsed = AppConfigSchema.parse({
+      preferences: {
+        settingsAccordionState: {
+          audio: false,
+          image: true,
+          video: true,
+          project: false,
+          // unknown future section — should be preserved as-is
+          customSection: true,
+        },
+      },
+    });
+    expect(parsed.preferences.settingsAccordionState).toEqual({
+      audio: false,
+      image: true,
+      video: true,
+      project: false,
+      customSection: true,
+    });
+  });
 });
