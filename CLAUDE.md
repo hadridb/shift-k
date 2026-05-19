@@ -174,6 +174,15 @@ shift-k/
 - [x] Animations : `framer-motion@^12` installe. Slot indicator slide via `layoutId`, modales fade+scale 180ms, stage badge flip rotateX 180ms, pause badge scale+fade. ADR-025 fixe les durations/easings canoniques (Material standard `[0.4, 0, 0.2, 1]`).
 - [x] Tests : 66 verts (54 → 66). +4 activity-log (FIFO, max, copy, empty), +2 accordion state (defaults, round-trip), +6 useEscapeClose (Escape vs autres touches × INPUT/TEXTAREA/SELECT/DIV).
 
+**Sprint 8 (termine)** : Splash screen + cinematic onboarding 7 ecrans.
+- [x] Splash 400x300 frameless transparent, 1.2 s, wordmark + trait sous "shift" anime + tagline. Skip sur autostart / `--hidden`.
+- [x] Onboarding fullscreen 980x680 plein noir avec 7 ecrans : Welcome (hero wordmark 96 px) → Downloads (folder SVG + particules) → Projects (tree anime) → FirstProject (slot mock pulsant, optionnel via Skip) → Shortcuts (3 chords clavier qui s'illuminent en cascade) → Extension (3 plateformes converging, "Bientot disponible" en attendant la Phase Gamma) → Ready (particle burst final).
+- [x] State machine 1-7 dans `OnboardingApp.tsx`, transitions slide-up + fade 350 ms, contenu cascade fade-in 100 ms stagger. `ScreenLayout` partage (dots de progression, footer Retour/Continuer).
+- [x] Persistance per-screen : chaque "Confirmer" ecrit la config. Flag `preferences.firstLaunchCompleted` flippe a la fin sur "Lancer Shift-K".
+- [x] Migration auto : configs existantes avec root + downloadsPath → `firstLaunchCompleted: true` silencieusement au load (les users actuels ne se prennent pas le nouvel onboarding involontairement).
+- [x] Replay : bouton dans Settings → À PROPOS + script `npm run dev:onboarding` (cross-env `SHIFTK_FORCE_ONBOARDING=1`).
+- [x] Voir ADR-031 + docs/MARKETING_ASSETS.md. 118 tests verts.
+
 **Sprint 7.6 (termine — Sprint 7 ferme)** : Cleanup final themes.
 - [x] Mica retire (rendu Electron/Chromium insuffisant vs WinUI 3 natif). Aurora retire (animation CSS instable, ROI faible).
 - [x] 4 themes finaux : Obsidian, Carbon, Ivory, Liquid Glass.
@@ -226,4 +235,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 20 mai 2026 (Sprint 7.6 — 4 themes finaux apres retrait Mica/Aurora ; ADR-022 a ADR-030). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 20 mai 2026 (Sprint 8 — splash + onboarding cinematique 7 ecrans ; ADR-022 a ADR-031). A maintenir a jour a chaque decision structurante.*

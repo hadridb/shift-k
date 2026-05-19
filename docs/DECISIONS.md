@@ -840,3 +840,57 @@ L'`id` interne reste `'liquid-glass'` — la migration de config ne change rien,
 - 2 fonctions pures testables (`getThemeLabel` / `getThemeDescription`) dans `themes.ts`, 2 tests dedies dans `themes.test.ts`.
 - Le picker SettingsApp consomme ces helpers via `platformInfo` (deja recupere par IPC `system:platform-info` au mount).
 - Les futurs themes pourront suivre le meme pattern s'ils ont besoin de noms differents par plateforme — l'opt-in vit dans le helper, pas dans le type `Theme`.
+
+---
+
+## ADR-031 : Splash + onboarding cinematique — fenetre 980x680 plein ecran noir
+
+**Date :** 2026-05-20
+**Statut :** Acceptee
+
+**Contexte :** Sprint 8 livre le premier "moment marketing" du produit — la sequence visuelle qu'un nouveau user voit en premier (et qu'on screen-record pour landing page / ProductHunt). Deux decisions structurantes : le format de l'onboarding window et la presence d'un splash a chaque lancement.
+
+### Splash a chaque lancement
+
+400x300 px frameless transparent au centre, contenu noir arrondi 360x240. Wordmark `shift-k` + trait blanc sous "shift" qui se draw en 400 ms + tagline. Total 1.2 s : fade-in 200 ms, hold 800 ms, fade-out 200 ms. Skippe quand `wasOpenedAtLogin()` ou `--hidden` (autostart silencieux).
+
+**Pourquoi pas seulement au premier lancement ?** L'effet de signature visuel doit etre la marque mentale. Apple, Linear, Notion ouvrent toujours sur leur identite — 1.2 s n'est pas un cout, c'est une promesse de qualite. Pour les users power, le `--hidden` autostart skip naturellement le splash (pas de friction).
+
+### Onboarding 980x680 fullscreen noir (vs wizard plus petit)
+
+Pourquoi pas un format compact 540x500 (notre ex-onboarding 3-steps) ? Deux raisons.
+
+1. **Cinematic = espace.** Le wordmark hero 96 px sur l'ecran 1 demande au moins 720 px de largeur pour respirer. Une SVG line-art folder + 3 particles + caption + form + 2 boutons en colonne demande ~600 px de hauteur. Tout en dessous de 900 px se sent etrique.
+2. **Marketing screen-record.** L'asset doit pouvoir etre capture en 4K 60fps sans crop ni paddings affreux. 980x680 garde un ratio proche du 16:9 sans toucher au plein-ecran (lequel demande de gerer le fullscreen API + cas multi-ecran). Le fond noir uni sert d'ancre visuelle parfaite pour un loop video qui s'integre dans n'importe quelle page.
+
+### 7 ecrans : Welcome, Downloads, Projects, FirstProject (opt), Shortcuts, Extension (opt), Ready
+
+Sequencage choisi pour respecter le **principe d'engagement progressif** :
+1. Welcome — establishment shot, pure identite, zero action
+2. Downloads — premiere action concrete (un chemin)
+3. Projects — seconde action concrete (un chemin)
+4. FirstProject — *optionnel*, pour donner un sentiment de progres immediat
+5. Shortcuts — formation, pas d'action
+6. Extension — *optionnel*, teaser pour Phase Gamma
+7. Ready — payoff visuel (particle burst) + transition vers l'overlay
+
+Les ecrans optionnels (4 et 6) ont un bouton "Skip" ou "Plus tard" — pas obligatoire d'agir, mais l'effet d'avoir vu l'ecran reste.
+
+### Persistance per-screen
+
+Chaque "Confirmer" (ecrans 2-3) ecrit dans la config immediatement via `window.shiftK.updateConfig({ ... })`. Le flag `firstLaunchCompleted: true` ne flippe qu'a la fin (ecran 7, clic "Lancer Shift-K"). Si l'utilisateur quitte au milieu, ses chemins sont sauves mais la prochaine session relance l'onboarding au debut — choix volontaire, on prefere reaffirmer la sequence complete plutot que des etats partiels obscurs.
+
+### Migration des configs existantes
+
+Un user qui avait config root + downloadsPath set avant ce sprint (l'ancien 3-step) ne doit pas se prendre la nouvelle onboarding apres update. Migration silencieuse dans `store.ts` : si `root && downloadsPath && !firstLaunchCompleted`, on flippe `firstLaunchCompleted: true` au premier load. Le user existant ne voit jamais le nouvel onboarding involontairement.
+
+### Replay onboarding
+
+Bouton dans Settings → APPARENCE → À PROPOS qui invoque `onboarding:replay` IPC → recreer la fenetre onboarding (sans toucher au flag). Utile pour demo / screen recording / debug. Egalement accessible via `npm run dev:onboarding` qui set `SHIFTK_FORCE_ONBOARDING=1` (lu dans main/index.ts au boot).
+
+### Consequences
+
+- Le composant `OnboardingApp.tsx` original (3-step path picker) est entierement remplace. Sa logique est generalisee dans 7 composants `screens/*.tsx` plus un `ScreenLayout` partage.
+- Nouveau renderer entry `splash.html` + `src/renderer/splash/`. Total 4 entries dans `vite.config.ts > rollupOptions.input` (overlay, settings, onboarding, splash) + 2 dev-only (index, particle-demo).
+- ParticleBurst (composant Sprint 6) reutilise sur l'ecran 7 final, scale 2.4x pour la cinematique.
+- Les SVG sur ecrans 2/3/5/6 sont volontairement minimaux (line-art fait main). Remplacables par des SVG Figma plus polis plus tard sans toucher la structure.
