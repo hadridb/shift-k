@@ -1,3 +1,4 @@
+import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
 import { ipcMain, BrowserWindow, shell, dialog } from 'electron';
@@ -9,6 +10,7 @@ import { createSettingsWindow } from '@main/windows/settings';
 import { createOverlayWindow } from '@main/windows/overlay';
 import { syncWatcher } from '@main/services/watcher-manager';
 import { getRecentActivity } from '@main/services/activity-log';
+import { applyTheme } from '@main/services/theme-applier';
 import {
   broadcastConfigChange,
   setActiveClient,
@@ -36,6 +38,20 @@ export function registerConfigHandlers(): void {
   ipcMain.handle('config:set-active-stage', (_e, stage: Stage) => setActiveStage(stage));
 
   ipcMain.handle('activity:get-recent', () => getRecentActivity());
+
+  ipcMain.handle('theme:apply', (_e, themeId: string) => {
+    applyTheme(themeId as Parameters<typeof applyTheme>[0]);
+  });
+
+  ipcMain.handle('system:platform-info', () => {
+    const platform =
+      process.platform === 'win32'
+        ? 'windows'
+        : process.platform === 'darwin'
+          ? 'macos'
+          : 'linux';
+    return { platform, release: os.release() };
+  });
 
   ipcMain.handle('config:toggle-routing', () => toggleRouting());
 

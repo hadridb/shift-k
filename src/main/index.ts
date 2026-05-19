@@ -12,6 +12,7 @@ import { registerShortcuts, unregisterShortcuts } from './shortcuts';
 import { createTray, destroyTray } from './tray';
 import { applyAutostart, wasOpenedAtLogin } from './services/autostart';
 import { addActivity } from './services/activity-log';
+import { applyTheme } from './services/theme-applier';
 import { classifyExtension } from '@shared/i18n/activity';
 import { getConfig, onConfigChange } from '@core/config/store';
 
@@ -85,6 +86,8 @@ app.whenReady().then(() => {
   if (isConfigComplete()) {
     if (!hidden) createOverlayWindow();
     void syncWatcher();
+    // Apply the persisted theme's native material once the overlay exists.
+    applyTheme(getConfig().preferences.theme);
   } else {
     // Onboarding always shows even on autostart — config is incomplete,
     // there's nothing useful for the user to do via the tray alone.

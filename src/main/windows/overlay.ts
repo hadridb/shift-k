@@ -46,6 +46,11 @@ export function createOverlayWindow(): BrowserWindow {
     y,
     frame: false,
     transparent: true,
+    // Fully transparent background so Mica/vibrancy themes can paint
+    // the OS material behind the renderer. Opaque themes (Obsidian,
+    // Carbon, Ivory) paint their own --bg-primary on the container,
+    // hiding this transparency.
+    backgroundColor: '#00000000',
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,

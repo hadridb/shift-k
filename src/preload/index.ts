@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
 import type { ShiftKBridge } from '../shared/bridge';
-import type { AppConfig, ActivityEntry } from '../shared/types';
+import type { AppConfig, ActivityEntry, ThemeId } from '../shared/types';
 
 const bridge: ShiftKBridge = {
   getConfig: () => ipcRenderer.invoke('config:get') as Promise<AppConfig>,
@@ -54,6 +54,20 @@ const bridge: ShiftKBridge = {
     ipcRenderer.on('activity:routed', handler);
     return () => ipcRenderer.removeListener('activity:routed', handler);
   },
+
+  applyTheme: (themeId: ThemeId) => ipcRenderer.invoke('theme:apply', themeId) as Promise<void>,
+
+  onGlassFallback: (callback) => {
+    const handler = (_event: IpcRendererEvent, enabled: boolean) => callback(enabled);
+    ipcRenderer.on('theme:glass-fallback', handler);
+    return () => ipcRenderer.removeListener('theme:glass-fallback', handler);
+  },
+
+  getPlatformInfo: () =>
+    ipcRenderer.invoke('system:platform-info') as Promise<{
+      platform: 'windows' | 'macos' | 'linux';
+      release: string;
+    }>,
 };
 
 contextBridge.exposeInMainWorld('shiftK', bridge);

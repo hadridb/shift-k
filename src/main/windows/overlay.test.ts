@@ -43,6 +43,11 @@ describe('overlay BrowserWindow source contract (ADR-028)', () => {
     expect(SOURCE).toMatch(/useContentSize:\s*false/);
   });
 
+  it('uses transparent background so themes can paint OS materials', () => {
+    expect(SOURCE).toMatch(/transparent:\s*true/);
+    expect(SOURCE).toMatch(/backgroundColor:\s*['"]#00000000['"]/);
+  });
+
   it('never calls setSize / setBounds / setContentSize', () => {
     expect(SOURCE).not.toMatch(/\.setSize\s*\(/);
     expect(SOURCE).not.toMatch(/\.setBounds\s*\(/);

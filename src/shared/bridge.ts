@@ -6,6 +6,7 @@ import type {
   RescanPreview,
   RescanPreviewItem,
   ActivityEntry,
+  ThemeId,
 } from './types';
 
 export interface ShiftKBridge {
@@ -33,4 +34,8 @@ export interface ShiftKBridge {
 
   getRecentActivity: () => Promise<ActivityEntry[]>;
   onActivityRouted: (callback: (entry: ActivityEntry) => void) => () => void;
+
+  applyTheme: (themeId: ThemeId) => Promise<void>;
+  onGlassFallback: (callback: (enabled: boolean) => void) => () => void;
+  getPlatformInfo: () => Promise<{ platform: 'windows' | 'macos' | 'linux'; release: string }>;
 }

@@ -5,10 +5,13 @@ import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
 import { FooterBar } from './components/FooterBar';
 import { ActivityToast } from './components/ActivityToast';
+import { AuroraBackground } from './components/AuroraBackground';
 import { NewProjectModal } from './modals/NewProjectModal';
 import { EditSlotsModal } from './modals/EditSlotsModal';
 import { OpenFoldersModal } from './modals/OpenFoldersModal';
 import { RescanModal } from './modals/RescanModal';
+import { useApplyTheme } from '@renderer/hooks/useApplyTheme';
+import { THEMES, DEFAULT_THEME_ID } from '@renderer/styles/themes';
 
 type ModalType = 'new-project' | 'edit-slots' | 'open-folders' | 'rescan' | null;
 
@@ -58,6 +61,11 @@ export function OverlayApp() {
   const [modal, setModal] = useState<ModalType>(null);
   const [rescanPreview, setRescanPreview] = useState<RescanPreview | null>(null);
 
+  // Drive `<html data-theme>` from the persisted preference. Falls back to
+  // the default theme before the config loads (no flash because globals.css
+  // already sets `:root` to the default Obsidian palette).
+  useApplyTheme(config?.preferences.theme ?? DEFAULT_THEME_ID);
+
   // Suspend J/K/L while a modal is open so users can type freely.
   useJklShortcuts(modal === null);
 
@@ -99,50 +107,64 @@ export function OverlayApp() {
       <div
         style={{
           width: 290,
-          height: 468,
-          background: '#0A0A0A',
+          height: 460,
+          background: 'var(--bg-primary)',
           borderRadius: 14,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <span style={{ color: '#444', fontSize: 12 }}>…</span>
+        <span style={{ color: 'var(--text-disabled)', fontSize: 12 }}>…</span>
       </div>
     );
   }
 
-  const divider = <div style={{ height: 1, background: '#191919', margin: '0 0' }} />;
+  const divider = (
+    <div style={{ height: 1, background: 'var(--border-divider)', margin: '0 0' }} />
+  );
+
+  const currentTheme = THEMES[config.preferences.theme] ?? THEMES[DEFAULT_THEME_ID];
 
   return (
-    // Container fills the entire BrowserWindow (290×520) so the rounded
+    // Container fills the entire BrowserWindow (290×460) so the rounded
     // corners + overflow:hidden + position:relative form the bounding box
     // for every absolutely-positioned child (modals, toast). Modals must
     // NEVER use position:fixed — see ADR-028.
     <div
+      className="overlay-root"
       style={{
         width: '100vw',
         height: '100vh',
-        background: '#0A0A0A',
+        background: 'var(--bg-primary)',
         borderRadius: 14,
         overflow: 'hidden',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
+        boxShadow: 'var(--shadow-overlay)',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
+      {/* Aurora animated gradient — mounted only when the active theme
+          asks for it. Renders at z-index 0 behind the rest. */}
+      {currentTheme.animatedBackground && (
+        <AuroraBackground
+          colors={currentTheme.animatedBackground.colors}
+          durationSeconds={currentTheme.animatedBackground.durationSeconds}
+        />
+      )}
+
       {/* Header — drag region */}
       <div
         className="drag-region flex items-center justify-between px-3"
-        style={{ height: 44, flexShrink: 0 }}
+        style={{ height: 44, flexShrink: 0, position: 'relative', zIndex: 1 }}
       >
         <span
           style={{
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: '0.18em',
-            color: '#FFFFFF',
+            color: 'var(--text-primary)',
             userSelect: 'none',
           }}
         >
@@ -153,7 +175,7 @@ export function OverlayApp() {
           <span
             style={{
               fontSize: 11,
-              color: '#666666',
+              color: 'var(--text-muted)',
               maxWidth: 160,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -163,48 +185,46 @@ export function OverlayApp() {
             {config.activeClient}
           </span>
         ) : (
-          <span style={{ fontSize: 11, color: '#444444' }}>no client</span>
+          <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>no client</span>
         )}
       </div>
 
       {divider}
 
-      {/* Slot list */}
-      <SlotList
-        slots={config.slots}
-        activeClient={config.activeClient}
-        onSelect={handleSelectClient}
-      />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <SlotList
+          slots={config.slots}
+          activeClient={config.activeClient}
+          onSelect={handleSelectClient}
+        />
+      </div>
 
       {divider}
 
-      {/* Stage bar — sits immediately below the slot list (no flex spacer)
-          so the overlay reads as one compact block. The activity toast
-          overlays the stage briefly during display (transient 4–5 s),
-          which is the trade-off for a tight layout. */}
-      <StageBar
-        stages={config.stages}
-        activeStage={config.activeStage}
-        routingEnabled={config.routingEnabled}
-        onCycle={handleCycleStage}
-        onSelect={handleSelectStage}
-      />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <StageBar
+          stages={config.stages}
+          activeStage={config.activeStage}
+          routingEnabled={config.routingEnabled}
+          onCycle={handleCycleStage}
+          onSelect={handleSelectStage}
+        />
+      </div>
 
       {divider}
 
-      {/* Footer */}
-      <FooterBar
-        routingEnabled={config.routingEnabled}
-        onTogglePause={handleTogglePause}
-        onRescan={() => void handleRescan()}
-        onOpenFolders={() => setModal('open-folders')}
-        onNewProject={() => setModal('new-project')}
-        onEditSlots={() => setModal('edit-slots')}
-        onSettings={() => void window.shiftK.openSettings()}
-      />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <FooterBar
+          routingEnabled={config.routingEnabled}
+          onTogglePause={handleTogglePause}
+          onRescan={() => void handleRescan()}
+          onOpenFolders={() => setModal('open-folders')}
+          onNewProject={() => setModal('new-project')}
+          onEditSlots={() => setModal('edit-slots')}
+          onSettings={() => void window.shiftK.openSettings()}
+        />
+      </div>
 
-      {/* Aggregated activity toast — positioned above the stage bar in the
-          flex spacer zone (sits between slots and stage, not above footer). */}
       <ActivityToast />
 
       {/* Modals — wrapped in AnimatePresence so the fade+scale exit plays */}
