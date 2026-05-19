@@ -174,6 +174,13 @@ shift-k/
 - [x] Animations : `framer-motion@^12` installe. Slot indicator slide via `layoutId`, modales fade+scale 180ms, stage badge flip rotateX 180ms, pause badge scale+fade. ADR-025 fixe les durations/easings canoniques (Material standard `[0.4, 0, 0.2, 1]`).
 - [x] Tests : 66 verts (54 → 66). +4 activity-log (FIFO, max, copy, empty), +2 accordion state (defaults, round-trip), +6 useEscapeClose (Escape vs autres touches × INPUT/TEXTAREA/SELECT/DIV).
 
+**Sprint 6.3 (termine)** : 10 slots + ratio compact.
+- [x] 10e slot ajoute, surface comme "0" sur le clavier (touche 0 juste apres 9 sur la rangee numerique). Hotkey Ctrl+Alt+0 enregistre automatiquement via la boucle existante sur SLOT_KEYS.
+- [x] Migration auto : un config v0.1.0 a 9 slots se voit injecter `'0': null` au prochain `parse()` Zod (via `.default(null)` sur la cle '0' du schema). 2 tests dedies couvrent ce cas + le defaut a vide.
+- [x] Slot row height : `h-9` (36 px) → `h-8` (32 px) pour caser 10 slots + header + stage + footer dans 498 px.
+- [x] Window : 520 → 498 px. Ratio compact, regression test mis a jour.
+- [x] 90 tests verts (88 → 90).
+
 **Sprint 6.2 (termine)** : Fix bug critique modale.
 - [x] Bug : a l'ouverture de n'importe quelle modale, le BrowserWindow paraissait s'agrandir et les coins arrondis disparaissaient. **Cause** : modales en `position: fixed inset: 0` couvraient les 290×520 du window, alors que le container arrondi ne faisait que 290×~455 (hauteur naturelle du contenu). **Fix** : container `100vw × 100vh` + flex column avec spacer ; modales toutes en `position: absolute` (confinees + clippees par le container arrondi) ; toast repositionne `bottom: 93` (au-dessus du stage bar dans la nouvelle geometrie).
 - [x] Verrouillage par test de regression : `overlay.test.ts` inspecte `overlay.ts` pour bloquer `setSize` / `setBounds` / `setContentSize` / `did-finish-load`. Tout pattern dangereux casse le CI.
@@ -200,4 +207,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 19 mai 2026 (Sprint 6.2 — fix bug critique modale + container 100vh + lock window dimensions ; ADR-022 a ADR-028). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 19 mai 2026 (Sprint 6.3 — 10 slots + window 498 px ; ADR-022 a ADR-028). A maintenir a jour a chaque decision structurante.*

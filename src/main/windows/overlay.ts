@@ -3,9 +3,11 @@ import path from 'path';
 import { getConfig, setConfigKey } from '@core/config/store';
 
 const OVERLAY_WIDTH = 290;
-// 520 px (was 468) gives the toast room above the footer without overlapping
-// the slot list, and the stage popover room to open upward without clipping.
-const OVERLAY_HEIGHT = 520;
+// 498 px: header 44 + 10 slots × 32 + stage 40 + footer 44 + 3 dividers + flex
+// spacer (~47 px) for the activity toast. 520 was overly tall once slots
+// dropped from 36 to 32 px; this is the new compact ratio. See ADR-028 for
+// the locking contract.
+const OVERLAY_HEIGHT = 498;
 
 const isDev = !app.isPackaged;
 

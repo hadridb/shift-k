@@ -23,8 +23,8 @@ describe('overlay BrowserWindow source contract (ADR-028)', () => {
     expect(SOURCE).toMatch(/const OVERLAY_WIDTH\s*=\s*290\b/);
   });
 
-  it('declares OVERLAY_HEIGHT = 520', () => {
-    expect(SOURCE).toMatch(/const OVERLAY_HEIGHT\s*=\s*520\b/);
+  it('declares OVERLAY_HEIGHT = 498', () => {
+    expect(SOURCE).toMatch(/const OVERLAY_HEIGHT\s*=\s*498\b/);
   });
 
   it('passes width: OVERLAY_WIDTH to BrowserWindow', () => {
