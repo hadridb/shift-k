@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { AppConfig, RescanPreview } from '../../shared/types';
+import type { AppConfig, RescanPreview, Stage } from '../../shared/types';
 import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
 import { FooterBar } from './components/FooterBar';
@@ -72,6 +72,10 @@ export function OverlayApp() {
 
   const handleCycleStage = useCallback(() => {
     void window.shiftK.cycleStage();
+  }, []);
+
+  const handleSelectStage = useCallback((stage: Stage) => {
+    void window.shiftK.setActiveStage(stage);
   }, []);
 
   const handleTogglePause = useCallback(() => {
@@ -171,6 +175,7 @@ export function OverlayApp() {
         activeStage={config.activeStage}
         routingEnabled={config.routingEnabled}
         onCycle={handleCycleStage}
+        onSelect={handleSelectStage}
       />
 
       {divider}

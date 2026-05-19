@@ -12,6 +12,7 @@ import {
   broadcastConfigChange,
   setActiveClient,
   cycleStage,
+  setActiveStage,
   toggleRouting,
   previousSlot,
   nextSlot,
@@ -31,6 +32,7 @@ export function registerConfigHandlers(): void {
   });
 
   ipcMain.handle('config:cycle-stage', () => cycleStage());
+  ipcMain.handle('config:set-active-stage', (_e, stage: Stage) => setActiveStage(stage));
 
   ipcMain.handle('config:toggle-routing', () => toggleRouting());
 

@@ -10,6 +10,8 @@ const bridge: ShiftKBridge = {
 
   cycleStage: () => ipcRenderer.invoke('config:cycle-stage'),
 
+  setActiveStage: (stage) => ipcRenderer.invoke('config:set-active-stage', stage),
+
   toggleRouting: () => ipcRenderer.invoke('config:toggle-routing'),
 
   previousSlot: () => ipcRenderer.invoke('config:previous-slot'),

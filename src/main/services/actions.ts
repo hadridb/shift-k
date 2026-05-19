@@ -49,6 +49,11 @@ export function cycleStage(): Stage {
   return next;
 }
 
+export function setActiveStage(stage: Stage): void {
+  setConfigKey('activeStage', stage);
+  broadcastConfigChange();
+}
+
 export async function toggleRouting(): Promise<boolean> {
   const next = !getConfig().routingEnabled;
   setConfigKey('routingEnabled', next);
