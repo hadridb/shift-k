@@ -3,25 +3,19 @@
  *  - the CSS variables that drive every component's inline styles
  *    (applied via `:root[data-theme="<id>"]` blocks in themes.css)
  *  - whether the theme needs a native OS window-material call from
- *    the main process (Mica, vibrancy) and the platform/version gates
- *    that apply
+ *    the main process (currently only macOS vibrancy)
  *  - the metadata the picker UI needs to render mini-previews and
  *    grey out unavailable cards
  *
  * The single source of truth is this object — themes.css mirrors the
  * cssVars for runtime application, and tests assert the two stay in
- * sync. See ADR-029 for the architecture.
+ * sync. See ADR-029 + ADR-030 for architecture + the Sprint 7.6 decisions
+ * (Mica + Aurora removed, Liquid Glass renamed per-platform).
  */
 
-export type ThemeId =
-  | 'obsidian'
-  | 'carbon'
-  | 'ivory'
-  | 'mica'
-  | 'liquid-glass'
-  | 'aurora';
+export type ThemeId = 'obsidian' | 'carbon' | 'ivory' | 'liquid-glass';
 
-export type ThemeCategory = 'standard' | 'translucent' | 'experimental';
+export type ThemeCategory = 'standard' | 'translucent';
 
 export type Platform = 'windows' | 'macos' | 'linux';
 
@@ -29,7 +23,6 @@ export type ThemeAvailability =
   | { kind: 'universal' }
   | { kind: 'native-or-fallback'; native: Platform[]; cssFallback: boolean };
 
-export type WindowMaterial = 'mica' | 'acrylic' | 'tabbed' | 'none';
 export type Vibrancy =
   | 'hud'
   | 'sidebar'
@@ -45,23 +38,14 @@ export type Vibrancy =
   | 'content'
   | 'under-page';
 
-export interface ThemeAnimatedBackground {
-  type: 'aurora-gradient';
-  durationSeconds: number;
-  colors: string[];
-}
-
 export interface Theme {
   id: ThemeId;
   label: string;
   description: string;
   category: ThemeCategory;
   availability: ThemeAvailability;
-  minOSVersion?: { windows?: string; macos?: string };
   cssVars: Record<string, string>;
-  windowBackgroundMaterial?: WindowMaterial;
   vibrancy?: Vibrancy;
-  animatedBackground?: ThemeAnimatedBackground;
 }
 
 /**
@@ -172,39 +156,17 @@ const ivory: Theme = {
   }),
 };
 
-// --- 4. Mica (Windows 11+ only, native material) ----------------------
-
-const mica: Theme = {
-  id: 'mica',
-  label: 'Mica',
-  description: 'Effet natif Windows 11. Translucide, intégré au desktop.',
-  category: 'translucent',
-  availability: { kind: 'native-or-fallback', native: ['windows'], cssFallback: false },
-  minOSVersion: { windows: '10.0.22000' },
-  windowBackgroundMaterial: 'mica',
-  cssVars: vars({
-    'bg-primary': 'transparent',
-    'bg-elevated': 'rgba(20,20,20,0.65)',
-    'bg-hover': 'rgba(255,255,255,0.08)',
-    'bg-modal': 'rgba(20,20,20,0.62)',
-    'border-subtle': 'rgba(255,255,255,0.08)',
-    'border-divider': 'rgba(255,255,255,0.06)',
-    'text-primary': '#F5F5F5',
-    'text-secondary': 'rgba(245,245,245,0.65)',
-    'text-muted': 'rgba(245,245,245,0.4)',
-    'text-disabled': 'rgba(245,245,245,0.25)',
-    'accent': '#FFFFFF',
-    'accent-text': '#0A0A0A',
-    'shadow-overlay': '0 8px 40px rgba(0,0,0,0.4)',
-  }),
-};
-
-// --- 5. Liquid Glass (macOS native vibrancy, Windows CSS fallback) ----
+// --- 4. Liquid Glass (macOS native vibrancy, Windows CSS fallback) ----
+//
+// Renders as "Liquid Glass" on macOS where AppKit's vibrancy gives a true
+// refracting glass material, and as "Transparency" on Windows / Linux
+// where the effect is a CSS backdrop-filter approximation. See ADR-030
+// for the label rationale.
 
 const liquidGlass: Theme = {
   id: 'liquid-glass',
-  label: 'Liquid Glass',
-  description: 'Verre dépoli. Natif macOS, fallback CSS sur Windows.',
+  label: 'Liquid Glass', // overridden per-platform by `getThemeLabel()`
+  description: 'Verre dépoli translucide.', // overridden per-platform
   category: 'translucent',
   availability: { kind: 'native-or-fallback', native: ['macos'], cssFallback: true },
   vibrancy: 'hud',
@@ -212,7 +174,7 @@ const liquidGlass: Theme = {
     'bg-primary': 'rgba(20,20,20,0.55)',
     'bg-elevated': 'rgba(20,20,20,0.55)',
     'bg-hover': 'rgba(255,255,255,0.06)',
-    'bg-modal': 'rgba(20,20,20,0.6)',
+    'bg-modal': 'rgba(0,0,0,0.5)',
     'border-subtle': 'rgba(255,255,255,0.12)',
     'border-divider': 'rgba(255,255,255,0.08)',
     'text-primary': '#F5F5F5',
@@ -225,65 +187,47 @@ const liquidGlass: Theme = {
   }),
 };
 
-// --- 6. Aurora (animated gradient, universal, experimental) -----------
-
-const aurora: Theme = {
-  id: 'aurora',
-  label: 'Aurora',
-  description: 'Dégradé animé. Cinématique, expérimental.',
-  category: 'experimental',
-  availability: { kind: 'universal' },
-  animatedBackground: {
-    type: 'aurora-gradient',
-    durationSeconds: 60,
-    colors: ['#1A1530', '#0A1428', '#15203A'],
-  },
-  cssVars: vars({
-    'bg-primary': 'transparent', // AuroraBackground renders behind everything
-    'bg-elevated': 'rgba(0,0,0,0.4)',
-    'bg-hover': 'rgba(255,255,255,0.06)',
-    'bg-modal': 'rgba(0,0,0,0.55)',
-    'border-subtle': 'rgba(255,255,255,0.08)',
-    'border-divider': 'rgba(255,255,255,0.06)',
-    'text-primary': '#F5F5F5',
-    'text-secondary': 'rgba(245,245,245,0.7)',
-    'text-muted': 'rgba(245,245,245,0.45)',
-    'text-disabled': 'rgba(245,245,245,0.3)',
-    'accent': '#FFFFFF',
-    'accent-text': '#0A0A0A',
-    'shadow-overlay': '0 8px 40px rgba(0,0,0,0.6)',
-  }),
-};
-
 export const THEMES: Record<ThemeId, Theme> = {
   obsidian,
   carbon,
   ivory,
-  mica,
   'liquid-glass': liquidGlass,
-  aurora,
 };
 
-export const THEME_ORDER: ThemeId[] = [
-  'obsidian',
-  'carbon',
-  'ivory',
-  'mica',
-  'liquid-glass',
-  'aurora',
-];
+export const THEME_ORDER: ThemeId[] = ['obsidian', 'carbon', 'ivory', 'liquid-glass'];
 
 export const DEFAULT_THEME_ID: ThemeId = 'obsidian';
 
 /**
+ * Returns the platform-localised label for a theme. Currently only the
+ * Liquid Glass card varies — "Liquid Glass" on macOS where vibrancy
+ * is the real thing, "Transparency" on Windows / Linux where the CSS
+ * fallback is honest about what it is. See ADR-030.
+ */
+export function getThemeLabel(theme: Theme, platform: Platform): string {
+  if (theme.id === 'liquid-glass') {
+    return platform === 'macos' ? 'Liquid Glass' : 'Transparency';
+  }
+  return theme.label;
+}
+
+export function getThemeDescription(theme: Theme, platform: Platform): string {
+  if (theme.id === 'liquid-glass') {
+    return platform === 'macos'
+      ? 'Vibrancy native macOS, profondeur translucide.'
+      : 'Verre dépoli translucide. Approximation CSS.';
+  }
+  return theme.description;
+}
+
+/**
  * Detect whether a theme can run on the current platform with its native
- * material/vibrancy effects. Returns `available` (always pickable, may use
- * fallback), `unavailable` (greyed out), and a reason string for tooltips.
+ * material/vibrancy effects.
  */
 export function checkAvailability(
   theme: Theme,
   platform: Platform,
-  osRelease: string,
+  _osRelease: string,
 ): { available: boolean; usesFallback: boolean; reason?: string } {
   if (theme.availability.kind === 'universal') {
     return { available: true, usesFallback: false };
@@ -291,23 +235,6 @@ export function checkAvailability(
   const { native, cssFallback } = theme.availability;
   const isNative = native.includes(platform);
   if (isNative) {
-    // Optional version gate (only Windows for now)
-    if (platform === 'windows' && theme.minOSVersion?.windows) {
-      if (!isWindowsAtLeast(osRelease, theme.minOSVersion.windows)) {
-        if (cssFallback) {
-          return {
-            available: true,
-            usesFallback: true,
-            reason: `Effet natif disponible à partir de Windows ${theme.minOSVersion.windows}. Fallback CSS utilisé.`,
-          };
-        }
-        return {
-          available: false,
-          usesFallback: false,
-          reason: `Requiert Windows ${theme.minOSVersion.windows} ou plus récent.`,
-        };
-      }
-    }
     return { available: true, usesFallback: false };
   }
   if (cssFallback) {
@@ -326,7 +253,8 @@ export function checkAvailability(
 
 /**
  * Parses `os.release()` strings like "10.0.22631" and compares against a
- * minimum like "10.0.22000". Returns true if current ≥ min.
+ * minimum like "10.0.22000". Returns true if current ≥ min. Kept for
+ * future re-introduction of Mica or other Win-build-gated effects.
  */
 export function isWindowsAtLeast(currentRelease: string, minRelease: string): boolean {
   const cur = currentRelease.split('.').map((n) => parseInt(n, 10) || 0);

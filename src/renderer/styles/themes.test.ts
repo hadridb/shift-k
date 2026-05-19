@@ -5,7 +5,8 @@ import {
   DEFAULT_THEME_ID,
   checkAvailability,
   isWindowsAtLeast,
-  type Theme,
+  getThemeLabel,
+  getThemeDescription,
   type ThemeId,
 } from './themes';
 
@@ -26,9 +27,14 @@ const REQUIRED_TOKENS = [
 ];
 
 describe('THEMES registry', () => {
-  it('exposes exactly 6 themes', () => {
-    expect(Object.keys(THEMES)).toHaveLength(6);
-    expect(THEME_ORDER).toHaveLength(6);
+  it('exposes exactly 4 themes (Sprint 7.6: Mica + Aurora removed)', () => {
+    expect(Object.keys(THEMES)).toHaveLength(4);
+    expect(THEME_ORDER).toHaveLength(4);
+  });
+
+  it('does NOT include mica or aurora', () => {
+    expect(Object.keys(THEMES)).not.toContain('mica');
+    expect(Object.keys(THEMES)).not.toContain('aurora');
   });
 
   it('THEME_ORDER matches the registry keys', () => {
@@ -56,16 +62,6 @@ describe('THEMES registry', () => {
       expect(theme.id).toBe(id as ThemeId);
     },
   );
-
-  it('only Mica declares a Windows-specific minOSVersion', () => {
-    const themesWithVersionGate = Object.values(THEMES).filter((t: Theme) => t.minOSVersion?.windows);
-    expect(themesWithVersionGate.map((t) => t.id)).toEqual(['mica']);
-  });
-
-  it('Aurora is the only theme with an animated background', () => {
-    const animated = Object.values(THEMES).filter((t: Theme) => t.animatedBackground);
-    expect(animated.map((t) => t.id)).toEqual(['aurora']);
-  });
 });
 
 describe('isWindowsAtLeast', () => {
@@ -91,30 +87,13 @@ describe('isWindowsAtLeast', () => {
 
 describe('checkAvailability', () => {
   it('universal themes are available everywhere with no fallback', () => {
-    for (const id of ['obsidian', 'carbon', 'ivory', 'aurora'] as ThemeId[]) {
+    for (const id of ['obsidian', 'carbon', 'ivory'] as ThemeId[]) {
       for (const platform of ['windows', 'macos', 'linux'] as const) {
         const r = checkAvailability(THEMES[id], platform, '10.0.22631');
         expect(r.available).toBe(true);
         expect(r.usesFallback).toBe(false);
       }
     }
-  });
-
-  it('Mica: available on Windows 11+ without fallback', () => {
-    const r = checkAvailability(THEMES['mica'], 'windows', '10.0.22631');
-    expect(r.available).toBe(true);
-    expect(r.usesFallback).toBe(false);
-  });
-
-  it('Mica: unavailable on Windows 10 (no CSS fallback)', () => {
-    const r = checkAvailability(THEMES['mica'], 'windows', '10.0.19044');
-    expect(r.available).toBe(false);
-    expect(r.reason).toMatch(/Windows/);
-  });
-
-  it('Mica: unavailable on macOS and Linux', () => {
-    expect(checkAvailability(THEMES['mica'], 'macos', '0').available).toBe(false);
-    expect(checkAvailability(THEMES['mica'], 'linux', '0').available).toBe(false);
   });
 
   it('Liquid Glass: native on macOS', () => {
@@ -130,5 +109,28 @@ describe('checkAvailability', () => {
     const lin = checkAvailability(THEMES['liquid-glass'], 'linux', '0');
     expect(lin.available).toBe(true);
     expect(lin.usesFallback).toBe(true);
+  });
+});
+
+describe('getThemeLabel / getThemeDescription (ADR-030)', () => {
+  it('non-liquid-glass themes return their static label everywhere', () => {
+    for (const id of ['obsidian', 'carbon', 'ivory'] as ThemeId[]) {
+      const t = THEMES[id];
+      expect(getThemeLabel(t, 'windows')).toBe(t.label);
+      expect(getThemeLabel(t, 'macos')).toBe(t.label);
+    }
+  });
+
+  it('Liquid Glass: "Liquid Glass" on macOS, "Transparency" on Windows / Linux', () => {
+    const t = THEMES['liquid-glass'];
+    expect(getThemeLabel(t, 'macos')).toBe('Liquid Glass');
+    expect(getThemeLabel(t, 'windows')).toBe('Transparency');
+    expect(getThemeLabel(t, 'linux')).toBe('Transparency');
+  });
+
+  it('Liquid Glass description: vibrancy mention on macOS, approximation CSS elsewhere', () => {
+    const t = THEMES['liquid-glass'];
+    expect(getThemeDescription(t, 'macos')).toMatch(/[Vv]ibrancy/);
+    expect(getThemeDescription(t, 'windows')).toMatch(/[Aa]pproximation CSS/);
   });
 });

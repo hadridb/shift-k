@@ -166,11 +166,21 @@ describe('AppConfigSchema', () => {
     expect(parsed.preferences.theme).toBe('obsidian');
   });
 
-  it('preferences.theme accepts each of the 6 valid theme ids', () => {
-    for (const id of ['obsidian', 'carbon', 'ivory', 'mica', 'liquid-glass', 'aurora']) {
+  it('preferences.theme accepts each of the 4 valid theme ids (Sprint 7.6)', () => {
+    for (const id of ['obsidian', 'carbon', 'ivory', 'liquid-glass']) {
       const parsed = AppConfigSchema.parse({ preferences: { theme: id } });
       expect(parsed.preferences.theme).toBe(id);
     }
+  });
+
+  it('preferences.theme migration: legacy "mica" coerced to "obsidian"', () => {
+    const parsed = AppConfigSchema.parse({ preferences: { theme: 'mica' } });
+    expect(parsed.preferences.theme).toBe('obsidian');
+  });
+
+  it('preferences.theme migration: legacy "aurora" coerced to "obsidian"', () => {
+    const parsed = AppConfigSchema.parse({ preferences: { theme: 'aurora' } });
+    expect(parsed.preferences.theme).toBe('obsidian');
   });
 
   it('preferences.theme rejects unknown values', () => {

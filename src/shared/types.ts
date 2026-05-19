@@ -8,13 +8,7 @@ export type SlotKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0';
 
 export type StageLabels = Record<Stage, string>;
 
-export type ThemeId =
-  | 'obsidian'
-  | 'carbon'
-  | 'ivory'
-  | 'mica'
-  | 'liquid-glass'
-  | 'aurora';
+export type ThemeId = 'obsidian' | 'carbon' | 'ivory' | 'liquid-glass';
 
 export interface Preferences {
   theme: ThemeId;

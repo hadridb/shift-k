@@ -93,9 +93,13 @@ export const AppConfigSchema = z.object({
   routingEnabled: z.boolean().default(true),
   preferences: z
     .object({
-      theme: z
-        .enum(['obsidian', 'carbon', 'ivory', 'mica', 'liquid-glass', 'aurora'])
-        .default('obsidian'),
+      // Sprint 7.6: mica + aurora removed. Legacy persisted values are
+      // coerced to 'obsidian' via preprocess so old configs don't fail to
+      // parse. See ADR-029.
+      theme: z.preprocess(
+        (val) => (val === 'mica' || val === 'aurora' ? 'obsidian' : val),
+        z.enum(['obsidian', 'carbon', 'ivory', 'liquid-glass']).default('obsidian'),
+      ),
       dailyFolderFormat: z.string().default('J{yyyy-MM-dd}'),
       dailyFoldersEnabled: z.boolean().default(true),
       lazyDailyFolders: z.boolean().default(true),

@@ -5,7 +5,6 @@ import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
 import { FooterBar } from './components/FooterBar';
 import { ActivityToast } from './components/ActivityToast';
-import { AuroraBackground } from './components/AuroraBackground';
 import { NewProjectModal } from './modals/NewProjectModal';
 import { EditSlotsModal } from './modals/EditSlotsModal';
 import { OpenFoldersModal } from './modals/OpenFoldersModal';
@@ -149,15 +148,6 @@ export function OverlayApp() {
         flexDirection: 'column',
       }}
     >
-      {/* Aurora animated gradient — mounted only when the active theme
-          asks for it. Renders at z-index 0 behind the rest. */}
-      {currentTheme.animatedBackground && (
-        <AuroraBackground
-          colors={currentTheme.animatedBackground.colors}
-          durationSeconds={currentTheme.animatedBackground.durationSeconds}
-        />
-      )}
-
       {/* Liquid Glass dedicated frosted layer — only mounted for this
           theme. Sits at z-index 0 behind the content (z-index ≥ 1).
           The backdrop-filter lives on this layer rather than the root

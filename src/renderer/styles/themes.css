@@ -1,7 +1,8 @@
 /* Theme CSS variables — mirrored from src/renderer/styles/themes.ts.
    Switching a theme is one DOM mutation: setAttribute('data-theme', id)
    on <html>. Every component that reads `var(--*)` updates instantly.
-   See ADR-029 for the architecture. */
+   See ADR-029 + ADR-030 for the architecture and the Sprint 7.6
+   decisions (Mica + Aurora removed, 4 themes shipped). */
 
 /* Fallback / default — obsidian also lives under :root unscoped so that
    pages with no data-theme attribute set still render correctly. */
@@ -54,22 +55,6 @@
   --shadow-overlay: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-:root[data-theme='mica'] {
-  --bg-primary: transparent;
-  --bg-elevated: rgba(20, 20, 20, 0.65);
-  --bg-hover: rgba(255, 255, 255, 0.08);
-  --bg-modal: rgba(0, 0, 0, 0.5);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-divider: rgba(255, 255, 255, 0.06);
-  --text-primary: #F5F5F5;
-  --text-secondary: rgba(245, 245, 245, 0.65);
-  --text-muted: rgba(245, 245, 245, 0.4);
-  --text-disabled: rgba(245, 245, 245, 0.25);
-  --accent: #FFFFFF;
-  --accent-text: #0A0A0A;
-  --shadow-overlay: 0 8px 40px rgba(0, 0, 0, 0.4);
-}
-
 :root[data-theme='liquid-glass'] {
   --bg-primary: rgba(20, 20, 20, 0.55);
   --bg-elevated: rgba(20, 20, 20, 0.55);
@@ -93,11 +78,9 @@
    transparent BrowserWindow surface (which shows the desktop through),
    and the content (z-index: 1) sits above the frosted layer.
 
-   Sprint 7.5 bumped the blur from 40 → 80 px and the saturate from 180
-   → 200 % for a more pronounced glass look on Windows where there's
-   no native vibrancy to enrich the rendering. Brightness held at 110 %.
-   border-radius + overflow:hidden keep the layer clipped to the
-   rounded overlay shape so it doesn't paint into the corner artifacts. */
+   80 px blur + 200 % saturate + 110 % brightness for a pronounced glass
+   feel on Windows where there's no native vibrancy. border-radius +
+   overflow:hidden keep the layer clipped to the rounded overlay shape. */
 .glass-layer {
   position: absolute;
   inset: 0;
@@ -109,25 +92,3 @@
   backdrop-filter: blur(80px) saturate(200%) brightness(110%);
   -webkit-backdrop-filter: blur(80px) saturate(200%) brightness(110%);
 }
-
-:root[data-theme='aurora'] {
-  --bg-primary: transparent;
-  --bg-elevated: rgba(0, 0, 0, 0.4);
-  --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-modal: rgba(0, 0, 0, 0.5);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-divider: rgba(255, 255, 255, 0.06);
-  --text-primary: #F5F5F5;
-  --text-secondary: rgba(245, 245, 245, 0.7);
-  --text-muted: rgba(245, 245, 245, 0.45);
-  --text-disabled: rgba(245, 245, 245, 0.3);
-  --accent: #FFFFFF;
-  --accent-text: #0A0A0A;
-  --shadow-overlay: 0 8px 40px rgba(0, 0, 0, 0.6);
-}
-
-/* `@keyframes aurora-shift` lives in globals.css to ensure it loads
-   independent of theme switching. The Aurora component drives the
-   animation via framer-motion now (more deterministic at mount), but
-   we keep the CSS keyframes around so a future revert to pure CSS
-   doesn't need this declaration recreated. */

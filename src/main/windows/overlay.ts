@@ -1,15 +1,6 @@
-import os from 'os';
 import { app, BrowserWindow, screen } from 'electron';
 import path from 'path';
 import { getConfig, setConfigKey } from '@core/config/store';
-
-const MICA_MIN_BUILD = 22000;
-
-function isWindows11OrLater(): boolean {
-  if (process.platform !== 'win32') return false;
-  const build = parseInt(os.release().split('.')[2] ?? '0', 10);
-  return build >= MICA_MIN_BUILD;
-}
 
 const OVERLAY_WIDTH = 290;
 // 460 px: header 44 + 10 slots × 32 + stage 40 + footer 44 + 3 dividers = 451.
@@ -49,20 +40,7 @@ export function createOverlayWindow(): BrowserWindow {
   // and the activity toast must render *inside* the rounded container (via
   // position: absolute, see OverlayApp). See ADR-028.
   //
-  // Mica timing: if the persisted theme already wants Mica, pass it as the
-  // constructor `backgroundMaterial` option so DWM picks it up on the very
-  // first paint — calling setBackgroundMaterial after creation works but can
-  // race the first frame and leave the user staring at the default grey for
-  // a few ms. See ADR-029.
-  const initialMaterial: 'mica' | 'none' =
-    config.preferences.theme === 'mica' && isWindows11OrLater() ? 'mica' : 'none';
-  console.log(
-    '[overlay] creating window —',
-    'platform=', process.platform,
-    'os.release=', os.release(),
-    'persistedTheme=', config.preferences.theme,
-    'initialMaterial=', initialMaterial,
-  );
+  console.log('[overlay] creating window — persistedTheme=', config.preferences.theme);
 
   overlayWindow = new BrowserWindow({
     width: OVERLAY_WIDTH,
@@ -71,12 +49,11 @@ export function createOverlayWindow(): BrowserWindow {
     y,
     frame: false,
     transparent: true,
-    // Fully transparent background so Mica/vibrancy themes can paint
-    // the OS material behind the renderer. Opaque themes (Obsidian,
-    // Carbon, Ivory) paint their own --bg-primary on the container,
-    // hiding this transparency.
+    // Fully transparent background so the Liquid Glass theme (macOS
+    // vibrancy + CSS backdrop-filter elsewhere) can show through.
+    // Opaque themes (Obsidian, Carbon, Ivory) paint their own
+    // --bg-primary on the container, hiding this transparency.
     backgroundColor: '#00000000',
-    backgroundMaterial: initialMaterial, // Electron 25+ — first-paint Mica.
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
