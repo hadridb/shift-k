@@ -47,6 +47,8 @@ const bridge: ShiftKBridge = {
 
   completeOnboarding: () => ipcRenderer.invoke('onboarding:complete'),
 
+  replayOnboarding: () => ipcRenderer.invoke('onboarding:replay') as Promise<void>,
+
   getRecentActivity: () => ipcRenderer.invoke('activity:get-recent') as Promise<ActivityEntry[]>,
 
   onActivityRouted: (callback) => {

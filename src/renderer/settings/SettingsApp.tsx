@@ -1104,6 +1104,37 @@ export function SettingsApp() {
             />
           </Field>
         </Section>
+
+        <Section title="À PROPOS">
+          <Field
+            label="Rejouer l'onboarding cinématique"
+            hint="Utile pour démo / screen recording. Ne réinitialise pas la config."
+          >
+            <button
+              onClick={() => {
+                void window.shiftK.replayOnboarding();
+                window.close();
+              }}
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 6,
+                color: 'var(--text-primary)',
+                fontSize: 12,
+                cursor: 'pointer',
+                padding: '8px 16px',
+                fontFamily: 'inherit',
+              }}
+            >
+              Rejouer l'onboarding
+            </button>
+          </Field>
+          <Field label="Version">
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+              Shift-K v0.1.0
+            </div>
+          </Field>
+        </Section>
       </div>
 
       {/* Footer */}

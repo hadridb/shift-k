@@ -31,6 +31,7 @@ export interface ShiftKBridge {
   pickFolder: (title?: string) => Promise<string | null>;
   openSettings: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  replayOnboarding: () => Promise<void>;
 
   getRecentActivity: () => Promise<ActivityEntry[]>;
   onActivityRouted: (callback: (entry: ActivityEntry) => void) => () => void;
