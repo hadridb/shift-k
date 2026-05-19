@@ -19,3 +19,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Aurora-shift keyframes live here (not in themes.css) so they're loaded
+   from the globals stylesheet that every renderer imports unconditionally.
+   The Aurora component currently drives the animation via framer-motion
+   (more reliable at first mount), but a pure-CSS fallback can be wired
+   back at any time using `animation: aurora-shift 60s ease-in-out infinite`
+   on the gradient element. */
+@keyframes aurora-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
