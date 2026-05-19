@@ -115,20 +115,27 @@ export function OverlayApp() {
   const divider = <div style={{ height: 1, background: '#191919', margin: '0 0' }} />;
 
   return (
+    // Container fills the entire BrowserWindow (290×520) so the rounded
+    // corners + overflow:hidden + position:relative form the bounding box
+    // for every absolutely-positioned child (modals, toast). Modals must
+    // NEVER use position:fixed — see ADR-028.
     <div
       style={{
-        width: 290,
+        width: '100vw',
+        height: '100vh',
         background: '#0A0A0A',
         borderRadius: 14,
         overflow: 'hidden',
         boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
         position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Header — drag region */}
       <div
         className="drag-region flex items-center justify-between px-3"
-        style={{ height: 44 }}
+        style={{ height: 44, flexShrink: 0 }}
       >
         <span
           style={{
@@ -171,6 +178,11 @@ export function OverlayApp() {
 
       {divider}
 
+      {/* Spacer — fills the gap between the slot list and the bottom-pinned
+          stage/footer stack. The activity toast hovers in this zone when
+          visible (see ActivityToast `bottom` calc). */}
+      <div style={{ flex: 1, minHeight: 0 }} />
+
       {/* Stage bar */}
       <StageBar
         stages={config.stages}
@@ -193,7 +205,8 @@ export function OverlayApp() {
         onSettings={() => void window.shiftK.openSettings()}
       />
 
-      {/* Aggregated activity toast — positioned above the footer */}
+      {/* Aggregated activity toast — positioned above the stage bar in the
+          flex spacer zone (sits between slots and stage, not above footer). */}
       <ActivityToast />
 
       {/* Modals — wrapped in AnimatePresence so the fade+scale exit plays */}

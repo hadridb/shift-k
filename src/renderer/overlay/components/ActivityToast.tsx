@@ -156,10 +156,13 @@ export function ActivityToast() {
             y: { duration: 0.22, ease: 'easeOut' },
           }}
           style={{
+            // bottom: 93 = footer 44 + divider 1 + stage 40 + 8 px gap.
+            // Toast hovers in the flex-spacer zone, above the stage bar.
             position: 'absolute',
             left: 12,
             right: 12,
-            bottom: 52,
+            bottom: 93,
+            maxHeight: 64, // guard against multi-line overflow into slot area
             background: 'rgba(20, 20, 20, 0.96)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',

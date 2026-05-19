@@ -174,6 +174,11 @@ shift-k/
 - [x] Animations : `framer-motion@^12` installe. Slot indicator slide via `layoutId`, modales fade+scale 180ms, stage badge flip rotateX 180ms, pause badge scale+fade. ADR-025 fixe les durations/easings canoniques (Material standard `[0.4, 0, 0.2, 1]`).
 - [x] Tests : 66 verts (54 → 66). +4 activity-log (FIFO, max, copy, empty), +2 accordion state (defaults, round-trip), +6 useEscapeClose (Escape vs autres touches × INPUT/TEXTAREA/SELECT/DIV).
 
+**Sprint 6.2 (termine)** : Fix bug critique modale.
+- [x] Bug : a l'ouverture de n'importe quelle modale, le BrowserWindow paraissait s'agrandir et les coins arrondis disparaissaient. **Cause** : modales en `position: fixed inset: 0` couvraient les 290×520 du window, alors que le container arrondi ne faisait que 290×~455 (hauteur naturelle du contenu). **Fix** : container `100vw × 100vh` + flex column avec spacer ; modales toutes en `position: absolute` (confinees + clippees par le container arrondi) ; toast repositionne `bottom: 93` (au-dessus du stage bar dans la nouvelle geometrie).
+- [x] Verrouillage par test de regression : `overlay.test.ts` inspecte `overlay.ts` pour bloquer `setSize` / `setBounds` / `setContentSize` / `did-finish-load`. Tout pattern dangereux casse le CI.
+- [x] Voir ADR-028. 88 tests verts (80 → 88, +8).
+
 **Sprint 6.1 (termine)** : Corrections UI Sprint 6.
 - [x] StagePopover ouvre **vers le haut** (au-dessus du chevron) au lieu de vers le bas qui depassait l'overlay 468px. `bottom: 44` + `transformOrigin: 'bottom left'` pour que le scale parte du bouton. Garde-fou `maxHeight: 200 + overflowY: auto` si plus de 5 stages un jour.
 - [x] `ActivityFeed` (5 lignes par fichier) remplace par `ActivityToast` agregat. Buckets par (type × stage), une ligne `2 vidéos envoyées vers 03_Outputs` plutot que 2 lignes Gen-4_001.mp4 + Gen-4_002.mp4. State machine idle → buffering (debounce 3 s silence) → visible (4 s, reset sur nouvelle arrivee) → fading (600 ms).
@@ -195,4 +200,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 19 mai 2026 (Sprint 6.1 — corrections UI : popover anchor top, toast agregat avec spinner particule, overlay 468 → 520 px ; ADR-022 a ADR-026). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 19 mai 2026 (Sprint 6.2 — fix bug critique modale + container 100vh + lock window dimensions ; ADR-022 a ADR-028). A maintenir a jour a chaque decision structurante.*

@@ -62,9 +62,16 @@ export function NewProjectModal({ onClose }: Props) {
       exit={MODAL_VARIANTS.exit}
       transition={MODAL_TRANSITION}
       style={{
-        position: 'fixed',
+        // position: absolute so the modal is clipped by the parent overlay
+        // container's borderRadius + overflow:hidden — keeps the rounded
+        // corners visible and prevents the window from "appearing" to
+        // resize. See ADR-028.
+        position: 'absolute',
         inset: 0,
         background: 'rgba(10,10,10,0.95)',
+        backdropFilter: 'blur(2px)',
+        WebkitBackdropFilter: 'blur(2px)',
+        borderRadius: 14,
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',

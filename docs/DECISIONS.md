@@ -647,3 +647,62 @@ Les animations **deterministes simples** (hover-color, fade, scale fixe) restent
 - ActivitySpinner.tsx supprime. La metaphore "loader rotatif + dispersion" est remplacee par "burst d'apparition + burst de dissolution + silence entre les deux" — l'utilisateur lit le texte du toast sans element visuel en mouvement.
 - Le pattern `key={trigger}` + `useMemo(generate, [])` est applicable a toute autre micro-animation que je voudrais randomiser plus tard (un confetti pour un milestone, un sparkle au switch de slot, etc.).
 - Si un jour on a besoin d'une bibliotheque de particules plus puissante (gpu-accelerated, des milliers d'instances), `react-tsparticles` est l'option de reference. Pas necessaire pour notre usage actuel.
+
+---
+
+## ADR-028 : L'overlay est verrouille a 290×520 ; aucune modale n'utilise `position: fixed`
+
+**Date :** 2026-05-19
+**Statut :** Acceptee
+
+**Contexte :** Un bug visuel critique decouvert pendant les tests de Sprint 6.2 : a l'ouverture de n'importe quelle modale (NewProject, EditSlots, OpenFolders, Rescan), l'overlay **paraissait** se redimensionner — les coins arrondis disparaissaient, un rectangle plein remplacait la silhouette luxe arrondie. Comportement identique pour les 4 modales.
+
+**Cause racine :** la BrowserWindow restait bien a 290×520 (verifie par inspection des bounds — pas de `setSize` / `setBounds` nulle part). Mais :
+- Le container racine de `OverlayApp.tsx` avait `width: 290` et **pas de `height`** → sa hauteur naturelle etait celle du contenu (~455 px).
+- Les modales etaient rendues en `position: fixed inset: 0` → positionnees par rapport au **viewport** (290×520), pas par rapport au container arrondi (290×455).
+- Resultat : la modale couvrait les 290×520 du window en rectangle plein, debordant les 65 px transparents en bas du container arrondi. L'effet visuel : "perte des coins + agrandissement".
+
+**Decision :**
+
+### 1. La BrowserWindow est **immuable** en runtime
+
+- Dimensions verrouillees : `OVERLAY_WIDTH = 290`, `OVERLAY_HEIGHT = 520`.
+- Flags BrowserWindow : `resizable: false`, `useContentSize: false` (explicite — la taille passee est la taille de la fenetre OUTER, pas du contenu).
+- **Aucun appel a `setSize` / `setBounds` / `setContentSize`** n'est autorise dans le main process. Test de regression `src/main/windows/overlay.test.ts` inspecte le source pour bloquer ces patterns (et `did-finish-load` qui est le declencheur typique).
+- Aucun listener qui ajuste les bounds en fonction du DOM. Si plus tard on veut un mode "compact" (overlay rapetisse), ce sera une recreation explicite de la window, pas une mutation in-place.
+
+### 2. Le container `OverlayApp` remplit la fenetre
+
+`width: '100vw', height: '100vh'` + `borderRadius: 14, overflow: 'hidden', position: 'relative'` + flex column. Tout enfant en `position: absolute` est confine au rectangle arrondi 290×520 — le `overflow: hidden` le clip aux coins.
+
+Layout flex column avec un spacer `flex: 1` entre le slot-list et le bloc stage+footer : pousse la stage bar et le footer au bas de la window, et laisse un gap d'environ 65 px dans lequel le toast activity flotte quand visible.
+
+### 3. Les modales sont **toujours** en `position: absolute`
+
+Convention :
+```tsx
+<motion.div
+  style={{
+    position: 'absolute', // JAMAIS fixed — voir ADR-028
+    inset: 0,
+    background: 'rgba(10,10,10,0.95)',
+    backdropFilter: 'blur(2px)',
+    borderRadius: 14,    // defense-in-depth si parent perd overflow:hidden
+    zIndex: 100,
+    ...
+  }}
+>
+```
+
+`borderRadius: 14` est redondant avec `overflow: hidden` du parent, mais sert de filet de securite — si un futur refactor casse l'overflow parent, le modal arrondit deja lui-meme.
+
+### 4. Le toast activity est positionne au-dessus du **stage bar**, pas du footer
+
+`bottom: 93` = footer (44) + divider (1) + stage (40) + 8 px de gap. Toast flotte dans le spacer flex au-dessus du stage bar, sans empieter sur les slots (`maxHeight: 64`).
+
+**Pourquoi pas `position: fixed` avec une window plus grande ?** Tentee pendant Sprint 6.1 (bump 468 → 520). Echoue parce que `fixed` rapporte toujours au viewport entier (290×520), et la window reste necessairement plus grande que le container arrondi pour laisser de l'air aux animations (popover stage qui s'ouvre vers le haut, etc.). La bonne reponse est de remplir le container, pas d'agrandir la window.
+
+**Consequences :**
+- Toute future modale ou overlay flottant doit suivre la convention `position: absolute` confinee au container racine. Pas d'exception.
+- Le test de regression bloque les patterns dangereux dans `overlay.ts` (`setSize`, `setBounds`, `setContentSize`, `did-finish-load`). Si un changement legitime de window dimensions devient necessaire un jour, le test doit etre mis a jour avec un ADR nouveau qui supersede 028.
+- L'identite visuelle "luxe arrondi" (preservation des coins, transparence subtile autour) est protegee par construction — un modal qui passerait en `fixed` casserait le test au CI, pas en production.
