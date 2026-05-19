@@ -38,3 +38,23 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Package installer
+        run: npm run dist
+
+      - name: Smoke — dist/core/config/store.js exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/core/config/store.js")) {
+            Write-Error "dist/core/config/store.js missing — main process import will fail at runtime"
+            exit 1
+          }
+
+      - name: Smoke — asar contains core/config/store (see ADR-022)
+        shell: pwsh
+        run: |
+          $entries = npx --yes asar list release/win-unpacked/resources/app.asar
+          if (-not ($entries | Select-String -SimpleMatch "dist\core\config\store.js")) {
+            Write-Error "core/config/store.js not packaged in app.asar — check files: globs in electron-builder.yml"
+            exit 1
+          }

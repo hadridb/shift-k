@@ -163,6 +163,7 @@ shift-k/
 - [x] preferences.startOnLogin toggle dans Settings, applique via onConfigChange listener
 - [x] Build pre-req : Windows Developer Mode activable via ms-settings:developers (sinon electron-builder echoue sur les symlinks Mac du cache winCodeSign — bug connu, voir commit 2d3de9d)
 - [x] Installer genere : release/Shift-K Setup 0.1.0.exe (~80 MB, non signe — SmartScreen warning au premier lancement)
+- [x] Fix `Cannot find module '../../core/config/store'` au demarrage de l'installer (19/05/2026) — `electron-builder.yml > files:` n'incluait que `dist/main/`, `dist/preload/`, `dist/renderer/`. Ajout de `dist/core/**/*`, `dist/shared/**/*` et `!**/*.test.js`. Voir ADR-022. Smoke test CI ajoute (verifie `dist/core/config/store.js` + presence dans asar via `npx asar list`).
 
 **Sprint 5b (prochain)** : A definir parmi :
 - Code signing Windows (cert Sectigo EV) pour faire disparaitre SmartScreen warning
@@ -177,4 +178,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 15 mai 2026 (Sprint 5a termine — installer Windows produit, V2 prete a remplacer V1 PowerShell sur la machine d'Hadrien). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 19 mai 2026 (Sprint 5a — fix asar packaging, ADR-022 + smoke CI). A maintenir a jour a chaque decision structurante.*

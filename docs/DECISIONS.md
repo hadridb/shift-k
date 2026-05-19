@@ -376,3 +376,48 @@ Le nom "Shift-K" du produit devient un double-meaning explicite : la touche cent
   3. Decouvrir / occasionnel → clic souris
 - Documentation : `docs/SHORTCUTS.md` agrege tous les raccourcis
 - Le combo signature **Ctrl+Shift+K** (surgir) + **Shift+J/K/L** (manipuler) = flow sans souris complet
+
+---
+
+## ADR-022 : electron-builder `files:` doit lister explicitement toutes les sous-arborescences runtime du main
+
+**Date :** 2026-05-19
+**Statut :** Acceptee
+
+**Contexte :** Sprint 5a a produit un installer Windows (`Shift-K Setup 0.1.0.exe`) qui crashait au demarrage avec :
+```
+Cannot find module '../../core/config/store'
+  at Object.<anonymous> (app.asar\dist\main\ipc\config-handlers.js:10)
+```
+
+Cause : `electron-builder.yml` listait uniquement `dist/main/**/*`, `dist/preload/**/*`, `dist/renderer/**/*` dans `files:`. Le main process compile correctement via `tsconfig.main.json` (qui inclut `src/core/**/*` et `src/shared/**/*` depuis Sprint 1), donc `dist/core/config/store.js` existait sur disque — mais electron-builder filtre via `files:` avant de produire l'asar. Resultat : l'asar contenait `dist/main/` qui faisait `require("../../core/config/store")` vers un dossier inexistant dans le bundle.
+
+**Decision :** `files:` doit lister **explicitement** toutes les sous-arborescences sous `dist/` dont le main a besoin a l'execution, pas seulement `dist/main/`. Liste actuelle :
+```yaml
+files:
+  - dist/main/**/*
+  - dist/preload/**/*
+  - dist/renderer/**/*
+  - dist/core/**/*      # runtime: store, router, watcher, scanner, projects
+  - dist/shared/**/*    # preventif (types purs aujourd'hui, mais facile a polluer plus tard)
+  - "!**/*.map"
+  - "!**/*.d.ts"
+  - "!**/*.test.js"     # exclure les specs Vitest compilees
+```
+
+**Smoke test CI :** Apres `npm run dist`, le job CI verifie deux invariants (voir `.github/workflows/ci.yml`) :
+1. `dist/core/config/store.js` existe sur disque (build:main a tourne).
+2. `npx asar list release/win-unpacked/resources/app.asar` contient `dist\core\config\store.js` (electron-builder l'a packagee).
+
+Si l'un ou l'autre echoue, le build casse — impossible de re-livrer un installer dans le meme etat qu'avant ce fix.
+
+**Pourquoi le piege est insidieux :**
+- `npm run typecheck` est vert : le code source est correct.
+- `npm test` est vert : Vitest charge depuis `src/`, jamais depuis l'asar.
+- `npm run dev` marche : Electron charge directement depuis `dist/` (filesystem nu, pas d'asar).
+- Le crash ne se manifeste **que** dans le binaire installe.
+
+**Consequences :**
+- Toute nouvelle sous-arborescence ajoutee a `src/` et importee par le main (ex: `src/extension/`, `src/lib/`, `src/services/...`) doit etre ajoutee a `files:` **en plus** de l'`include` de `tsconfig.main.json`. Les deux listes sont independantes mais doivent rester en phase.
+- Convention : la PR qui ajoute un nouveau dossier sous `src/` doit toucher les deux fichiers dans le meme commit.
+- Si on consolide un jour le bundling main (ex: esbuild en single-file), ce piege disparait — l'asar contiendrait un seul `dist/main/index.js` auto-suffisant. A reconsiderer si on accumule plus de pieges du genre.

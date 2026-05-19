@@ -10,8 +10,11 @@ files:
   - dist/main/**/*
   - dist/preload/**/*
   - dist/renderer/**/*
+  - dist/core/**/*
+  - dist/shared/**/*
   - "!**/*.map"
   - "!**/*.d.ts"
+  - "!**/*.test.js"
 
 win:
   target:
