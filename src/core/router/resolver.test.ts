@@ -224,4 +224,38 @@ describe('resolveDestination', () => {
     expect(result!.platform).toBe('runway');
     expect(result!.stageKey).toBe('out'); // active stage, not 'ost'
   });
+
+  // routeAllAudio toggle (ADR-024)
+
+  it('routes orphan audio file to OST when routeAllAudio is true', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: { ...baseConfig.preferences, routeAllAudio: true },
+    };
+    const result = resolveDestination('my_personal_song.mp3', cfg, FIXED_DATE);
+    expect(result).not.toBeNull();
+    expect(result!.platform).toBe('audio');
+    expect(result!.stageKey).toBe('ost');
+    expect(result!.stageFolderName).toBe('04_OST');
+  });
+
+  it('routeAllAudio does not affect non-audio orphans', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: { ...baseConfig.preferences, routeAllAudio: true },
+    };
+    // .mp4 with no pattern match: still null (routeAllAudio is audio-only)
+    expect(resolveDestination('random_clip.mp4', cfg, FIXED_DATE)).toBeNull();
+  });
+
+  it('routeAllAudio: matched platform still wins over the fallback', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: { ...baseConfig.preferences, routeAllAudio: true },
+    };
+    // Suno matches → goes via the override map, not the fallback
+    const result = resolveDestination('Suno_track.mp3', cfg, FIXED_DATE);
+    expect(result!.platform).toBe('suno'); // not 'audio'
+    expect(result!.stageKey).toBe('ost');
+  });
 });

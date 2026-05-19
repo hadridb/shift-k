@@ -58,14 +58,23 @@ export function resolveDestination(
   const platform = resolvePlatform(fileName, config.platforms);
 
   // No platform match: route only known media types via project-file rule,
-  // otherwise leave in Downloads. The routeAllAudio toggle (ADR-024) hooks
-  // in here in a later commit to capture orphan audio files.
+  // or — when routeAllAudio is on (ADR-024) — capture any audio file to OST
+  // so that sound banks with no recognizable naming still get filed.
   if (!platform) {
     if (isProject) {
       const stageKey: Stage = 'src';
       return {
         destDir: buildDailyPath(config, stageKey, null, date),
         platform: 'project',
+        stageKey,
+        stageFolderName: config.stages[stageKey],
+      };
+    }
+    if (isAudio && config.preferences.routeAllAudio) {
+      const stageKey: Stage = 'ost';
+      return {
+        destDir: buildDailyPath(config, stageKey, null, date),
+        platform: 'audio',
         stageKey,
         stageFolderName: config.stages[stageKey],
       };

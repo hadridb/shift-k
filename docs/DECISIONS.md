@@ -453,3 +453,54 @@ Si l'un ou l'autre echoue, le build casse — impossible de re-livrer un install
   1. Toggle pour `dailyFoldersEnabled`.
   2. Quand active : un `<select>` proposant les 3 presets + "Personnalise" qui revele un champ texte libre.
   3. Une preview live `<stage>/<dossier-genere>/Gen-4_demo.mp4` recalculee a chaque keystroke.
+
+---
+
+## ADR-024 : Routage audio — per-platform stage map + toggle `routeAllAudio`
+
+**Date :** 2026-05-19
+**Statut :** Acceptee
+
+**Contexte :** Jusqu'a maintenant le routeur ne connaissait que video + image + project (PSD/AI/PRPROJ/AEP) et envoyait tout sur `activeStage` sauf les project files (→ src). Les AI directors utilisent de plus en plus de plateformes audio — Suno, ElevenLabs, Udio, Stable Audio pour la generation ; Splice, Loopcloud, Cymatics pour les sound banks — et toutes leurs sorties ont vocation a aller dans le stage **OST** (musique, voix, sound design) peu importe le stage actif du moment. Forcer le user a switcher manuellement vers OST a chaque drop est inacceptable (et casse le flow "drop and forget" qui fait la valeur du produit).
+
+**Decision :** Deux mecanismes complementaires.
+
+### 1. `PLATFORM_STAGE_OVERRIDES` (constante de code, pas de config)
+
+Une map dans `src/core/router/resolver.ts` qui force le stage pour certaines plateformes :
+
+```ts
+{
+  suno: 'ost', elevenlabs: 'ost', udio: 'ost', stable_audio: 'ost',
+  aiva: 'ost', mubert: 'ost', soundraw: 'ost', splice: 'ost',
+  loopcloud: 'ost', cymatics: 'ost',
+  photoshop: 'src', premiere: 'src',
+}
+```
+
+Quand `resolvePlatform()` retourne une cle presente dans la map, le `stageKey` est celui de la map plutot que `config.activeStage`. Les autres plateformes (runway / kling / luma / higgsfield / sora / veo / midjourney / krea / topaz) continuent de suivre `activeStage` — comportement existant preserve.
+
+**Pourquoi en code et pas en config ?** Tres faible churn (les plateformes audio vont *toujours* vers OST par nature), et exposer ca en UI ouvrirait la porte a des mappings absurdes ("envoie Suno vers img") sans benefice. Si un user a un cas legitime de re-mapping (peu probable), un ADR-superseed le geera proprement. Photoshop/Premiere → src formalise une regle qui etait deja implicite via `projectExtensions`.
+
+### 2. Toggle `preferences.routeAllAudio` (boolean, default `false`)
+
+Quand `true`, n'importe quel fichier avec une extension dans `audioExtensions` mais **sans pattern de plateforme reconnu** est route vers OST (avec `platform: 'audio'` comme nom synthetique). Utile pour les sound banks dont le naming est totalement libre (`kick_03.wav`, `pad_dark.mp3`).
+
+**Pourquoi opt-in et pas default-on ?** Le dossier Downloads contient souvent de la musique personnelle non liee aux campagnes. Un default-on enverrait `Pink_Floyd_Echoes.mp3` dans `04_OST/J2026-05-19/` au premier lancement — UX inacceptable. Le user doit confirmer activement qu'il sait ce qu'il fait. Le tooltip dans Settings dit explicitement : "Active uniquement si ton Downloads ne contient JAMAIS d'audio personnel".
+
+**Pourquoi pas une logique heuristique (taille, duree, ML) ?** Le cout de complexite / faux positifs est dispro vs la simplicite d'un opt-in clair.
+
+### Conflits de patterns
+
+`'udio'` est sous-chaine de `'stable-audio'` → en `Object.entries` order, stable_audio doit etre liste **avant** udio dans le schema et la migration. Test couvert. Convention : a chaque nouvelle plateforme audio, verifier les sous-chaines vs les patterns existants.
+
+### Migration
+
+Pour les configs existantes (v0.1.0 → maintenant), la fonction pure `mergeNewPlatformPatterns()` (`src/core/config/migrations.ts`) est appelee au chargement de `store.ts`. Elle ajoute les 10 cles audio uniquement si absentes — les customisations user sur les cles existantes (`runway`, `photoshop`, etc.) sont preservees integralement. `audioExtensions` se voit injecter ses defaults via Zod (champ absent → default). Aucune action utilisateur requise post-upgrade.
+
+### Consequences
+
+- Les utilisateurs avec un Downloads "propre" peuvent activer `routeAllAudio` et ne plus jamais ranger leurs sound banks manuellement.
+- Photoshop/Premiere → src est maintenant **double-couvert** : par `projectExtensions` (extension-driven) ET par `PLATFORM_STAGE_OVERRIDES` (platform-driven). Redondant mais defensif : si un user retire `.psd` de `projectExtensions` par erreur, la regle plateforme prend le relais.
+- 21 plateformes par defaut (11 visuelles + 10 audio). La complexite de l'UI Settings monte d'un cran — l'ADR ne prescrit pas encore d'editeur generique pour `platforms`, juste un editeur scope aux 10 plateformes audio (commit #3).
+- Quand on ajoutera la prochaine plateforme apres v0.2.0, refaire le meme pattern : ajouter dans `schema.ts` defaults, ajouter dans `migrations.ts` `POST_V1_PLATFORM_PATTERNS` (renommer si la version cible change), ajouter dans `PLATFORM_STAGE_OVERRIDES` si le stage est forced. Trois fichiers a synchroniser.

@@ -11,6 +11,7 @@ export interface Preferences {
   dailyFoldersEnabled: boolean;
   lazyDailyFolders: boolean;
   groupByPlatform: boolean;
+  routeAllAudio: boolean;
   logRetentionDays: number;
   notifyOnRoute: boolean;
   confirmBeforeRescan: boolean;
