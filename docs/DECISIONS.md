@@ -557,3 +557,44 @@ Defini de facto dans le code, a respecter pour toute nouvelle animation :
 - Le bundle renderer passe de ~144 kB a ~176 kB (gzip 46 → 56 kB) — acceptable.
 - En cas de probleme de performance sur des machines plus modestes, le toggle `prefers-reduced-motion` du navigateur sera honore via les API natives de framer-motion (`useReducedMotion`). Pas implemente pour l'instant — `prefers-reduced-motion` n'est pas signale par Windows en mode "performance" classique, donc gain marginal.
 - Les tests Vitest qui touchent a des composants animes ne testent que la logique (predicats, hooks purs comme `isEscapeForClose`), pas le rendering ou les transitions — la suite ne charge pas RTL+JSDOM.
+
+---
+
+## ADR-026 : Activity feed remplace par un toast agregat avec debounce 3 s
+
+**Date :** 2026-05-19
+**Statut :** Acceptee, supersede la decision implicite du Sprint 6 (feed permanent de 5 lignes par fichier)
+
+**Contexte :** Le Sprint 6 introduisait un `ActivityFeed` permanent sous la liste des slots : 5 lignes max, une par fichier route, avec timestamp relatif et fade-to-grey apres 30 s. Apres test sur des sessions reelles, deux problemes :
+
+1. **Bruit visuel disproportionne** — un AI director qui drop 8 plans Runway d'un coup voit 5 lignes quasi-identiques `↳ Gen-4_001.mp4 → YSL / out` qui ne lui apprennent rien de plus que "ca route" (et il le sait deja par la notification systeme native). La densite d'information est faible.
+2. **Le feed occupe verticalement de la place permanente** dans une fenetre de 290×468 deja contrainte. On a sacrifie ~120 px qui auraient pu rester aux slots.
+
+**Decision :** Remplacer le feed permanent par un **toast** ephemere en bas de l'overlay (au-dessus du footer), qui :
+- Agrege les arrivees en buckets `(type × stage)`. Une ligne par bucket : `2 vidéos envoyées vers 03_Outputs` plutot que `Gen-4_001.mp4`, `Gen-4_002.mp4`, ...
+- N'apparait qu'apres une fenetre de silence de **3 secondes** (debounce) — laisse a chokidar le temps de finir d'emettre les events `awaitWriteFinish` pour des fichiers dropees ensemble.
+- Reste affiche 4 s, puis fade-out en 600 ms. Si une nouvelle arrivee tombe pendant les 4 s, le timer est reset et les compteurs s'incrementent en place — l'utilisateur voit `1 vidéo → 2 vidéos → 3 vidéos` sans que le toast clignote.
+
+**Pourquoi 3 s de debounce et pas plus / moins ?**
+- chokidar `awaitWriteFinish.stabilityThreshold` est a 2000 ms. Une fenetre de 3 s englobe l'event "ecriture finie" + 1 s de tampon pour les fichiers en serie.
+- En dessous de 3 s, le toast clignote a chaque drop (un drop de 5 fichiers via Runway "Download all" arrive en ~2.5 s).
+- Au-dessus de 5 s, l'utilisateur a deja change de contexte (ouvert DaVinci, etc.) et la confirmation devient inutile.
+
+**Pourquoi un toast plutot qu'une notif systeme ?**
+- Les notifs systeme sont deja la (`preferences.notifyOnRoute`), elles sont per-fichier et apparaissent dans le centre de notifications Windows. Cible : confirmation rapide qu'un fichier est bien arrive.
+- Le toast in-overlay sert l'autre cas d'usage : "j'ai dropp un batch, est-ce que tout est passe ?". Il aggrege.
+- Les deux sont complementaires, pas concurrents. Le user peut desactiver la notif systeme si elle le derange, le toast reste.
+
+**Format de la ligne :** `<count> <noun> <participle> vers <stage_folder_name>`. Helper `formatActivityLine(count, type, stageFolderName)` dans `src/shared/i18n/activity.ts` gere la pluralisation et l'accord du participe en francais (10 tests). Les types sont determines a l'IPC (cote main) via `classifyExtension()` qui partage le code avec le router pour eviter les divergences (project > audio > video > image en ordre de priorite).
+
+**Pourquoi le glyphe (spinner + particules) ?**
+- Le toast est silencieux et minimaliste. Sans signal visuel "ca bouge", il pourrait passer pour un panneau statique.
+- Un spinner pendant l'affichage signale "operation en cours" (memori metaphore).
+- Au moment du fade-out, le spinner se dissout en 6 particules qui se dispersent — signale clairement la fin du cycle. Plus expressif qu'un simple fade. Inspire des transitions Linear/Notion.
+- 6 particules, 550 ms de duree, accent `#9090E0` (subtle purple pour donner une identite Shift-K — distinct du blanc/gris du reste de l'overlay).
+
+**Consequences :**
+- `ActivityFeed.tsx` est supprime. Son comportement (5 dernieres routes, fade-to-grey 30 s) ne survit nulle part.
+- `ActivityType` ajoute a `@shared/types`. L'IPC `activity:routed` transporte maintenant un champ `type: 'video' | 'image' | 'audio' | 'project' | null` (null pour les fichiers dont l'extension n'est dans aucune liste — ne devrait pas arriver puisque le router refuse de les router, mais defensif).
+- Le hauteur de l'overlay passe de 468 → 520 px (ADR pas requis, change trivial dans `overlay.ts`). Necessaire pour caser le toast en bas + popover stage qui s'ouvre vers le haut + slots integralement visibles.
+- Si plus tard on veut un historique persistant et requetable (Phase Gamma : recherche dans les plans generes), il vivra ailleurs (SQLite + UI dediee), pas dans le feed overlay.

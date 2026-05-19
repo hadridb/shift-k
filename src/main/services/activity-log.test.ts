@@ -14,6 +14,7 @@ function entry(i: number): ActivityEntry {
     stage: 'out',
     stageFolderName: '03_Outputs',
     platform: 'runway',
+    type: 'video',
     timestamp: Date.now() + i,
   };
 }

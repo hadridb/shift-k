@@ -72,11 +72,14 @@ export interface RescanPreview {
   errors: Array<{ file: string; error: string }>;
 }
 
+export type ActivityType = 'video' | 'image' | 'audio' | 'project';
+
 export interface ActivityEntry {
   filename: string;
   client: string;
   stage: Stage;
   stageFolderName: string;
   platform: string;
+  type: ActivityType | null;
   timestamp: number;
 }

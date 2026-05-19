@@ -4,7 +4,7 @@ import type { AppConfig, RescanPreview, Stage } from '../../shared/types';
 import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
 import { FooterBar } from './components/FooterBar';
-import { ActivityFeed } from './components/ActivityFeed';
+import { ActivityToast } from './components/ActivityToast';
 import { NewProjectModal } from './modals/NewProjectModal';
 import { EditSlotsModal } from './modals/EditSlotsModal';
 import { OpenFoldersModal } from './modals/OpenFoldersModal';
@@ -171,11 +171,6 @@ export function OverlayApp() {
 
       {divider}
 
-      {/* Activity feed — last 5 routed files */}
-      <ActivityFeed />
-
-      {divider}
-
       {/* Stage bar */}
       <StageBar
         stages={config.stages}
@@ -197,6 +192,9 @@ export function OverlayApp() {
         onEditSlots={() => setModal('edit-slots')}
         onSettings={() => void window.shiftK.openSettings()}
       />
+
+      {/* Aggregated activity toast — positioned above the footer */}
+      <ActivityToast />
 
       {/* Modals — wrapped in AnimatePresence so the fade+scale exit plays */}
       <AnimatePresence>

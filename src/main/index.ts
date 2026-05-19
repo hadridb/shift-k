@@ -12,6 +12,7 @@ import { registerShortcuts, unregisterShortcuts } from './shortcuts';
 import { createTray, destroyTray } from './tray';
 import { applyAutostart, wasOpenedAtLogin } from './services/autostart';
 import { addActivity } from './services/activity-log';
+import { classifyExtension } from '@shared/i18n/activity';
 import { getConfig, onConfigChange } from '@core/config/store';
 
 function isConfigComplete(): boolean {
@@ -49,12 +50,14 @@ app.whenReady().then(() => {
       if (cfg.preferences.notifyOnRoute) {
         notifyRouted(event.result.platform, event.result.destinationPath);
       }
+      const filename = path.basename(event.result.destinationPath);
       const entry = {
-        filename: path.basename(event.result.destinationPath),
+        filename,
         client: cfg.activeClient ?? '',
         stage: event.result.stageKey,
         stageFolderName: event.result.stageFolderName,
         platform: event.result.platform,
+        type: classifyExtension(filename, cfg),
         timestamp: event.result.movedAt.getTime(),
       };
       addActivity(entry);
