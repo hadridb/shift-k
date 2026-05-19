@@ -55,7 +55,7 @@
   --bg-primary: transparent;
   --bg-elevated: rgba(20, 20, 20, 0.65);
   --bg-hover: rgba(255, 255, 255, 0.08);
-  --bg-modal: rgba(20, 20, 20, 0.62);
+  --bg-modal: rgba(20, 20, 20, 0.6);
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-divider: rgba(255, 255, 255, 0.06);
   --text-primary: #F5F5F5;
@@ -83,23 +83,21 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* Liquid Glass — applied UNCONDITIONALLY (not gated on data-glass-fallback)
-   because:
-   - On Windows/Linux it's the only thing producing the glass look.
-   - On macOS the native vibrancy material handles refraction; the additional
-     CSS blur is redundant but harmless (no visible artefact).
-   The data-glass-fallback attribute is still set by the theme-applier
-   for diagnostic visibility but isn't required in the selector. */
-:root[data-theme='liquid-glass'] .overlay-root {
+/* Dedicated frosted-glass layer for Liquid Glass theme. Mounted as a
+   sibling of the content (z-index: 0) so backdrop-filter applies to the
+   transparent BrowserWindow surface (which shows the desktop through),
+   and the content (z-index: 1) sits above the frosted layer. Pattern
+   adapted from the Sprint 7.2 brief — separates the glass effect from
+   .overlay-root so the layout container stays simple. */
+.glass-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  background: rgba(20, 20, 20, 0.55);
   backdrop-filter: blur(40px) saturate(180%) brightness(110%);
   -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(110%);
-}
-
-:root[data-theme='mica'] .overlay-root,
-:root[data-theme='aurora'] .overlay-root {
-  /* Both Mica and Aurora keep the root container fully transparent —
-     Mica relies on the OS material, Aurora paints its own gradient via
-     AuroraBackground.tsx. No CSS backdrop-filter needed here. */
 }
 
 :root[data-theme='aurora'] {
@@ -117,12 +115,8 @@
   --shadow-overlay: 0 8px 40px rgba(0, 0, 0, 0.6);
 }
 
-@keyframes aurora-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
+/* `@keyframes aurora-shift` lives in globals.css to ensure it loads
+   independent of theme switching. The Aurora component drives the
+   animation via framer-motion now (more deterministic at mount), but
+   we keep the CSS keyframes around so a future revert to pure CSS
+   doesn't need this declaration recreated. */

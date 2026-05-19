@@ -154,6 +154,12 @@ export function OverlayApp() {
         />
       )}
 
+      {/* Liquid Glass dedicated frosted layer — only mounted for this
+          theme. Sits at z-index 0 behind the content (z-index ≥ 1).
+          The backdrop-filter lives on this layer rather than the root
+          container so the layout stays simple. */}
+      {currentTheme.id === 'liquid-glass' && <div className="glass-layer" />}
+
       {/* Header — drag region */}
       <div
         className="drag-region flex items-center justify-between px-3"
