@@ -18,7 +18,13 @@ export function createSettingsWindow(): BrowserWindow {
     width: SETTINGS_WIDTH,
     height: SETTINGS_HEIGHT,
     title: 'Shift-K · Réglages',
-    backgroundColor: '#0A0A0A',
+    // Transparent so the Liquid Glass / Transparency theme can paint a
+    // translucent background through the renderer; the opaque themes
+    // (Obsidian / Carbon / Ivory) paint `--bg-primary` over this and
+    // appear fully opaque as expected. Without this, the settings
+    // window stayed dark when the user picked Ivory or Liquid Glass.
+    transparent: true,
+    backgroundColor: '#00000000',
     autoHideMenuBar: true,
     minimizable: false,
     maximizable: false,

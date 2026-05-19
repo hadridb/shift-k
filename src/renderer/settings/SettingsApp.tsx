@@ -6,6 +6,8 @@ import {
   THEME_ORDER,
   DEFAULT_THEME_ID,
   checkAvailability,
+  getThemeLabel,
+  getThemeDescription,
   type Platform,
   type Theme,
 } from '@renderer/styles/themes';
@@ -446,7 +448,6 @@ function ThemePreview({ theme }: { theme: Theme }) {
   // scope, so the preview reads the theme even when <html data-theme>
   // is different.
   const override = theme.cssVars as React.CSSProperties;
-  const isAurora = !!theme.animatedBackground;
   return (
     <div
       style={{
@@ -460,17 +461,6 @@ function ThemePreview({ theme }: { theme: Theme }) {
         border: '1px solid var(--border-subtle)',
       }}
     >
-      {isAurora && theme.animatedBackground && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: `linear-gradient(135deg, ${theme.animatedBackground.colors.join(', ')})`,
-            backgroundSize: '200% 200%',
-            opacity: 0.85,
-          }}
-        />
-      )}
       <div style={{ position: 'relative', padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
         {[true, false, false].map((active, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -554,7 +544,7 @@ function ThemePickerGrid({
                   marginBottom: 2,
                 }}
               >
-                {theme.label}
+                {getThemeLabel(theme, platform)}
               </div>
               <div
                 style={{
@@ -563,7 +553,7 @@ function ThemePickerGrid({
                   lineHeight: 1.3,
                 }}
               >
-                {theme.description}
+                {getThemeDescription(theme, platform)}
               </div>
               {avail.usesFallback && (
                 <div
@@ -689,6 +679,14 @@ export function SettingsApp() {
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
+        // Paint the active theme's --bg-primary on the root container so the
+        // Settings window reflects whatever theme the user picked. Without
+        // this, the transparent BrowserWindow showed through to the desktop
+        // for opaque themes (Obsidian / Carbon / Ivory). For Liquid Glass,
+        // --bg-primary is itself semi-transparent and the window's
+        // transparency lets the desktop blur through.
+        background: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
       }}
     >
       {/* Header */}
