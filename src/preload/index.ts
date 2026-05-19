@@ -57,6 +57,12 @@ const bridge: ShiftKBridge = {
 
   applyTheme: (themeId: ThemeId) => ipcRenderer.invoke('theme:apply', themeId) as Promise<void>,
 
+  onThemeChanged: (callback) => {
+    const handler = (_event: IpcRendererEvent, themeId: ThemeId) => callback(themeId);
+    ipcRenderer.on('theme:changed', handler);
+    return () => ipcRenderer.removeListener('theme:changed', handler);
+  },
+
   onGlassFallback: (callback) => {
     const handler = (_event: IpcRendererEvent, enabled: boolean) => callback(enabled);
     ipcRenderer.on('theme:glass-fallback', handler);

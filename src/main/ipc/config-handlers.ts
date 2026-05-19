@@ -40,7 +40,17 @@ export function registerConfigHandlers(): void {
   ipcMain.handle('activity:get-recent', () => getRecentActivity());
 
   ipcMain.handle('theme:apply', (_e, themeId: string) => {
+    // Apply native window-level effects on the overlay (Mica / vibrancy).
     applyTheme(themeId as Parameters<typeof applyTheme>[0]);
+    // CRITICAL: broadcast to EVERY BrowserWindow so each renderer flips its
+    // own <html data-theme>. Without this, switching theme from the Settings
+    // window only changes the Settings DOM — the overlay keeps its previous
+    // theme and overlays opaque CSS on top of Mica/vibrancy, hiding the
+    // material entirely. This is the root cause of Sprint 7.1's "Mica looks
+    // grey" bug. See docs/THEME_DEBUG.md.
+    for (const w of BrowserWindow.getAllWindows()) {
+      w.webContents.send('theme:changed', themeId);
+    }
   });
 
   ipcMain.handle('system:platform-info', () => {

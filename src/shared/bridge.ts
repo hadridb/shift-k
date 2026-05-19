@@ -36,6 +36,7 @@ export interface ShiftKBridge {
   onActivityRouted: (callback: (entry: ActivityEntry) => void) => () => void;
 
   applyTheme: (themeId: ThemeId) => Promise<void>;
+  onThemeChanged: (callback: (themeId: ThemeId) => void) => () => void;
   onGlassFallback: (callback: (enabled: boolean) => void) => () => void;
   getPlatformInfo: () => Promise<{ platform: 'windows' | 'macos' | 'linux'; release: string }>;
 }
