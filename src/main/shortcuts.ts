@@ -3,7 +3,9 @@ import { activateSlot, cycleStage, toggleRouting } from './services/actions';
 import { toggleOverlayWindow } from './windows/overlay';
 import type { SlotKey } from '@shared/types';
 
-const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+// Includes '0' for the 10th slot — Ctrl+Alt+0 lives just past Ctrl+Alt+9
+// on the number row, intentional muscle-memory continuation.
+const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 interface Registration {
   accelerator: string;
@@ -26,7 +28,7 @@ export function registerShortcuts(): void {
     toggleOverlayWindow();
   });
 
-  // Ctrl+Alt+1..9 — activate slot directly
+  // Ctrl+Alt+1..9 + Ctrl+Alt+0 — activate slot directly
   for (const key of SLOT_KEYS) {
     register(`Control+Alt+${key}`, () => {
       activateSlot(key);

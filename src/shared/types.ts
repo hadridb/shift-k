@@ -2,7 +2,9 @@
 
 export type Stage = 'src' | 'img' | 'out' | 'ost' | 'liv';
 
-export type SlotKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+// Slot keys map to the keyboard number row: 1–9 then 0 (the 10th slot is
+// surfaced as "0" so Ctrl+Alt+0 is the natural next key after Ctrl+Alt+9).
+export type SlotKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0';
 
 export type StageLabels = Record<Stage, string>;
 

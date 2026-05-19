@@ -13,10 +13,11 @@ les autres applications.
 
 | Raccourci         | Action                                              |
 | ----------------- | --------------------------------------------------- |
-| **Ctrl+Shift+K**  | Toggle overlay (afficher / masquer)                 |
-| **Ctrl+Alt+1..9** | Activer directement le slot 1 a 9                   |
-| **Ctrl+Alt+S**    | Cycler le stage (src → img → out → ost → liv → src) |
-| **Ctrl+Alt+P**    | Pause / reprise du routage                          |
+| **Ctrl+Shift+K**     | Toggle overlay (afficher / masquer)                 |
+| **Ctrl+Alt+1..9**    | Activer directement le slot 1 a 9                   |
+| **Ctrl+Alt+0**       | Activer le slot 10 (touche 0, juste apres 9)        |
+| **Ctrl+Alt+S**       | Cycler le stage (src → img → out → ost → liv → src) |
+| **Ctrl+Alt+P**       | Pause / reprise du routage                          |
 
 > Si un raccourci echoue a s'enregistrer (deja pris par une autre app), un
 > warning apparait dans la console et le raccourci est inactif.

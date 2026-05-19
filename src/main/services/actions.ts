@@ -4,7 +4,7 @@ import { syncWatcher } from './watcher-manager';
 import type { AppConfig, Stage, SlotKey } from '@shared/types';
 
 const STAGE_ORDER: Stage[] = ['src', 'img', 'out', 'ost', 'liv'];
-const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 interface FilledSlot {
   key: SlotKey;

@@ -84,10 +84,38 @@ describe('AppConfigSchema', () => {
 
   it('accepts null slots and string slots', () => {
     const result = AppConfigSchema.parse({
-      slots: { '1': 'YSL - PURESHOTS', '2': null, '3': null, '4': null, '5': null, '6': null, '7': null, '8': null, '9': null },
+      slots: { '1': 'YSL - PURESHOTS', '2': null, '3': null, '4': null, '5': null, '6': null, '7': null, '8': null, '9': null, '0': null },
     });
     expect(result.slots['1']).toBe('YSL - PURESHOTS');
     expect(result.slots['2']).toBeNull();
+  });
+
+  it('migration: V1 config with 9 slots (no "0" key) gets slot 0 back-filled to null', () => {
+    // Simulate a config persisted before slot '0' existed — has '1'..'9' only.
+    const result = AppConfigSchema.parse({
+      slots: {
+        '1': 'YSL - PURESHOTS',
+        '2': 'Gucci - Campaign',
+        '3': null,
+        '4': null,
+        '5': null,
+        '6': null,
+        '7': null,
+        '8': null,
+        '9': null,
+        // '0' deliberately absent
+      },
+    });
+    expect(result.slots['0']).toBeNull();
+    expect(result.slots['1']).toBe('YSL - PURESHOTS');
+    expect(result.slots['9']).toBeNull();
+  });
+
+  it('migration: completely empty config defaults all 10 slots to null', () => {
+    const result = AppConfigSchema.parse({});
+    expect(result.slots['0']).toBeNull();
+    expect(result.slots['9']).toBeNull();
+    expect(Object.keys(result.slots)).toHaveLength(10);
   });
 
   it('defaultConfig has correct ignore extensions', () => {

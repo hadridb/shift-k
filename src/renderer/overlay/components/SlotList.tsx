@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import type { SlotKey } from '@shared/types';
 
-const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+const SLOT_KEYS: SlotKey[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 interface Props {
   slots: Record<SlotKey, string | null>;
@@ -21,7 +21,7 @@ export function SlotList({ slots, activeClient, onSelect }: Props) {
         return (
           <button
             key={key}
-            className="no-drag w-full flex items-center h-9 px-0 text-left transition-colors duration-150 hover:bg-[#161616] focus:outline-none disabled:hover:bg-transparent"
+            className="no-drag w-full flex items-center h-8 px-0 text-left transition-colors duration-150 hover:bg-[#161616] focus:outline-none disabled:hover:bg-transparent"
             style={{ background: 'transparent', position: 'relative' }}
             onClick={() => !isEmpty && onSelect(client)}
             disabled={isEmpty}

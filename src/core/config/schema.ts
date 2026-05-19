@@ -3,7 +3,7 @@ import type { AppConfig } from '@shared/types';
 
 const StageSchema = z.enum(['src', 'img', 'out', 'ost', 'liv']);
 
-export const SlotKeySchema = z.enum(['1', '2', '3', '4', '5', '6', '7', '8', '9']);
+export const SlotKeySchema = z.enum(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']);
 
 export const AppConfigSchema = z.object({
   version: z.string().default('2.0.0'),
@@ -74,6 +74,9 @@ export const AppConfigSchema = z.object({
       '7': z.string().nullable(),
       '8': z.string().nullable(),
       '9': z.string().nullable(),
+      // Slot '0' added after v0.1.0: defaults to null so configs persisted
+      // with only '1'–'9' migrate seamlessly on the next AppConfigSchema.parse().
+      '0': z.string().nullable().default(null),
     })
     .default({
       '1': null,
@@ -85,6 +88,7 @@ export const AppConfigSchema = z.object({
       '7': null,
       '8': null,
       '9': null,
+      '0': null,
     }),
   routingEnabled: z.boolean().default(true),
   preferences: z
