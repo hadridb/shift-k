@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 interface Props {
   colors: string[];
@@ -9,24 +10,41 @@ interface Props {
  * Animated gradient backdrop for the Aurora theme. Mounted conditionally
  * by OverlayApp when the active theme exposes `animatedBackground`.
  *
- * Pure CSS animation via the `aurora-shift` keyframes declared in
- * themes.css. The colour stops are passed as inline CSS variables so
- * the same component instance handles future palette tweaks without a
- * stylesheet change.
+ * The animation is driven by framer-motion rather than CSS keyframes —
+ * the keyframes approach (themes.css `@keyframes aurora-shift`) was
+ * fragile: a CSS rule that lives in a separately-imported stylesheet
+ * sometimes failed to apply on the very first paint, and there's no
+ * way to verify "animation is running" from JS. framer-motion's
+ * `animate` prop runs through requestAnimationFrame deterministically.
  */
 export function AuroraBackground({ colors, durationSeconds }: Props) {
   const [c1, c2, c3] = colors;
-  const style: React.CSSProperties = {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 0,
-    pointerEvents: 'none',
-    background: `linear-gradient(135deg, ${c1 ?? '#1A1530'}, ${c2 ?? '#0A1428'}, ${c3 ?? '#15203A'})`,
-    backgroundSize: '400% 400%',
-    animation: `aurora-shift ${durationSeconds}s ease-in-out infinite`,
-    // Force a compositing layer so the animation runs on the GPU.
-    willChange: 'background-position',
-    transform: 'translateZ(0)',
-  };
-  return <div aria-hidden="true" style={style} />;
+
+  useEffect(() => {
+    console.log('[aurora] mounted', { colors, durationSeconds });
+  }, [colors, durationSeconds]);
+
+  return (
+    <motion.div
+      aria-hidden="true"
+      initial={{ backgroundPosition: '0% 50%' }}
+      animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+      transition={{
+        duration: durationSeconds,
+        ease: 'easeInOut',
+        repeat: Infinity,
+      }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: 'none',
+        background: `linear-gradient(135deg, ${c1 ?? '#1A1530'}, ${c2 ?? '#0A1428'}, ${c3 ?? '#15203A'})`,
+        backgroundSize: '400% 400%',
+        // Force a compositing layer so the animation runs on the GPU.
+        willChange: 'background-position',
+        transform: 'translateZ(0)',
+      }}
+    />
+  );
 }
