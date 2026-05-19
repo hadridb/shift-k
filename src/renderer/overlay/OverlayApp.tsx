@@ -61,10 +61,14 @@ export function OverlayApp() {
   const [modal, setModal] = useState<ModalType>(null);
   const [rescanPreview, setRescanPreview] = useState<RescanPreview | null>(null);
 
-  // Drive `<html data-theme>` from the persisted preference. Falls back to
-  // the default theme before the config loads (no flash because globals.css
-  // already sets `:root` to the default Obsidian palette).
-  useApplyTheme(config?.preferences.theme ?? DEFAULT_THEME_ID);
+  // Drive `<html data-theme>` from the persisted preference AND track the
+  // live-preview theme via the IPC broadcast. The returned `activeThemeId`
+  // is what conditional component mounts (Aurora gradient, .glass-layer)
+  // should key off — config.preferences.theme alone would miss the
+  // live-preview state from the Settings picker. See ADR-029.
+  const activeThemeId = useApplyTheme(
+    config?.preferences.theme ?? DEFAULT_THEME_ID,
+  );
 
   // Suspend J/K/L while a modal is open so users can type freely.
   useJklShortcuts(modal === null);
@@ -124,7 +128,7 @@ export function OverlayApp() {
     <div style={{ height: 1, background: 'var(--border-divider)', margin: '0 0' }} />
   );
 
-  const currentTheme = THEMES[config.preferences.theme] ?? THEMES[DEFAULT_THEME_ID];
+  const currentTheme = THEMES[activeThemeId] ?? THEMES[DEFAULT_THEME_ID];
 
   return (
     // Container fills the entire BrowserWindow (290×460) so the rounded
