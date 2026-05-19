@@ -598,3 +598,52 @@ Defini de facto dans le code, a respecter pour toute nouvelle animation :
 - `ActivityType` ajoute a `@shared/types`. L'IPC `activity:routed` transporte maintenant un champ `type: 'video' | 'image' | 'audio' | 'project' | null` (null pour les fichiers dont l'extension n'est dans aucune liste — ne devrait pas arriver puisque le router refuse de les router, mais defensif).
 - Le hauteur de l'overlay passe de 468 → 520 px (ADR pas requis, change trivial dans `overlay.ts`). Necessaire pour caser le toast en bas + popover stage qui s'ouvre vers le haut + slots integralement visibles.
 - Si plus tard on veut un historique persistant et requetable (Phase Gamma : recherche dans les plans generes), il vivra ailleurs (SQLite + UI dediee), pas dans le feed overlay.
+
+---
+
+## ADR-027 : Animations stochastiques — `framer-motion` plutot que CSS keyframes
+
+**Date :** 2026-05-19
+**Statut :** Acceptee, prolonge ADR-025
+
+**Contexte :** Sprint 6.1 introduisait un spinner + dispersion de 6 particules. Sprint 6.2 le remplace par un `ParticleBurst` : 12 a 16 particules par burst, chacune avec un angle, un rayon, une taille **randomisees** au moment du declenchement. Chaque burst doit avoir une silhouette differente — c'est ca qui le rend "organique" plutot que mecanique.
+
+CSS keyframes ne se prete pas a ca proprement :
+- Un `@keyframes` est une definition statique. Pour animer 16 particules dans 16 directions distinctes, il faudrait **16 regles CSS** ecrites a la main (ou genere via JS et inject en runtime — alambique).
+- Alternative : `@keyframes` parametre par CSS custom properties (`--dx`, `--dy`) settees inline sur chaque element. Marche, mais on perd l'expressivite de pouvoir faire varier l'easing par axe (`opacity: { duration, times }` separe du `x`/`y`/`scale`), et le pattern "remount sur key change pour rejouer" devient un hack (toggle de classe + setTimeout pour forcer reflow).
+
+framer-motion gere ca trivialement :
+- Chaque `<motion.circle>` accepte `initial`, `animate`, `transition` independants. Les valeurs cibles sont des nombres JS — on peut les calculer avec `Math.random()` et `useMemo(generate, [])`.
+- Pour rejouer : la convention est `<BurstInstance key={trigger} />` dans le parent. React unmount/remount sur key change, et framer-motion repart de `initial`. C'est documente, idiomatique, deux lignes de code.
+- Cout : 0 — framer-motion est deja dans le bundle depuis ADR-025.
+
+**Decision :** Toute animation **stochastique** (parametres randomises a chaque declenchement) utilise framer-motion avec le pattern :
+
+```tsx
+function Burst({ trigger }: { trigger: number }) {
+  return <BurstInstance key={trigger} />;
+}
+function BurstInstance() {
+  const particles = useMemo(generateParticles, []);
+  return <svg>{particles.map(p => <motion.circle ... />)}</svg>;
+}
+```
+
+Les animations **deterministes simples** (hover-color, fade, scale fixe) restent en Tailwind/CSS — pas la peine d'invoquer framer-motion pour une transition `background 150ms ease-out`. Ligne de partage : si une valeur d'animation depend d'un appel runtime (random, mesure DOM, derivation d'etat), framer-motion. Sinon CSS suffit.
+
+**Convention sur les bursts visuels Shift-K :**
+- Couleur : **blanc pur uniquement** (`#FFFFFF`). Le bundle d'identite visuelle est volontairement minimaliste — l'accent purple `#9090E0` du spinner Sprint 6.1 est retire avec lui.
+- Pas de trainees. Pas plus de 16 particules. Duree ≤ 700 ms total.
+- Easing canonique pour les bursts : `cubic-bezier(0.16, 1, 0.3, 1)` — strong ease-out, qui reproduit la forme d'une vraie explosion (rapide au depart, decelere fort). Ajoute a la table de durees d'ADR-025 :
+
+  | Cas                              | Duration | Easing                     |
+  |----------------------------------|----------|----------------------------|
+  | Particle burst                   | 700 ms   | `[0.16, 1, 0.3, 1]`        |
+  | Central flash (burst centre)     | 200 ms   | `[0.16, 1, 0.3, 1]`        |
+
+**Demo page :** `particle-demo.html` + `src/renderer/dev/particle-demo.tsx` (registre dans `vite.config.ts > rollupOptions.input`). Accessible en dev a `http://localhost:5173/particle-demo.html`. Bouton "Trigger burst" + "Loop ×1.2s" pour iterer sans avoir a dropper un fichier reel et attendre le cycle du toast (3 s debounce + 4 s visible + 600 ms fade). La page reste dans la build de prod mais Electron ne la charge jamais — overhead negligeable (~3 kB).
+
+**Consequences :**
+- ActivitySpinner.tsx supprime. La metaphore "loader rotatif + dispersion" est remplacee par "burst d'apparition + burst de dissolution + silence entre les deux" — l'utilisateur lit le texte du toast sans element visuel en mouvement.
+- Le pattern `key={trigger}` + `useMemo(generate, [])` est applicable a toute autre micro-animation que je voudrais randomiser plus tard (un confetti pour un milestone, un sparkle au switch de slot, etc.).
+- Si un jour on a besoin d'une bibliotheque de particules plus puissante (gpu-accelerated, des milliers d'instances), `react-tsparticles` est l'option de reference. Pas necessaire pour notre usage actuel.
