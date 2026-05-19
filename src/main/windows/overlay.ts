@@ -33,6 +33,10 @@ export function createOverlayWindow(): BrowserWindow {
   const x = storedX > 0 ? storedX : defaultX;
   const y = storedY > 0 ? storedY : defaultY;
 
+  // CRITICAL: dimensions are LOCKED. No setBounds / setSize / setContentSize
+  // calls anywhere in the codebase. The DOM never drives window size — modals
+  // and the activity toast must render *inside* the rounded container (via
+  // position: absolute, see OverlayApp). See ADR-028.
   overlayWindow = new BrowserWindow({
     width: OVERLAY_WIDTH,
     height: OVERLAY_HEIGHT,
@@ -43,6 +47,7 @@ export function createOverlayWindow(): BrowserWindow {
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
+    useContentSize: false, // explicit: window size is the OUTER frame size
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, '../../preload/index.js'),
