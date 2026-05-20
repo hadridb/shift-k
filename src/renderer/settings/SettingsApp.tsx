@@ -675,7 +675,6 @@ export function SettingsApp() {
 
   return (
     <div
-      className="settings-root"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -684,9 +683,8 @@ export function SettingsApp() {
         // Settings window reflects whatever theme the user picked. Without
         // this, the transparent BrowserWindow showed through to the desktop
         // for opaque themes (Obsidian / Carbon / Ivory). For Liquid Glass,
-        // --bg-primary is fully transparent (Sprint 8d.5) and a macOS-only
-        // CSS rule on `.settings-root` adds the backdrop-filter blur on top
-        // of native vibrancy. See themes.css.
+        // --bg-primary is itself semi-transparent and the window's
+        // transparency lets the desktop blur through.
         background: 'var(--bg-primary)',
         color: 'var(--text-primary)',
       }}

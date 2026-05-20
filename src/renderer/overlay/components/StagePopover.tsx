@@ -62,8 +62,8 @@ export function StagePopover({ open, stages, activeStage, onSelect, onClose }: P
             minWidth: 160,
             maxHeight: 200,
             overflowY: 'auto',
-            backdropFilter: 'blur(40px) saturate(180%) brightness(108%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(180%) brightness(108%)',
+            backdropFilter: 'blur(20px) saturate(160%) brightness(108%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(160%) brightness(108%)',
           }}
           role="menu"
         >

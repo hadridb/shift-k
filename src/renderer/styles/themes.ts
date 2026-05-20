@@ -177,14 +177,14 @@ const liquidGlass: Theme = {
   vibrancy: 'sidebar',
   // Sprint 8d.3 — pushed bg-primary opacity 0.55 → 0.04 so the
   // 'sidebar' vibrancy can actually show through. Sprint 8d.4 — bumped
-  // to 0.02. Sprint 8d.5 — maxed out: 0.02 → 0 (fully transparent).
-  // The .overlay-root no longer paints anything on top of the native
-  // vibrancy on macOS Liquid Glass; the glass-layer + the chromatic
-  // / specular pseudos provide all the visual chrome. On the dark
-  // themes / Windows fallback, this value is overridden by the
-  // themes.css selector path and stays opaque.
+  // a notch further (0.04 → 0.02) on user feedback "encore un peu plus
+  // de transparence". The themes.css block also adds macOS-only
+  // overrides that bring bg-modal / bg-elevated to a *light* frost
+  // (rgba(255,255,255,...)) — instead of the dark Windows fallback —
+  // so modal panels and settings cards read as glass cards floating
+  // on the vibrancy rather than opaque dark plates.
   cssVars: vars({
-    'bg-primary': 'rgba(0,0,0,0)',
+    'bg-primary': 'rgba(0,0,0,0.02)',
     'bg-elevated': 'rgba(20,20,20,0.30)',
     'bg-hover': 'rgba(255,255,255,0.06)',
     'bg-modal': 'rgba(0,0,0,0.45)',
