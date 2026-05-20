@@ -459,7 +459,7 @@ Si l'un ou l'autre echoue, le build casse — impossible de re-livrer un install
 ## ADR-024 : Routage audio — per-platform stage map + toggle `routeAllAudio`
 
 **Date :** 2026-05-19
-**Statut :** Acceptee
+**Statut :** Acceptee. **Partiellement superseded par ADR-036 (2026-05-20)** : le default de `routeAllAudio` passe de `false` a `true`. Le reste — `PLATFORM_STAGE_OVERRIDES`, `audioExtensions`, le mecanisme de capture orpheline lui-meme — reste valide.
 
 **Contexte :** Jusqu'a maintenant le routeur ne connaissait que video + image + project (PSD/AI/PRPROJ/AEP) et envoyait tout sur `activeStage` sauf les project files (→ src). Les AI directors utilisent de plus en plus de plateformes audio — Suno, ElevenLabs, Udio, Stable Audio pour la generation ; Splice, Loopcloud, Cymatics pour les sound banks — et toutes leurs sorties ont vocation a aller dans le stage **OST** (musique, voix, sound design) peu importe le stage actif du moment. Forcer le user a switcher manuellement vers OST a chaque drop est inacceptable (et casse le flow "drop and forget" qui fait la valeur du produit).
 
@@ -1097,3 +1097,180 @@ Le renderer-side hook `useJklShortcuts` (Shift+J/K/L overlay-focused) n'est pas 
 - Aucune de ces dependances n'est runtime — pas de risque de regression sur les builds Windows en cours.
 - ADR-010 reste la decision de fond (Apple Developer ID + Sectigo EV); ADR-035 specifie le COMMENT.
 - Si on doit cibler le Mac App Store un jour (improbable, le cycle de validation est punitif pour un outil pro), il faudra activer `mac.sandbox: true`, retirer les bypass JIT (impossible, V8 en a besoin → blocant Mac App Store de toute facon), ou utiliser un sub-pattern XPC. **Conclusion : pas de Mac App Store, distribution directe uniquement.** Cohrent avec la strategie de pricing direct EUR 29-49/mois.
+
+---
+
+## ADR-036 : Routage audio out of the box — default true, opt-out preserve (Sprint 8c)
+
+**Date :** 2026-05-20
+**Statut :** Acceptee. **Supersede ADR-024 sur le default de `routeAllAudio`** (le reste d'ADR-024 — la liste des plateformes, `PLATFORM_STAGE_OVERRIDES`, le mecanisme `audioExtensions` — reste valide).
+
+**Contexte :** Bug remonte en test ami sur Mac : Suno (et certaines exports ElevenLabs / Udio / AIVA) descendent les fichiers avec le titre du morceau seul, sans aucun marqueur de plateforme dans le filename (ex : `My_Song_Title.mp3`). Le router refuse de router (pas de pattern match) et le fichier reste en vrac dans Downloads.
+
+Sprint 5a avait deja livre `preferences.routeAllAudio` (capture les audio orphelins vers OST) precisement pour ce cas. Le mecanisme existait, mais :
+1. Le toggle etait **OFF par defaut** (ADR-024) — pour eviter de capturer la musique personnelle dans Downloads.
+2. Le testeur Mac ne savait pas que ca existait — UX-friction de decouverte.
+3. Le stage cible etait hardcode a `'ost'` ; un user qui prefere envoyer ses inits audio bruts vers `src` n'avait pas la main.
+
+Le testeur ne pouvait pas deviner qu'un toggle desactive cassait Suno. **Le bug est dans le default, pas dans la decouvrabilite.**
+
+**Decision :**
+
+### 1. Default ON — superseder ADR-024 sur ce point
+
+`preferences.routeAllAudio` passe de `default false` à `default true`. Trois arguments :
+
+1. **La promesse produit "drop and forget" est plus prioritaire que la protection musique perso.** Un user qui drop des outputs IA dans Downloads et qui regarde 30 secondes plus tard pour les ranger ne s'attend pas a devoir activer un toggle obscur dans Settings. Le bug Suno casse la promesse fondamentale.
+
+2. **La protection musique perso reste accessible via opt-out.** Le toggle existe toujours, est visible, est documente. Un user avec de la musique personnelle dans Downloads peut le desactiver en 2 secondes. C'est l'inversion classique convenience-vs-conservatisme : default a la convenience, opt-out pour les cas pointus.
+
+3. **Le scenario `Pink_Floyd_Echoes.mp3` reste cas-limite.** Sur la cible primaire (AI directors freelance, Downloads dedie aux outputs IA, voir CLAUDE.md "Persona cible"), Downloads ne contient pas de musique perso — ils ont iTunes/Apple Music/Spotify pour ca. ADR-024 surestimait le risque pour cette persona.
+
+ADR-024 reste citee pour son raisonnement (le risque est reel et documente), mais le verdict final s'inverse a la lumiere du test ami.
+
+### 2. Migration one-shot pour les installs existantes
+
+Pure function `applyAudioRoutingDefaultMigration` dans `src/core/config/migrations.ts` (testable hors Electron) :
+
+```ts
+function applyAudioRoutingDefaultMigration(prefs) {
+  if (prefs.audioRoutingDefaultMigrated === true) return { prefs, changed: false };
+  return { prefs: { ...prefs, routeAllAudio: true, audioRoutingDefaultMigrated: true }, changed: true };
+}
+```
+
+Appelee dans `store.ts > migrate()` au load. Le flag `audioRoutingDefaultMigrated` (nouveau, `default false` cote Zod) garantit l'idempotence :
+- Premier load apres upgrade → marker absent ou false → flip applique → marker passe a true → persist.
+- Tous les loads suivants → marker true → migration skip.
+- Un user qui opt-out via Settings apres coup garde son `routeAllAudio: false` car le marker est deja stamp.
+
+**Pourquoi cette mecanique vs un simple `default: true` ?** Les configs persistees avant Sprint 8c ont `routeAllAudio: false` ecrit en dur sur disque (Zod defaults sont serialises). Sans migration, ces users garderaient le vieux comportement et le bug Suno persisterait pour tous les early-adopters. Le marker permet de differencier "valeur par defaut heritage" de "valeur explicitement choisie par l'user".
+
+**Pourquoi pas un check pre-Zod sur l'absence du champ ?** Faisable mais fragile : depend de comment electron-store gere les defaults vs le raw JSON. Le marker explicite est triviale a raisonner et testable en une fonction pure.
+
+### 3. `audioFallbackStage: Stage` configurable
+
+Nouveau champ dans `Preferences` (default `'ost'`). Le resolver consulte `config.preferences.audioFallbackStage` pour la branche orphan-audio, au lieu du literal `'ost'`. Les 5 stages sont valides via Zod (`StageSchema`).
+
+**Critique : on ne touche PAS `PLATFORM_STAGE_OVERRIDES`.** Suno, ElevenLabs, Udio etc. restent forces a `'ost'` cote code, quel que soit `audioFallbackStage`. Raisonnement : ces plateformes sont **audio par definition** (semantique fixe), tandis que les orphelins audio sont **ambigus** (peut etre un init brut a melanger, un livrable, etc.) — la pref utilisateur a du sens pour l'ambigu, pas pour le force.
+
+Regression test dedie : `audioFallbackStage = 'src'` + Suno → toujours `'ost'`.
+
+**Pourquoi pas une map plus generale (orphan-by-extension-class → stage) ?** Surdesigne. Les seules orphelines actuellement routees sont audio (`routeAllAudio` est le seul flag de capture orpheline). Si on ajoute un jour `routeAllVideo` ou `routeAllImage`, on adoptera la meme pref + dropdown jumelle. Pas de meta-config a ce stade.
+
+**Migration :** Zod `.default('ost')` injecte automatiquement le champ pour les configs persistees avant ce sprint. Aucun comportement diffrent tant que l'user ne touche pas au dropdown.
+
+### 4. Banniere Settings — UX du opt-out
+
+Section AUDIO : banniere "ROUTAGE AUDIO ORPHELIN" en haut, qui :
+- Explique le bug Suno explicitement (avec `My_Song_Title.mp3` en code inline)
+- Dit clairement "Actif par defaut pour que Suno marche out of the box"
+- Surface le scenario opt-out : "Si ton dossier Telechargements contient de l'audio personnel, desactive le toggle"
+
+Le toggle juste en dessous a un label `"Capturer les fichiers audio orphelins"` et un hint qui rappelle "Actif par defaut". Le user opt-out en 2 clics.
+
+### 5. Stub `extractAudioMetadata` (preparation Sprint 16)
+
+Nouvelle fonction pure dans `src/core/router/audio-metadata.ts` :
+```ts
+export function extractAudioMetadata(_filePath: string): AudioMetadata { return {}; }
+```
+
+Type `AudioMetadata` definit 6 champs **tous optionnels** : `source`, `title`, `artist`, `software`, `suggestedStage`, `durationSeconds`.
+
+**Pourquoi ce stub maintenant ?**
+- Sprint 16 brache `music-metadata` (~140 kB, pure JS, pas de native dep) pour lire les tags ID3. Quand on lit les tags, le filename devient secondaire — Suno embed son nom dans `TENC` (Encoded By) et un track ID dans `TXXX:SUNO_TRACK_ID`. ElevenLabs : `TENC: ElevenLabs`. AIVA : tags custom. La capture orpheline `routeAllAudio` deviendra une defense de second niveau pour les outputs qui n'ont aucun tag.
+- Le stub fige le contrat (signature, types, JSDoc). Sprint 16 brache `music-metadata` sans avoir a reinventer l'API au milieu.
+- Cost : 1 fichier, 5 tests, ~90 lignes. Ne touche pas au resolver. Pas de regression possible.
+
+**Piege documente dans la JSDoc :** la version Sprint 16 sera **async** (lecture I/O des premiers ~4-8 kB du fichier pour le tag header). L'API stub actuelle est sync. La migration sync → async demandera de propager `await` dans `resolveDestination` et ses callers — le commentaire inline du fichier rappelle ce point pour eviter qu'on l'oublie.
+
+### Consequences
+
+- **Suno marche out of the box** pour tout nouvel install et tous les installs existants apres la prochaine ouverture de l'app (la migration s'execute au load de `store.ts`).
+- **Risque musique perso assume** : un user avec Pink Floyd dans Downloads verra ses morceaux routes vers `<Client>/<stage>/J<date>/` au prochain drop. Mitigation : la banniere visible + le toggle explicite + l'overlay activity toast qui montre les routages (Sprint 6.1) permettent de detecter immediatement le comportement et de l'inverser.
+- **Un user qui opt-out apres coup garde son choix** : le marker `audioRoutingDefaultMigrated: true` est ecrit a la migration, donc la migration ne re-run plus, donc le `routeAllAudio: false` persiste a chaque reload.
+- L'overlay et le toast d'activite (Sprint 6.1, `formatActivityLine`) n'ont **pas** besoin d'etre touches : la classification audio/video/image/project est faite par extension dans l'IPC `activity:routed`, peu importe le stage cible.
+- **Si on retente un jour de flipper en default-off**, l'ADR-037 (a ecrire) doit superseder le point #1 d'ADR-036, supprimer le marker `audioRoutingDefaultMigrated` (devenu vide de sens) ou inverser sa logique, et accepter que les installs existantes qui ont accepte le default-on a la migration garderont leur `routeAllAudio: true` — c'est leur choix implicite a posteriori.
+- ADR-024 reste cite dans le code (commentaires resolver, PLATFORM_STAGE_OVERRIDES) car son raisonnement sur le routage audio par plateforme reste valide. Seul le default a change.
+
+---
+
+## ADR-037 : `moveFile` cross-volume — fallback copy + unlink quand `fs.rename` throw EXDEV
+
+**Date :** 2026-05-20
+**Statut :** Acceptee. Bug critique decouvert pendant la validation live de Sprint 8c, fix bundled dans le meme commit (voir CLAUDE.md "Sprint 8c").
+
+**Contexte :** Pendant le test live de Sprint 8c (audio orphelin out-of-the-box), aucun fichier ne se routait — ni l'audio orphelin, ni meme les Suno tagges, ni les videos Runway. Diagnostic complet :
+
+1. `chokidar` detecte bien les nouveaux fichiers (verifie via `console.log` temporaire dans `watcher.ts`).
+2. `resolveDestination` retourne bien une destination valide.
+3. `moveFile` est appelee — et **throw `EXDEV: cross-device link not permitted`** sur `fs.rename`.
+4. L'erreur est captee par `processFile` qui envoie un event `type: 'error'` au handler dans `main/index.ts`.
+5. **Le handler n'a qu'une branche `if (event.type === 'routed')`** — les events d'erreur sont silencieusement ignores. Aucun log, aucune notification.
+
+Cause racine : Node.js `fs.rename()` n'autorise pas le rename entre volumes physiques sur Windows (limitation de l'API `MoveFileExW` sans le flag `MOVEFILE_COPY_ALLOWED`). Le persona cible — Hadrien et tous les AI directors testes — a son dossier Telechargements sur `C:` (drive systeme) et son root projet sur `E:` (drive media dedie aux gros fichiers). Cross-volume systematique.
+
+La V1 PowerShell utilisait `Move-Item` qui fallback automatiquement en `Copy-Item` + `Remove-Item` entre volumes — Hadrien n'a jamais vu le bug pendant le port V2 parce que la V1 tournait en parallele et faisait le boulot (voir [piege V1 vs V2 dans CLAUDE.md](../CLAUDE.md#heritage-v1-phasma-powershell)). Une fois la V1 desactivee pour valider Sprint 8c, V2 a revele qu'**aucun fichier n'avait jamais ete route** par le V2 sur Hadrien — sa machine est cross-volume depuis le debut.
+
+**Pourquoi les tests ne l'ont pas attrape :** `move-file.test.ts` cree son tmp dans `os.tmpdir()`. Sur la CI GitHub Actions ET sur la machine d'Hadrien, le tmpdir est sur le drive systeme — meme volume que la destination de test. `EXDEV` ne se declenche jamais en test. **Trou de couverture genuine.**
+
+**Decision :**
+
+### 1. Fallback `copy + unlink` quand `fs.rename` retourne EXDEV
+
+Dans `move-file.ts > moveFile`, intercept du code `EXDEV` dans le catch existant. EXDEV est une propriete **permanente** de la paire de chemins (le layout des volumes ne change pas entre retries), donc on **sort immediatement de la boucle de retry** et on bascule vers `crossVolumeMove`.
+
+```ts
+if (code === 'EXDEV') {
+  return crossVolumeMove(sourcePath, destPath);
+}
+```
+
+`crossVolumeMove` fait deux phases avec la meme politique de retry que la branche rename (10 tentatives, 500 ms entre chacune, sur EBUSY / EPERM / EACCES) :
+
+- **Phase 1 : `fs.copyFile`** — peut throw EBUSY si la source est encore lockee par le downloader (rare apres l'`awaitWriteFinish` de 2 s, mais possible). Retry transparent.
+- **Phase 2 : `fs.unlink`** — peut throw EBUSY si la source vient d'etre rouverte par un autre process. Retry transparent.
+
+### 2. Pas d'atomicite — trade-off documente
+
+Si `copyFile` succede mais `unlink` echoue apres MAX_ATTEMPTS, le fichier existe a destination ET a la source. La JSDoc de `crossVolumeMove` explicite ce trade-off :
+
+> *We prefer that to "destination never received the file" — at least the routing succeeded semantically, and the duplicate in Downloads can be cleaned manually (or by a future rescan that finds the file already matched at the destination and skips it).*
+
+Alternative consideree : rollback (delete destination si unlink fails). Rejetee car :
+- Source path `unlink` qui fail apres MAX_ATTEMPTS suggere une situation pathologique (locks systemes, antivirus, etc.) ou rollback aurait probablement les memes problemes.
+- Le user voit le fichier dans son dossier client (utile), un duplicate dans Downloads est gerable.
+
+### 3. Surface des `type: 'error'` events dans `main/index.ts`
+
+Le handler dans `main/index.ts:62-83` n'avait qu'une branche `routed`. **C'est ce qui a permis a ce bug de passer inapercu pendant tout le sprint** — chaque move echoue silencieusement, aucun log, aucune notif, l'overlay ne montre rien. On rajoute la branche manquante :
+
+```ts
+} else if (event.type === 'error') {
+  console.error(`[watcher] route failed for ${event.file}: ${event.error}`);
+}
+```
+
+Console-only pour cette iteration. Un toast rouge dans l'overlay ou une notif systeme demandent un design dedie (frequence d'apparition vs friction, position dans l'overlay vs ActivityToast existant, retention dans l'activity log). A traiter dans un futur sprint UX si necessaire.
+
+### 4. Tests
+
+5 nouveaux tests dans `move-file.test.ts` (6 → 11 total). On ne peut pas vraiment fabriquer un cross-volume dans la CI, donc on `vi.spyOn(fs, 'rename')` pour throw EXDEV et on laisse le vrai `fs.copyFile + fs.unlink` faire le travail sur le tmpdir. Les semantiques filesystem reelles sont exercees, seul `rename` est mock :
+
+1. Fallback fonctionne : source supprimee, dest existe avec le bon contenu.
+2. EXDEV bypass la boucle de retry (rename appele **1 fois**, pas 10).
+3. EXDEV + collision de nom → `_v02` suffix correctement applique apres bascule cross-volume.
+4. Erreurs non-EXDEV non-transient (ENOENT, etc.) throw toujours (pas swallowed par la nouvelle branche).
+5. EXDEV + EBUSY transient sur copyFile → retry (~ 500 ms) puis success.
+
+### 5. Suppression du trou de couverture
+
+Le bug est passe en partie parce que tous les tests `moveFile` tournent sur le meme volume que le tmpdir. **A reconsiderer si on industrialise les tests cross-platform :** on pourrait monter une partition virtuelle (loop device sur Linux, RAM disk sur macOS, VHD sur Windows) pour avoir un vrai test cross-volume. Pas necessaire aujourd'hui — le mock couvre les chemins de code, et la regression test (EXDEV → rename appele 1 fois) bloque toute regression vers `fs.rename` direct sans fallback.
+
+### Consequences
+
+- **Tous les fichiers existants dans `C:\Users\Hadrien\Downloads`** (7 ElevenLabs, 1 SFX, etc., listees pendant le diagnostic) restent dans Downloads — `chokidar` est en `ignoreInitial: true`, donc seul un Rescan manuel les routera. Action utilisateur : ouvrir l'overlay, cliquer Rescan, accepter la preview.
+- **Tous les nouveaux drops apres le prochain restart de Shift-K** seront routes correctement, peu importe le drive source.
+- Le bug existait depuis Sprint 1 (mai 2026). Toutes les versions distribuees avant ce fix (0.1.0, 0.1.1) sont **fonctionnellement cassees sur les machines cross-volume**. Le test ami sur Mac n'a probablement pas detecte le bug parce que macOS et Linux n'ont pas la notion de "volume" dans le meme sens — un mv entre deux disques sur macOS marche via APFS (ou via fallback systeme) sans EXDEV. **A confirmer en test Mac avant de bumper la version**.
+- Le pattern "handler ne traite qu'une branche d'event" est un anti-pattern systemique. A auditer ailleurs dans le code (autres `setXxxHandler` ?) au prochain sprint cleanup. Le minimum est qu'un `else` ou un `default` log la branche inattendue.

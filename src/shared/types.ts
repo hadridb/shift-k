@@ -18,6 +18,8 @@ export interface Preferences {
   lazyDailyFolders: boolean;
   groupByPlatform: boolean;
   routeAllAudio: boolean;
+  audioFallbackStage: Stage;
+  audioRoutingDefaultMigrated: boolean;
   logRetentionDays: number;
   notifyOnRoute: boolean;
   confirmBeforeRescan: boolean;

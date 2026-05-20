@@ -41,6 +41,7 @@ interface Form {
   lazyDailyFolders: boolean;
   groupByPlatform: boolean;
   routeAllAudio: boolean;
+  audioFallbackStage: Stage;
   audioExtensions: string[];
   imageExtensions: string[];
   videoExtensions: string[];
@@ -68,6 +69,7 @@ function formFromConfig(config: AppConfig): Form {
     lazyDailyFolders: config.preferences.lazyDailyFolders,
     groupByPlatform: config.preferences.groupByPlatform,
     routeAllAudio: config.preferences.routeAllAudio,
+    audioFallbackStage: config.preferences.audioFallbackStage,
     audioExtensions: [...config.audioExtensions],
     imageExtensions: [...config.imageExtensions],
     videoExtensions: [...config.videoExtensions],
@@ -640,6 +642,7 @@ export function SettingsApp() {
           dailyFolderFormat: form.dailyFolderFormat,
           lazyDailyFolders: form.lazyDailyFolders,
           routeAllAudio: form.routeAllAudio,
+          audioFallbackStage: form.audioFallbackStage,
           groupByPlatform: form.groupByPlatform,
           notifyOnRoute: form.notifyOnRoute,
           confirmBeforeRescan: form.confirmBeforeRescan,
@@ -926,18 +929,71 @@ export function SettingsApp() {
             </div>
           </Field>
 
+          {/* Sprint 8c (ADR-036): banner explaining when the orphan-audio
+              capture kicks in. Default ON since Sprint 8c — supersedes
+              ADR-024's off-by-default. Surfaces the opt-out clearly for
+              users with personal music in Downloads. */}
+          <div
+            style={{
+              padding: '12px 14px',
+              background: 'var(--bg-primary)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 8,
+              marginBottom: 14,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.18em',
+                color: 'var(--text-muted)',
+                marginBottom: 6,
+                fontWeight: 600,
+              }}
+            >
+              ROUTAGE AUDIO ORPHELIN
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+              Certaines plateformes (Suno surtout) exportent avec le titre du morceau,
+              sans aucun marqueur dans le nom (ex : <code style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--text-primary)' }}>My_Song_Title.mp3</code>).
+              Shift-K capture ces fichiers et les envoie vers le stage de ton choix.
+              <br /><br />
+              <strong style={{ color: 'var(--text-primary)' }}>Actif par defaut</strong> pour que Suno marche out of the box. Si ton
+              dossier Telechargements contient de l'audio personnel (musique, podcasts) que tu
+              ne veux pas voir route, desactive le toggle ci-dessous.
+            </div>
+          </div>
+
           <ToggleRow
             checked={form.routeAllAudio}
             onChange={(v) => update('routeAllAudio', v)}
-            label="Capturer tous les fichiers audio vers OST"
-            hint="Active uniquement si ton Downloads ne contient JAMAIS d'audio personnel (musique perso, podcasts). Sinon laisse off — seules les plateformes reconnues seront routées."
+            label="Capturer les fichiers audio orphelins"
+            hint="Actif par defaut. Desactive uniquement si ton Telechargements contient de l'audio personnel a preserver."
           />
+
+          <Field
+            label="Stage cible pour les audio orphelins"
+            hint="Par defaut OST (musique, voix, sound design). Choisis src si tu prefères classer les inits audio bruts a part."
+          >
+            <select
+              style={{ ...inputStyle, cursor: 'pointer' }}
+              value={form.audioFallbackStage}
+              onChange={(e) => update('audioFallbackStage', e.target.value as Stage)}
+              disabled={!form.routeAllAudio}
+            >
+              {(['src', 'img', 'out', 'ost', 'liv'] as const).map((stageKey) => (
+                <option key={stageKey} value={stageKey}>
+                  {form.stages[stageKey]} ({stageKey})
+                </option>
+              ))}
+            </select>
+          </Field>
 
           {(() => {
             const sampleDate = new Date();
-            const ostStageName = form.stages['ost'];
+            const fallbackStageName = form.stages[form.audioFallbackStage];
             const dailyFolder = form.dailyFoldersEnabled
-              ? `/${previewDailyFolder(form.dailyFolderFormat, ostStageName, sampleDate)}`
+              ? `/${previewDailyFolder(form.dailyFolderFormat, fallbackStageName, sampleDate)}`
               : '';
             const sampleClient = original.activeClient ?? '<Client>';
             return (
@@ -950,13 +1006,15 @@ export function SettingsApp() {
                   borderRadius: 6,
                   fontSize: 11,
                   color: 'var(--text-secondary)',
+                  opacity: form.routeAllAudio ? 1 : 0.5,
+                  transition: 'opacity 150ms ease-out',
                 }}
               >
                 <div style={{ fontSize: 9, letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: 4 }}>
-                  EXEMPLE
+                  EXEMPLE {form.routeAllAudio ? '' : '(toggle off)'}
                 </div>
                 <code style={{ fontSize: 11, color: 'var(--text-primary)' }}>
-                  ElevenLabs_voice.mp3 → {sampleClient}/{ostStageName}{dailyFolder}/
+                  My_Song_Title.mp3 → {sampleClient}/{fallbackStageName}{dailyFolder}/
                 </code>
               </div>
             );

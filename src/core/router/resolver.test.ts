@@ -195,9 +195,14 @@ describe('resolveDestination', () => {
     expect(result!.stageKey).toBe('ost');
   });
 
-  it('returns null for an audio file with no platform match (routeAllAudio off by default)', () => {
-    // Pure orphan audio — no pattern, no toggle yet (routeAllAudio added in next commit)
-    expect(resolveDestination('my_personal_song.mp3', baseConfig, FIXED_DATE)).toBeNull();
+  it('routes orphan audio with the default config (Sprint 8c flipped default to true)', () => {
+    // ADR-036 supersedes ADR-024 on the default. The whole point of Sprint 8c
+    // is "Suno works out of the box" — files without a recognized platform
+    // pattern but with an audio extension go to the configured fallback stage.
+    const result = resolveDestination('my_personal_song.mp3', baseConfig, FIXED_DATE);
+    expect(result).not.toBeNull();
+    expect(result!.platform).toBe('audio');
+    expect(result!.stageKey).toBe('ost'); // audioFallbackStage default
   });
 
   it('returns null when extension is audio but not in audioExtensions list', () => {
@@ -257,5 +262,88 @@ describe('resolveDestination', () => {
     const result = resolveDestination('Suno_track.mp3', cfg, FIXED_DATE);
     expect(result!.platform).toBe('suno'); // not 'audio'
     expect(result!.stageKey).toBe('ost');
+  });
+
+  // Sprint 8c (ADR-036): audioFallbackStage configurable
+
+  it('routes orphan audio to audioFallbackStage when set to src', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: {
+        ...baseConfig.preferences,
+        routeAllAudio: true,
+        audioFallbackStage: 'src',
+      },
+    };
+    const result = resolveDestination('My_Song_Title.mp3', cfg, FIXED_DATE);
+    expect(result).not.toBeNull();
+    expect(result!.platform).toBe('audio');
+    expect(result!.stageKey).toBe('src');
+    expect(result!.stageFolderName).toBe('01_SRC Inits');
+  });
+
+  it('routes orphan audio to audioFallbackStage when set to img', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: {
+        ...baseConfig.preferences,
+        routeAllAudio: true,
+        audioFallbackStage: 'img',
+      },
+    };
+    const result = resolveDestination('Track.flac', cfg, FIXED_DATE);
+    expect(result!.stageKey).toBe('img');
+    expect(result!.stageFolderName).toBe('02_IMG Inits');
+  });
+
+  it('audioFallbackStage does NOT affect known audio platforms (Suno still goes to OST)', () => {
+    // PLATFORM_STAGE_OVERRIDES keeps its hardcoded 'ost' — only orphans
+    // respect audioFallbackStage. Regression guard for the Sprint 8c split.
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: {
+        ...baseConfig.preferences,
+        routeAllAudio: true,
+        audioFallbackStage: 'src', // even with this set...
+      },
+    };
+    const result = resolveDestination('Suno_track.mp3', cfg, FIXED_DATE);
+    expect(result!.platform).toBe('suno');
+    expect(result!.stageKey).toBe('ost'); // override map wins
+  });
+
+  it('audioFallbackStage defaults to ost (Sprint 5a behavior preserved)', () => {
+    // Brand new config with only routeAllAudio toggled, no explicit
+    // audioFallbackStage override → defaults to ost via Zod schema.
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: { ...baseConfig.preferences, routeAllAudio: true },
+    };
+    const result = resolveDestination('orphan_track.mp3', cfg, FIXED_DATE);
+    expect(result!.stageKey).toBe('ost');
+  });
+
+  // PDF / non-audio orphan — explicit guard (brief asked for this)
+
+  it('non-audio orphan (.pdf) is never routed, even with routeAllAudio true', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: { ...baseConfig.preferences, routeAllAudio: true },
+    };
+    // .pdf is not in audioExtensions/videoExtensions/imageExtensions/projectExtensions
+    // and no platform pattern matches → must return null
+    expect(resolveDestination('invoice_2026.pdf', cfg, FIXED_DATE)).toBeNull();
+  });
+
+  // Opt-out path (ADR-036 supersedes ADR-024's default-off, but the toggle remains)
+
+  it('opt-out: orphan audio stays in Downloads when user disables routeAllAudio', () => {
+    const cfg: AppConfig = {
+      ...baseConfig,
+      preferences: { ...baseConfig.preferences, routeAllAudio: false },
+    };
+    // A user who turns off the toggle in Settings keeps the strict pre-Sprint-8c
+    // behavior — personal music in Downloads is left untouched.
+    expect(resolveDestination('Pink_Floyd_Echoes.mp3', cfg, FIXED_DATE)).toBeNull();
   });
 });

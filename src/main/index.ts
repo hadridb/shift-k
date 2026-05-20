@@ -79,6 +79,12 @@ app.whenReady().then(() => {
       BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send('activity:routed', entry);
       });
+    } else if (event.type === 'error') {
+      // Sprint 8c (ADR-037): surface move failures. Pre-fix these were
+      // silently swallowed, which is how the EXDEV cross-volume bug went
+      // undetected for so long. Console-only for now — a UX-facing toast
+      // is a separate design decision (see ADR-037 § "follow-up").
+      console.error(`[watcher] route failed for ${event.file}: ${event.error}`);
     }
   });
   registerShortcuts();

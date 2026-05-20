@@ -85,5 +85,16 @@ export function createWatcher(options: WatcherOptions): FSWatcher {
   watcher.on('add', handle);
   watcher.on('change', handle);
 
+  // Sprint 8c (ADR-037): surface chokidar startup + errors. The error
+  // listener in particular is non-negotiable — without it chokidar's
+  // internal errors are swallowed and we lose all observability when the
+  // watcher fails to attach (e.g. permission denied on Downloads).
+  watcher.on('ready', () => {
+    console.log('[watcher] chokidar ready — watching:', config.downloadsPath);
+  });
+  watcher.on('error', (err) => {
+    console.error('[watcher] chokidar error:', err);
+  });
+
   return watcher;
 }

@@ -1,6 +1,10 @@
 import ElectronStore from 'electron-store';
 import { AppConfigSchema, defaultConfig } from './schema';
-import { POST_V1_PLATFORM_PATTERNS, mergeNewPlatformPatterns } from './migrations';
+import {
+  POST_V1_PLATFORM_PATTERNS,
+  mergeNewPlatformPatterns,
+  applyAudioRoutingDefaultMigration,
+} from './migrations';
 import type { AppConfig } from '@shared/types';
 
 const store = new ElectronStore<AppConfig>({
@@ -21,10 +25,21 @@ function migrate(): void {
   // 2. Sprint 8: gate the new cinematic onboarding to first launch only.
   // Existing users whose config already has root + downloadsPath set should
   // not see the onboarding — flip firstLaunchCompleted to true silently.
-  const prefs = (raw.preferences ?? {}) as Partial<AppConfig['preferences']>;
+  let prefs = (raw.preferences ?? {}) as Partial<AppConfig['preferences']>;
   const hasCompleteConfig = Boolean(raw.root && raw.downloadsPath);
   if (hasCompleteConfig && prefs.firstLaunchCompleted !== true) {
-    store.set('preferences', { ...prefs, firstLaunchCompleted: true });
+    prefs = { ...prefs, firstLaunchCompleted: true };
+    store.set('preferences', prefs);
+  }
+
+  // 3. Sprint 8c (ADR-036): force-flip routeAllAudio to true on first load
+  // after upgrade, then stamp the marker so the migration never re-runs.
+  // ADR-024's default-off decision is superseded — the goal is "Suno works
+  // out of the box". Users who explicitly opt out after this point keep
+  // their choice (marker is set, migration skips).
+  const audio = applyAudioRoutingDefaultMigration(prefs);
+  if (audio.changed) {
+    store.set('preferences', audio.prefs);
   }
 }
 

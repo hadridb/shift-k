@@ -235,6 +235,16 @@ shift-k/
 - Polish overlay : badge "N fichiers en attente" pres du bouton Rescan, recherche dans EditSlots
 - Phase Gamma : extension navigateur pour capture metadonnees (prompt, seed, params depuis Runway/Higgsfield/Kling)
 
+**Sprint 8c (termine — 20/05/2026)** : Routage audio orphelin OUT OF THE BOX.
+- [x] Bug rapporte en test Mac : Suno exporte `My_Song_Title.mp3` sans le pattern "suno" dans le nom — le router laissait le fichier dans Telechargements. La fonctionnalite `routeAllAudio` existait deja (Sprint 5a / ADR-024) mais le toggle etait off par defaut et trop peu visible.
+- [x] **`routeAllAudio` default flippe `false` → `true`**. ADR-036 supersede ADR-024 sur ce point. Justification : le bug Suno casse la promesse "drop and forget" du produit ; le risque musique perso reste reel mais est traite via opt-out + banniere visible. Suno marche maintenant out of the box.
+- [x] Migration one-shot des installs existantes via `applyAudioRoutingDefaultMigration` (pure function dans `migrations.ts`, testable hors Electron). Marker `preferences.audioRoutingDefaultMigrated` (default false) garantit que la migration s'execute une seule fois — un user qui opt-out apres coup garde son choix.
+- [x] Nouvelle pref `preferences.audioFallbackStage: Stage` (default `'ost'`). Le stage cible des audio orphelins est maintenant configurable (5 stages : src, img, out, ost, liv). Le hardcode `'ost'` reste pour les plateformes connues via `PLATFORM_STAGE_OVERRIDES` (Suno, ElevenLabs, etc. — semantique audio par definition).
+- [x] UI Settings AUDIO : banniere explicative au-dessus du toggle ("Actif par defaut, opt-out si Downloads contient de l'audio personnel") + dropdown stage cible (disabled quand toggle off, opacity 0.5 sur la preview). Label du toggle : "Capturer les fichiers audio orphelins".
+- [x] Stub `extractAudioMetadata` cree dans `src/core/router/audio-metadata.ts`. Retourne `{}`, type `AudioMetadata` avec 6 champs optionnels (source, title, artist, software, suggestedStage, durationSeconds). JSDoc detaillee + 5 tests bloquent le contrat. Non-cable au resolver — pure prep Sprint 16 (music-metadata).
+- [x] Voir ADR-036. Tests : +5 audio-metadata, +8 schema (default true + 5 stages + reject + 4 migration), +6 resolver (3 stage configs, pdf orphan, opt-out canonical, new default behavior).
+- [x] **Bug critique decouvert pendant la validation live** : `fs.rename` throw EXDEV en cross-volume (Hadrien : Downloads sur `C:`, projets sur `E:`). Aucun fichier ne s'est jamais route sur sa machine depuis Sprint 1 — la V1 PowerShell tournait en parallele et faisait le boulot, masquant le bug. Fix : `crossVolumeMove` fallback (`fs.copyFile` + `fs.unlink`) avec meme politique de retry sur EBUSY/EPERM/EACCES. Le handler `setWatcherEventHandler` dans `main/index.ts` n'avait qu'une branche `routed` — les erreurs etaient swallowed silencieusement (raison pour laquelle le bug a passe inapercu). Ajout d'un `console.error` sur les events `type: 'error'`. Voir ADR-037. 5 tests dedies (mock `fs.rename` pour throw EXDEV, le vrai `copyFile + unlink` est exerce). 168 tests verts (157 → 168, +11 cumulees Sprint 8c).
+
 **Sprint 10 (en cours — config seule, build Mac attend les certs)** : Preparation packaging macOS.
 - [x] `electron-builder.yml > mac:` : cibles `dmg` + `zip` (arm64 + x64), category `productivity`, hardenedRuntime, gatekeeperAssess false, entitlements + entitlementsInherit, notarize teamId placeholder.
 - [x] `extendInfo.LSUIElement: true` : Shift-K vit dans la menu bar uniquement, pas de Dock icon (UX equivalente au tray Windows). `NSDownloadsFolderUsageDescription` ajoute pour le prompt macOS 10.15+ au premier acces Downloads.
@@ -303,4 +313,4 @@ Sprint 10 cote config = termine cote Windows. Attendre la validation Apple Devel
 
 ---
 
-*Derniere mise a jour : 20 mai 2026 (Sprint 10 — config Mac packaging, en attente certs Apple ; ADR-035). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 20 mai 2026 (Sprint 10 — config Mac packaging, en attente certs Apple ; Sprint 8c — audio orphelins out of the box + fix EXDEV cross-volume, ADR-035/036/037). A maintenir a jour a chaque decision structurante.*

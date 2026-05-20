@@ -71,7 +71,11 @@ export function resolveDestination(
       };
     }
     if (isAudio && config.preferences.routeAllAudio) {
-      const stageKey: Stage = 'ost';
+      // Sprint 8c (ADR-036): stage cible configurable via audioFallbackStage.
+      // PLATFORM_STAGE_OVERRIDES garde son hardcode 'ost' pour Suno/ElevenLabs
+      // etc. (semantique : ces plateformes sont audio par definition) ; seul
+      // le fallback orphan respecte la pref user.
+      const stageKey: Stage = config.preferences.audioFallbackStage;
       return {
         destDir: buildDailyPath(config, stageKey, null, date),
         platform: 'audio',

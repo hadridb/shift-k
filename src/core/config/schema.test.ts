@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { AppConfigSchema, defaultConfig } from './schema';
-import { mergeNewPlatformPatterns, POST_V1_PLATFORM_PATTERNS } from './migrations';
+import {
+  mergeNewPlatformPatterns,
+  POST_V1_PLATFORM_PATTERNS,
+  applyAudioRoutingDefaultMigration,
+} from './migrations';
 
 describe('AppConfigSchema', () => {
   it('parses an empty object into full defaults', () => {
@@ -187,5 +191,97 @@ describe('AppConfigSchema', () => {
     expect(() =>
       AppConfigSchema.parse({ preferences: { theme: 'midnight-blue' } }),
     ).toThrow();
+  });
+
+  // Sprint 8c (ADR-036): audioFallbackStage configurable
+
+  it('preferences.audioFallbackStage defaults to "ost" (preserves Sprint 5a behavior)', () => {
+    expect(defaultConfig.preferences.audioFallbackStage).toBe('ost');
+    const parsed = AppConfigSchema.parse({});
+    expect(parsed.preferences.audioFallbackStage).toBe('ost');
+  });
+
+  it('preferences.audioFallbackStage accepts each of the 5 stage keys', () => {
+    for (const stage of ['src', 'img', 'out', 'ost', 'liv'] as const) {
+      const parsed = AppConfigSchema.parse({ preferences: { audioFallbackStage: stage } });
+      expect(parsed.preferences.audioFallbackStage).toBe(stage);
+    }
+  });
+
+  it('preferences.audioFallbackStage rejects unknown stage names', () => {
+    expect(() =>
+      AppConfigSchema.parse({ preferences: { audioFallbackStage: 'unknown' } }),
+    ).toThrow();
+  });
+
+  it('migration: configs without audioFallbackStage get the default injected', () => {
+    // Simulates an existing user config persisted before Sprint 8c.
+    const persistedV1: unknown = {
+      version: '2.0.0',
+      preferences: { routeAllAudio: true /* no audioFallbackStage */ },
+    };
+    const parsed = AppConfigSchema.parse(persistedV1);
+    expect(parsed.preferences.audioFallbackStage).toBe('ost');
+    expect(parsed.preferences.routeAllAudio).toBe(true); // user value preserved
+  });
+
+  // Sprint 8c (ADR-036): routeAllAudio default flipped false → true.
+  // Supersedes ADR-024 on the default. Opt-out via toggle remains.
+
+  it('preferences.routeAllAudio defaults to true (ADR-036 supersedes ADR-024 default)', () => {
+    expect(defaultConfig.preferences.routeAllAudio).toBe(true);
+    const parsed = AppConfigSchema.parse({});
+    expect(parsed.preferences.routeAllAudio).toBe(true);
+  });
+
+  it('preferences.audioRoutingDefaultMigrated defaults to false (marker for one-shot migration)', () => {
+    expect(defaultConfig.preferences.audioRoutingDefaultMigrated).toBe(false);
+  });
+
+  // applyAudioRoutingDefaultMigration — pure migration function
+
+  it('migration applyAudioRoutingDefault: flips routeAllAudio false → true on first run', () => {
+    // Canonical case: an old config persisted before Sprint 8c with the
+    // legacy default-false carried over.
+    const persisted = { routeAllAudio: false };
+    const result = applyAudioRoutingDefaultMigration(persisted);
+    expect(result.changed).toBe(true);
+    expect(result.prefs.routeAllAudio).toBe(true);
+    expect(result.prefs.audioRoutingDefaultMigrated).toBe(true);
+  });
+
+  it('migration applyAudioRoutingDefault: no-op when marker is already true (respects user opt-out)', () => {
+    // A user who toggled routeAllAudio off in Settings post-Sprint-8c — the
+    // marker is set, the migration must NOT overwrite their choice.
+    const persisted = { routeAllAudio: false, audioRoutingDefaultMigrated: true };
+    const result = applyAudioRoutingDefaultMigration(persisted);
+    expect(result.changed).toBe(false);
+    expect(result.prefs.routeAllAudio).toBe(false); // user wins
+  });
+
+  it('migration applyAudioRoutingDefault: still stamps marker for brand-new configs', () => {
+    // A fresh install where the user hasn't touched anything — routeAllAudio
+    // is true from the new default, but the marker is still false (Zod default).
+    // The migration is a no-op semantically, but it stamps the marker so the
+    // next load skips the check entirely.
+    const persisted = { routeAllAudio: true };
+    const result = applyAudioRoutingDefaultMigration(persisted);
+    expect(result.changed).toBe(true);
+    expect(result.prefs.routeAllAudio).toBe(true);
+    expect(result.prefs.audioRoutingDefaultMigrated).toBe(true);
+  });
+
+  it('migration applyAudioRoutingDefault: preserves unrelated preference keys', () => {
+    const persisted = {
+      routeAllAudio: false,
+      audioFallbackStage: 'src' as const,
+      groupByPlatform: true,
+      logRetentionDays: 60,
+    };
+    const result = applyAudioRoutingDefaultMigration(persisted);
+    expect(result.prefs.routeAllAudio).toBe(true);
+    expect(result.prefs.audioFallbackStage).toBe('src');
+    expect(result.prefs.groupByPlatform).toBe(true);
+    expect(result.prefs.logRetentionDays).toBe(60);
   });
 });

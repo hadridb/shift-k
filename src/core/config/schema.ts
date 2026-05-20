@@ -109,7 +109,21 @@ export const AppConfigSchema = z.object({
       dailyFoldersEnabled: z.boolean().default(true),
       lazyDailyFolders: z.boolean().default(true),
       groupByPlatform: z.boolean().default(false),
-      routeAllAudio: z.boolean().default(false),
+      // Sprint 8c (ADR-036) flip default false → true ; supersede la decision
+      // d'ADR-024 sur ce point. Les installs existantes sont migrees a true
+      // via `applyAudioRoutingDefaultMigration` dans store.ts (one-shot,
+      // protege par le flag `audioRoutingDefaultMigrated`).
+      routeAllAudio: z.boolean().default(true),
+      // Sprint 8c : stage cible des audio orphelins quand routeAllAudio est on.
+      // Etait hardcode 'ost' jusqu'au Sprint 8c ; maintenant configurable pour les
+      // users qui prefèrent envoyer les inits audio bruts vers 'src' ou ailleurs.
+      audioFallbackStage: StageSchema.default('ost'),
+      // Sprint 8c : marker one-shot pour la migration de routeAllAudio false → true.
+      // Default false pour que la migration s'execute au prochain load de TOUTE
+      // config persistee avant Sprint 8c (qui n'avait pas ce champ). Apres
+      // execution, le marker passe a true et la migration ne re-run plus —
+      // un user qui opt-out via le toggle Settings garde donc son choix.
+      audioRoutingDefaultMigrated: z.boolean().default(false),
       logRetentionDays: z.number().int().positive().default(30),
       notifyOnRoute: z.boolean().default(true),
       confirmBeforeRescan: z.boolean().default(true),
@@ -138,7 +152,9 @@ export const AppConfigSchema = z.object({
       dailyFoldersEnabled: true,
       lazyDailyFolders: true,
       groupByPlatform: false,
-      routeAllAudio: false,
+      routeAllAudio: true,
+      audioFallbackStage: 'ost',
+      audioRoutingDefaultMigrated: false,
       logRetentionDays: 30,
       notifyOnRoute: true,
       confirmBeforeRescan: true,
