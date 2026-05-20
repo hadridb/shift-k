@@ -183,6 +183,15 @@ shift-k/
 - [x] Replay : bouton dans Settings → À PROPOS + script `npm run dev:onboarding` (cross-env `SHIFTK_FORCE_ONBOARDING=1`).
 - [x] Voir ADR-031 + docs/MARKETING_ASSETS.md. 118 tests verts.
 
+**Sprint 8d (termine — 20/05/2026)** : Liquid Glass refinement macOS — approximation macOS 26.
+- [x] `theme-applier.ts` : vibrancy `'hud'` → `'fullscreen-ui'` (`NSVisualEffectMaterialFullScreenUI`, materiau Control Center / Menu Bar / Notification Center, macOS 11+). Plus translucide, moins teinte HUD.
+- [x] `overlay.ts` + `settings.ts` : `visualEffectState: 'active'` au constructor — la vibrancy macOS reste vivante meme quand la fenetre n'a pas le focus. Critique pour un overlay always-on-top.
+- [x] `themes.css` : couche CSS subtile macOS-only sur `.glass-layer` via `:root:not([data-glass-fallback='true'])`. `saturate(140%) brightness(108%)` (zero blur additionnel, pour ne pas voiler la vibrancy) + inset box-shadow chromatique ±0.5 px (warm rose a gauche, cool blue a droite + minuscule highlight/shadow top-bottom). Aberration calibree contre macOS 26 Settings.app.
+- [x] `OverlayApp.tsx` + `themes.css` : nouveau `.modal-backdrop` (z-index 10, blur 20 px + alpha 0.15) qui s'intercale entre UI overlay et modal quand un dialogue s'ouvre. Effet visuel gate macOS-only (meme selecteur que la couche CSS). Le panneau du modal (semi-transparent) blure le backdrop, qui blure l'UI — stacking macOS 26 "modal flotte sur champ recesse".
+- [x] Windows path strictement inchange : `.glass-layer` regle par defaut (80 px blur strong CSS) untouched ; `.modal-backdrop` rule par defaut layout-only (effet visuel gate sur selecteur macOS-only) ; `visualEffectState` ignore par Chromium sur Windows.
+- [x] Voir ADR-030 (Sprint 8d revision) + docs/THEMES.md. 142 tests verts (pas de nouveau test — les effets sont visuels).
+- [ ] Validation visuelle a faire au prochain test Mac. Screenshots avant/apres a deposer dans `docs/screenshots/sprint-8d-liquid-glass/`.
+
 **Sprint 8 polish (termine — 20/05/2026)** : 5 iterations de raffinement onboarding sur retour Hadrien.
 - [x] **Iter 1** : devtools gate (`SHIFTK_DEVTOOLS=1`), splash + Screen 1 wordmark passes en UPPERCASE sans trait, onboarding window passe `frame: false`, particle burst delai 1100 ms pour etre visible apres l'entry transition.
 - [x] **Iter 2** : `ParticleField.tsx` (140 particules 1-3 px Touch Designer style, 3 phases burst/idle/implode, seed deterministe pour HMR-stable). Screen 7 reecrit autour de la state machine. Screen 1 copy sober "Réalisateur IA".
@@ -280,6 +289,10 @@ Sequence a executer **sur Mac**, une fois les certificats Apple Developer recus 
 8. **Verification** : ouvrir le .dmg, drag-and-drop vers /Applications, premier lancement → Gatekeeper doit accepter sans prompt (signe + notarise + stapled). Si "App ne peut etre ouverte", c'est que le staple a echoue — re-lancer `xcrun stapler staple release/Shift-K-X.Y.Z-arm64.dmg`.
 
 Le test de regression `tests/electron-builder.mac.test.ts` garantit que la config Mac ne derive pas pendant qu'on attend les certs. Si on ajoute un entitlement, mettre a jour le plist ET le test.
+
+## Themes — gap actuel avec macOS 26 Liquid Glass
+
+Le thema `liquid-glass` rend bien (vibrancy native `'fullscreen-ui'` + couche CSS subtile + aberration chromatique inset ±0.5 px + modal blur stacking — Sprint 8d) mais reste une **approximation** du vrai Liquid Glass macOS 26. Le vrai materiau passe par `NSGlassEffectView` (nouvelle API AppKit macOS 26) qui supporte lensing dynamique et aberration chromatique physique au sampling. Electron 33 ne l'expose pas via `BrowserWindow.setVibrancy()` — limite aux `NSVisualEffectMaterial` stock. Re-evaluer quand Electron exposera l'API (probablement Electron 35+, automne 2026). Voir ADR-030 (Sprint 8d revision) + docs/THEMES.md.
 
 ## Dernieres decisions (session 20/05/2026)
 

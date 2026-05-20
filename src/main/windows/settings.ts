@@ -25,6 +25,10 @@ export function createSettingsWindow(): BrowserWindow {
     // window stayed dark when the user picked Ivory or Liquid Glass.
     transparent: true,
     backgroundColor: '#00000000',
+    // Match the overlay — vibrancy stays vivid even when this settings
+    // window doesn't have focus (the user is constantly switching back
+    // to the overlay to preview their picks). See ADR-030 / Sprint 8d.
+    visualEffectState: 'active',
     autoHideMenuBar: true,
     minimizable: false,
     maximizable: false,

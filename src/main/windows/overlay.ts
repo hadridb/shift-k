@@ -54,6 +54,12 @@ export function createOverlayWindow(): BrowserWindow {
     // Opaque themes (Obsidian, Carbon, Ivory) paint their own
     // --bg-primary on the container, hiding this transparency.
     backgroundColor: '#00000000',
+    // Keep the macOS vibrancy material vivid even when the overlay
+    // doesn't have keyboard focus. Without this, the system dims
+    // vibrancy whenever the user clicks another app — which is the
+    // default state for an always-on-top widget. Harmless when
+    // vibrancy is not applied (opaque themes). Sprint 8d / ADR-030.
+    visualEffectState: 'active',
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,

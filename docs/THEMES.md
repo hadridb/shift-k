@@ -35,13 +35,29 @@ Crème éditorial `#FAF8F3`, texte sombre `#1A1A1A`, accent or sourd
 `#A28C5B`. Mode clair haut de gamme, pour environnements lumineux.
 
 ### Liquid Glass / Transparency (translucent)
-- **macOS** : vibrancy native `'hud'` via `BrowserWindow.setVibrancy()`.
-  Refraction physique GPU, sampling inter-fenêtres. Le vrai Liquid Glass
-  Apple.
+- **macOS** (Sprint 8d) : vibrancy native `'fullscreen-ui'` via
+  `BrowserWindow.setVibrancy()` + `visualEffectState: 'active'` au
+  constructor (la vibrancy reste vivante quand la fenêtre perd le
+  focus — important pour un overlay always-on-top). `fullscreen-ui`
+  est `NSVisualEffectMaterialFullScreenUI`, le même matériau que
+  Control Center / Menu Bar / Notification Center — le plus proche
+  stock du Liquid Glass macOS 26 disponible sans `NSGlassEffectView`
+  (qu'Electron 33 n'expose pas).
+  Une couche CSS très subtile (`saturate(140%) brightness(108%)` +
+  inset box-shadow chromatique ±0.5 px) est layerée par-dessus pour
+  approcher le stacking visuel de macOS 26. Aucun blur CSS additionnel
+  pour ne pas voiler la vibrancy native.
 - **Windows / Linux** : `backdrop-filter: blur(80px) saturate(200%)
   brightness(110%)` sur un `.glass-layer` dédié. Approximation CSS sans
   refraction, sans sampling inter-app. Le label devient "Transparency"
   pour gérer les attentes.
+- **Modal stacking** (Sprint 8d, macOS uniquement) : quand un dialogue
+  s'ouvre (EditSlots, NewProject, OpenFolders, Rescan), un calque
+  `.modal-backdrop` (`blur(20px) + rgba(0,0,0,0.15)`) s'intercale entre
+  l'UI sous-jacente et le panneau du modal. Le panneau (semi-transparent
+  via `--bg-modal: rgba(0,0,0,0.5)`) blure le backdrop, qui blure
+  lui-même l'UI — deux passes empilées qui donnent au modal l'impression
+  de flotter au-dessus d'un champ recessé, comme dans macOS 26.
 
 ---
 
@@ -70,6 +86,14 @@ Voir aussi `docs/THEME_LIMITS.md` et `docs/KNOWN_LIMITATIONS.md`.
 
 - **Liquid Glass sur Windows** n'est PAS du vrai Liquid Glass Apple —
   c'est un blur CSS. Documenté dans le picker via le badge "Fallback CSS".
+- **Liquid Glass sur macOS reste une approximation** (Sprint 8d). Le
+  vrai matériau macOS 26 Liquid Glass est exposé par `NSGlassEffectView`,
+  une nouvelle API AppKit qui supporte la lensing dynamique et
+  l'aberration chromatique physique. Electron 33 ne l'expose pas via
+  `BrowserWindow.setVibrancy()` — on est limité au matériau
+  `fullscreen-ui` (`NSVisualEffectMaterialFullScreenUI`, macOS 11+) +
+  une couche CSS very subtle pour approcher visuellement. Re-évaluer
+  quand Electron exposera l'API (probablement Electron 35+).
 - **`prefers-reduced-motion`** non honoré actuellement. Pas critique
   depuis qu'Aurora est retiré (pas d'autres animations de thème).
 - **Capture d'écran Liquid Glass** : Snipping Tool Windows capture

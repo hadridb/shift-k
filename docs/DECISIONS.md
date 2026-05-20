@@ -841,6 +841,33 @@ L'`id` interne reste `'liquid-glass'` — la migration de config ne change rien,
 - Le picker SettingsApp consomme ces helpers via `platformInfo` (deja recupere par IPC `system:platform-info` au mount).
 - Les futurs themes pourront suivre le meme pattern s'ils ont besoin de noms differents par plateforme — l'opt-in vit dans le helper, pas dans le type `Theme`.
 
+### ADR-030 (revisited Sprint 8d) : Approximation macOS 26 Liquid Glass
+
+**Date :** 2026-05-20
+**Statut :** Acceptee, affine ADR-030
+
+**Contexte :** Premier test reel sur Mac. La vibrancy `'hud'` (NSVisualEffectMaterialHUDWindow) rend un gris semi-transparent uniforme — pas du tout l'effet macOS 26 Liquid Glass attendu (backdrop blur dynamique + lensing + aberration chromatique). Electron 33 n'expose pas `NSGlassEffectView`, la nouvelle API AppKit macOS 26. On est limite aux NSVisualEffectMaterial stock.
+
+**Decision :** Approximation a quatre niveaux, gatee sur `process.platform === 'darwin'` partout :
+
+1. **Vibrancy material** : `'hud'` → `'fullscreen-ui'` (`NSVisualEffectMaterialFullScreenUI`, macOS 11+). C'est le materiau du Control Center / Menu Bar / Notification Center — la stock le plus proche visuellement du Liquid Glass macOS 26. Plus translucide, moins de teinte HUD.
+
+2. **`visualEffectState: 'active'`** au constructor de la BrowserWindow (overlay + settings). La vibrancy macOS dim quand la fenetre n'a pas le focus par defaut — catastrophique pour un overlay always-on-top dont l'usage normal est "fenetre secondaire en permanence". `'active'` force le materiau a rester vivant. Option de constructor uniquement (pas de setter runtime), passee a la creation, ignoree sur Windows.
+
+3. **Couche CSS subtile** sur `.glass-layer` cote macOS uniquement (`:root:not([data-glass-fallback='true'])`) : `saturate(140%) brightness(108%)` + inset box-shadow chromatique ±0.5 px (warm rose `rgba(255,130,150,.12)` a gauche, cool blue `rgba(130,150,255,.12)` a droite + minuscule highlight top/shadow bottom). Aucun blur CSS pour ne pas voiler la vibrancy native. L'aberration chromatique mimicke la refraction differente aux bords d'une vraie surface de verre — calibre subtil contre macOS 26 Settings.app.
+
+4. **Modal blur stacking** : nouveau `.modal-backdrop` (z-index 10) entre l'UI overlay (z-index 1) et le panneau du modal (z-index 100). `blur(20px) + rgba(0,0,0,0.15)`. Le panneau du modal (semi-transparent via `--bg-modal: rgba(0,0,0,0.5)` + son propre `backdrop-filter`) blure le backdrop, qui blure lui-meme l'UI — deux passes empilees qui donnent au modal l'impression de flotter au-dessus d'un champ recessé. Style macOS 26.
+
+**Garde Windows intact :**
+- `.glass-layer` regle par defaut (80 px blur strong CSS) **inchangee** — Windows ne match pas `:not([data-glass-fallback='true'])` puisque `data-glass-fallback="true"` est set par `theme-applier.ts > cssGlassFallback: process.platform !== 'darwin'`.
+- `.modal-backdrop` rule par defaut = layout-only (position, z-index, pointer-events). Effet visuel `backdrop-filter` gate sur le meme selecteur macOS-only — Windows ne le voit pas.
+- `visualEffectState` au constructor : option macOS-only en Electron, ignoree silencieusement par Chromium sur Windows.
+
+**Consequences :**
+- Le test `themes.test.ts > 'liquid-glass' vibrancy is fullscreen-ui'` (s'il existait sur 'hud') reste valide en mettant a jour la valeur — actuellement les tests ne touchent pas la vibrancy donc rien a faire.
+- L'effet n'est pas 100% native. Reste un "80%" approximation — l'aberration vraie + lensing dynamique demandent `NSGlassEffectView`. Re-evaluer quand Electron expose l'API (probablement Electron 35+, automne 2026).
+- `MAC_BUGS.md` : screenshot avant/apres a prendre au prochain test Mac.
+
 ---
 
 ## ADR-031 : Splash + onboarding cinematique — fenetre 980x680 plein ecran noir

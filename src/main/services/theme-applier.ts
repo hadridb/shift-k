@@ -15,6 +15,16 @@ import { getOverlayWindow } from '@main/windows/overlay';
  * its code paths along with it. The `isWindows11OrLater` helper stays
  * exported in case a future sprint reintroduces a Windows-build-gated
  * effect. See ADR-029.
+ *
+ * Sprint 8d switched the macOS Liquid Glass vibrancy material from
+ * `'hud'` (dark, opaque HUD plate) to `'fullscreen-ui'`. `fullscreen-ui`
+ * is NSVisualEffectMaterialFullScreenUI — the same material Apple uses
+ * for the Control Center / Menu Bar / Notification Center on macOS
+ * 11+, which is the closest stock material to the macOS 26 Liquid
+ * Glass appearance. Electron 33 doesn't expose NSGlassEffectView, so
+ * this + a very subtle CSS pass in the renderer is the best
+ * approximation available without forking Electron. See ADR-030
+ * (Sprint 8d revision).
  */
 
 const MICA_MIN_BUILD = 22000;
@@ -27,7 +37,7 @@ export function isWindows11OrLater(): boolean {
 }
 
 interface Plan {
-  macosVibrancy: 'hud' | null;
+  macosVibrancy: 'fullscreen-ui' | null;
   /** Render the CSS backdrop-filter fallback in the renderer (Windows liquid-glass). */
   cssGlassFallback: boolean;
 }
@@ -35,7 +45,7 @@ interface Plan {
 function planFor(themeId: ThemeId): Plan {
   if (themeId === 'liquid-glass') {
     return {
-      macosVibrancy: 'hud',
+      macosVibrancy: 'fullscreen-ui',
       cssGlassFallback: process.platform !== 'darwin',
     };
   }
@@ -62,6 +72,8 @@ function applyToWindow(win: BrowserWindow, themeId: ThemeId, plan: Plan): void {
   }
 
   // Tell the renderer whether to draw the CSS backdrop-filter fallback.
+  // True on Windows / Linux (no native vibrancy → CSS does everything),
+  // false on macOS (native vibrancy + subtle CSS layered on top).
   win.webContents.send('theme:glass-fallback', plan.cssGlassFallback);
   console.log('[theme] glass-fallback signal sent:', plan.cssGlassFallback);
 }

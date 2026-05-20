@@ -169,7 +169,11 @@ const liquidGlass: Theme = {
   description: 'Verre dépoli translucide.', // overridden per-platform
   category: 'translucent',
   availability: { kind: 'native-or-fallback', native: ['macos'], cssFallback: true },
-  vibrancy: 'hud',
+  // Sprint 8d: switched from 'hud' to 'fullscreen-ui'. fullscreen-ui is
+  // the modern macOS Big Sur+ Control Center / Menu Bar material —
+  // the closest stock NSVisualEffectMaterial to the macOS 26 Liquid
+  // Glass appearance. See ADR-030.
+  vibrancy: 'fullscreen-ui',
   cssVars: vars({
     'bg-primary': 'rgba(20,20,20,0.55)',
     'bg-elevated': 'rgba(20,20,20,0.55)',
