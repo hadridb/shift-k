@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ScreenLayout, ScreenItem, SCREEN_EASE } from '../ScreenLayout';
+import {
+  ScreenLayout,
+  ScreenItem,
+  SCREEN_EASE,
+  H1,
+  Body,
+  Caption,
+} from '../ScreenLayout';
 
 interface Props {
   initialPath: string;
@@ -10,26 +17,24 @@ interface Props {
 
 /**
  * Minimal SVG folder illustration with 3 particles drifting out to the
- * right in a slow infinite loop — represents the watcher monitoring
- * the Downloads folder. Hand-drawn line art, monochrome white.
+ * right in a slow infinite loop. Represents the watcher monitoring
+ * the Downloads folder.
  */
 function FolderWithParticles() {
   const particles = [0, 1, 2];
   return (
-    <svg width="160" height="120" viewBox="0 0 160 120" fill="none">
-      {/* Folder body */}
+    <svg width="160" height="92" viewBox="0 0 160 92" fill="none">
       <path
-        d="M 12 36 L 12 96 Q 12 102 18 102 L 88 102 Q 94 102 94 96 L 94 42 Q 94 36 88 36 L 50 36 L 42 28 L 18 28 Q 12 28 12 34 Z"
+        d="M 12 26 L 12 76 Q 12 82 18 82 L 88 82 Q 94 82 94 76 L 94 32 Q 94 26 88 26 L 50 26 L 42 18 L 18 18 Q 12 18 12 24 Z"
         stroke="#F5F5F5"
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
-      {/* Particles drifting right */}
       {particles.map((i) => (
         <motion.circle
           key={i}
           cx={94}
-          cy={66}
+          cy={50}
           r={1.5}
           fill="#F5F5F5"
           initial={{ x: 0, opacity: 0 }}
@@ -49,6 +54,7 @@ function FolderWithParticles() {
 export function Screen2Downloads({ initialPath, onNext, onBack }: Props) {
   const [path, setPath] = useState(initialPath);
   const canContinue = path.trim().length > 0;
+  const isDefault = path === initialPath && initialPath.length > 0;
 
   async function pick() {
     const picked = await window.shiftK.pickFolder('Dossier Downloads');
@@ -71,33 +77,25 @@ export function Screen2Downloads({ initialPath, onNext, onBack }: Props) {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 24,
+          gap: 20,
           maxWidth: 560,
           textAlign: 'center',
         }}
       >
         <ScreenItem index={0}>
-          <h1 style={{ fontSize: 26, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
-            Où sont tes téléchargements ?
-          </h1>
+          <H1>Où sont tes téléchargements&nbsp;?</H1>
         </ScreenItem>
 
         <ScreenItem index={1}>
-          <p
-            style={{
-              fontSize: 14,
-              color: 'rgba(245,245,245,0.5)',
-              lineHeight: 1.6,
-              margin: 0,
-              maxWidth: 480,
-            }}
-          >
-            Shift-K surveille ce dossier en temps réel pour router tes générations IA
-            vers le bon projet.
-          </p>
+          <Body style={{ maxWidth: 500 }}>
+            C'est le dossier que Shift-K va surveiller en continu. On a
+            pré-rempli ton dossier Downloads système ci-dessous, tu peux le
+            laisser tel quel ou choisir un autre emplacement si tu télécharges
+            tes fichiers IA ailleurs.
+          </Body>
         </ScreenItem>
 
-        <ScreenItem index={2} style={{ marginTop: 16 }}>
+        <ScreenItem index={2} style={{ marginTop: 4 }}>
           <FolderWithParticles />
         </ScreenItem>
 
@@ -137,11 +135,17 @@ export function Screen2Downloads({ initialPath, onNext, onBack }: Props) {
             </button>
           </div>
         </ScreenItem>
+
+        {isDefault && (
+          <ScreenItem index={4}>
+            <Caption style={{ fontStyle: 'italic' }}>
+              Suggéré&nbsp;: ton dossier Downloads système.
+            </Caption>
+          </ScreenItem>
+        )}
       </div>
     </ScreenLayout>
   );
 }
 
-// Suppress unused-import warning while still importing SCREEN_EASE for
-// the FolderWithParticles motion timing if we ever switch to it.
 void SCREEN_EASE;

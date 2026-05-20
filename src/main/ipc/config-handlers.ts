@@ -1,7 +1,7 @@
 import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
-import { ipcMain, BrowserWindow, shell, dialog } from 'electron';
+import { app, ipcMain, BrowserWindow, shell, dialog } from 'electron';
 import { getConfig, setConfig, setConfigKey } from '@core/config/store';
 import { scanDownloads, previewRescan, executeRescan } from '@core/scanner/scanner';
 import { createProject, listProjects } from '@core/projects/scaffolder';
@@ -62,6 +62,12 @@ export function registerConfigHandlers(): void {
           ? 'macos'
           : 'linux';
     return { platform, release: os.release() };
+  });
+
+  // Onboarding uses this to pre-seed the Downloads picker on screen 2
+  // when the user has no persisted downloadsPath yet (first launch).
+  ipcMain.handle('system:default-downloads', () => {
+    return app.getPath('downloads');
   });
 
   ipcMain.handle('config:toggle-routing', () => toggleRouting());

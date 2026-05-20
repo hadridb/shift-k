@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ScreenLayout, ScreenItem, SCREEN_EASE } from '../ScreenLayout';
+import { ScreenLayout, ScreenItem, SCREEN_EASE, H1, Body } from '../ScreenLayout';
 
 interface Props {
   onNext: () => void;
@@ -32,7 +32,7 @@ const CHORDS: Chord[] = [
   },
   {
     keys: ['Shift', 'J', 'K', 'L'],
-    caption: 'Navigation NLE — précédent / pause / suivant',
+    caption: 'Navigation NLE : précédent / pause / suivant',
     delay: 1.4,
   },
 ];
@@ -53,7 +53,7 @@ function KeyChip({ label, lit }: { label: string; lit: boolean }) {
         border: '1px solid',
         fontSize: 12,
         fontFamily: 'ui-monospace, "SFMono-Regular", Consolas, monospace',
-        fontWeight: 600,
+        fontWeight: 500,
         minWidth: 24,
         textAlign: 'center',
       }}
@@ -91,30 +91,19 @@ export function Screen5Shortcuts({ onNext, onBack }: Props) {
         }}
       >
         <ScreenItem index={0}>
-          <h1 style={{ fontSize: 26, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
-            Trois raccourcis à connaître
-          </h1>
+          <H1>Trois raccourcis à connaître</H1>
         </ScreenItem>
 
         <ScreenItem index={1}>
-          <p
-            style={{
-              fontSize: 13,
-              color: 'rgba(245,245,245,0.5)',
-              lineHeight: 1.6,
-              margin: 0,
-            }}
-          >
-            Tu pourras tous les personnaliser dans Réglages plus tard.
-          </p>
+          <Body>Tu pourras tous les personnaliser dans Réglages plus tard.</Body>
         </ScreenItem>
 
-        <ScreenItem index={2} style={{ marginTop: 16 }}>
+        <ScreenItem index={2} style={{ marginTop: 12 }}>
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 28,
+              gap: 22,
               alignItems: 'center',
             }}
           >

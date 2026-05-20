@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ScreenLayout, ScreenItem, SCREEN_EASE } from '../ScreenLayout';
+import { ScreenLayout, ScreenItem, SCREEN_EASE, H1, Body, Caption } from '../ScreenLayout';
 
 interface Props {
   onNext: () => void;
@@ -100,25 +100,15 @@ export function Screen6Extension({ onNext, onBack }: Props) {
         }}
       >
         <ScreenItem index={0}>
-          <h1 style={{ fontSize: 24, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
-            Capture les métadonnées de tes générations
-          </h1>
+          <H1>Capture les métadonnées de tes générations</H1>
         </ScreenItem>
 
         <ScreenItem index={1}>
-          <p
-            style={{
-              fontSize: 13,
-              color: 'rgba(245,245,245,0.5)',
-              lineHeight: 1.6,
-              margin: 0,
-              maxWidth: 480,
-            }}
-          >
+          <Body style={{ maxWidth: 480 }}>
             Notre extension Chrome enregistre le prompt, le seed et les paramètres
             de chaque fichier que tu télécharges depuis Runway, Higgsfield, Kling,
             Luma, Sora, Midjourney…
-          </p>
+          </Body>
         </ScreenItem>
 
         <ScreenItem index={2}>
@@ -126,16 +116,9 @@ export function Screen6Extension({ onNext, onBack }: Props) {
         </ScreenItem>
 
         <ScreenItem index={3}>
-          <p
-            style={{
-              fontSize: 11,
-              color: 'rgba(245,245,245,0.35)',
-              fontStyle: 'italic',
-              margin: 0,
-            }}
-          >
+          <Caption style={{ fontStyle: 'italic' }}>
             Disponible en Phase Gamma. Tu pourras l'installer depuis Réglages.
-          </p>
+          </Caption>
         </ScreenItem>
       </div>
     </ScreenLayout>

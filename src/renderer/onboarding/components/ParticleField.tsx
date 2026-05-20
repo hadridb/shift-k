@@ -19,7 +19,9 @@ interface Particle {
 const PARTICLE_COUNT = 140;
 const BURST_DURATION_S = 1.5;
 const BURST_DELAY_MAX_S = 0.4;
-const IMPLODE_DURATION_S = 0.8;
+// 0.5 s is the sweet spot: long enough that the collapse reads as an
+// intentional gesture, short enough that "Lancer Shift-K" feels snappy.
+const IMPLODE_DURATION_S = 0.5;
 
 function rng(seed: number) {
   // Deterministic small PRNG — same seed gives the same point cloud, so

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScreenLayout, ScreenItem } from '../ScreenLayout';
+import { ScreenLayout, ScreenItem, H1, Body, Caption } from '../ScreenLayout';
 import {
   ParticleField,
   PARTICLE_FIELD_BURST_MS,
@@ -31,7 +31,15 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
 
   function handleLaunch() {
     setPhase('implode');
-    window.setTimeout(onLaunch, PARTICLE_FIELD_IMPLODE_MS);
+    // Fire the launch IPC a hair before the implosion finishes so the
+    // overlay-window cold-start overlaps with the last frames of the
+    // animation. Caps the user-perceived latency between click and the
+    // overlay appearing on screen.
+    const LAUNCH_LEAD_MS = 80;
+    window.setTimeout(
+      onLaunch,
+      Math.max(0, PARTICLE_FIELD_IMPLODE_MS - LAUNCH_LEAD_MS),
+    );
   }
 
   return (
@@ -57,44 +65,21 @@ export function Screen7Ready({ onLaunch, onBack }: Props) {
         }}
       >
         <ScreenItem index={0}>
-          <h1
-            style={{
-              fontSize: 32,
-              fontWeight: 500,
-              margin: 0,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Tout est prêt.
-          </h1>
+          <H1>Tout est prêt.</H1>
         </ScreenItem>
 
         <ScreenItem index={1}>
-          <p
-            style={{
-              fontSize: 13,
-              color: 'rgba(245,245,245,0.6)',
-              lineHeight: 1.6,
-              margin: 0,
-              maxWidth: 440,
-            }}
-          >
+          <Body style={{ maxWidth: 440 }}>
             Shift-K va maintenant surveiller tes téléchargements et router chaque
             génération vers le bon projet.
-          </p>
+          </Body>
         </ScreenItem>
 
-        <ScreenItem index={2} style={{ marginTop: 24 }}>
-          <p
-            style={{
-              fontSize: 11,
-              color: 'rgba(245,245,245,0.4)',
-              margin: 0,
-            }}
-          >
+        <ScreenItem index={2} style={{ marginTop: 20 }}>
+          <Caption>
             L'overlay s'ouvrira en haut à droite. Clic droit sur l'icône tray
             pour quitter.
-          </p>
+          </Caption>
         </ScreenItem>
       </div>
     </ScreenLayout>

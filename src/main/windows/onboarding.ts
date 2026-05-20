@@ -1,12 +1,12 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
 
-// Sprint 8 cinematic onboarding lives in a large centred window so the
-// hero typography + monochrome SVG illustrations have breathing room.
-// 980×680 is the smallest size that holds the 96 px wordmark on screen 1
-// without crowding and stays compact enough for laptop screens.
+// Sprint 8 cinematic onboarding lives in a centred golden-ratio window:
+// 980 × 605 ≈ 1.619, which keeps the hero typography + SVG illustrations
+// breathing without the dead vertical space the 680-px draft left under
+// each screen. Resizing is locked — the layout is tuned to this exact box.
 const ONBOARDING_WIDTH = 980;
-const ONBOARDING_HEIGHT = 680;
+const ONBOARDING_HEIGHT = 605;
 
 const isDev = !app.isPackaged;
 

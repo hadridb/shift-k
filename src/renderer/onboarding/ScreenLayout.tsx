@@ -57,7 +57,7 @@ export function ScreenLayout({
       {/* Progress dots */}
       <div
         style={{
-          padding: '28px 40px',
+          padding: '22px 40px 18px',
           display: 'flex',
           justifyContent: 'center',
           gap: 8,
@@ -104,7 +104,7 @@ export function ScreenLayout({
       {/* Footer */}
       <div
         style={{
-          padding: '24px 40px 32px',
+          padding: '18px 40px 22px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -198,3 +198,84 @@ export function ScreenItem({
 }
 
 export const SCREEN_EASE = EASE;
+
+/**
+ * Onboarding typography system — light weight everywhere, no bold body
+ * copy. Centralised here so every screen renders the same hierarchy:
+ *
+ *  • H1       32 px / weight 300 / -0.01 em / line-height 1.2
+ *  • Body     15 px / weight 400 / line-height 1.65 / fg 78 %
+ *  • Caption  13 px / weight 400 / fg 60 %
+ *
+ * Inline `style` overrides merge last, so callers can tweak margins or
+ * max-width without forking the helper.
+ */
+export function H1({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <h1
+      style={{
+        fontSize: 26,
+        fontWeight: 300,
+        letterSpacing: '-0.01em',
+        lineHeight: 1.25,
+        margin: 0,
+        color: '#F5F5F5',
+        ...style,
+      }}
+    >
+      {children}
+    </h1>
+  );
+}
+
+export function Body({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <p
+      style={{
+        fontSize: 15,
+        fontWeight: 400,
+        lineHeight: 1.65,
+        color: 'rgba(245,245,245,0.78)',
+        margin: 0,
+        ...style,
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
+export function Caption({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <p
+      style={{
+        fontSize: 13,
+        fontWeight: 400,
+        lineHeight: 1.5,
+        color: 'rgba(245,245,245,0.6)',
+        margin: 0,
+        ...style,
+      }}
+    >
+      {children}
+    </p>
+  );
+}

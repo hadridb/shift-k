@@ -40,4 +40,5 @@ export interface ShiftKBridge {
   onThemeChanged: (callback: (themeId: ThemeId) => void) => () => void;
   onGlassFallback: (callback: (enabled: boolean) => void) => () => void;
   getPlatformInfo: () => Promise<{ platform: 'windows' | 'macos' | 'linux'; release: string }>;
+  getDefaultDownloads: () => Promise<string>;
 }

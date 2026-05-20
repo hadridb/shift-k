@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ScreenLayout, ScreenItem, SCREEN_EASE } from '../ScreenLayout';
+import { ScreenLayout, ScreenItem, SCREEN_EASE, H1, Body } from '../ScreenLayout';
 
 interface Props {
   onCreate: (client: string, mission: string) => Promise<void>;
@@ -58,7 +58,7 @@ function SlotMock() {
             </div>
             <span style={{ minWidth: 14 }}>{slotLabel}</span>
             <span style={{ marginLeft: 4 }}>
-              {isFirst ? 'Ton premier client' : '—'}
+              {isFirst ? 'Ton premier client' : '·'}
             </span>
           </div>
         );
@@ -113,29 +113,11 @@ export function Screen4FirstProject({ onCreate, onSkip, onBack }: Props) {
         {/* Right: title + form */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 18 }}>
           <ScreenItem index={0}>
-            <h1
-              style={{
-                fontSize: 24,
-                fontWeight: 500,
-                margin: 0,
-                letterSpacing: '-0.01em',
-              }}
-            >
-              Crée ton premier client
-            </h1>
+            <H1>Crée ton premier client</H1>
           </ScreenItem>
 
           <ScreenItem index={1}>
-            <p
-              style={{
-                fontSize: 13,
-                color: 'rgba(245,245,245,0.5)',
-                lineHeight: 1.6,
-                margin: 0,
-              }}
-            >
-              Ou skippe et fais-le plus tard depuis l'overlay.
-            </p>
+            <Body>Ou skippe et fais-le plus tard depuis l'overlay.</Body>
           </ScreenItem>
 
           <ScreenItem index={3} style={{ marginTop: 8 }}>

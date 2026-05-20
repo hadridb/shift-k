@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ScreenLayout, ScreenItem, SCREEN_EASE } from '../ScreenLayout';
+import { ScreenLayout, ScreenItem, SCREEN_EASE, H1, Body } from '../ScreenLayout';
 
 interface Props {
   initialPath: string;
@@ -87,23 +87,13 @@ export function Screen3Projects({ initialPath, onNext, onBack }: Props) {
         }}
       >
         <ScreenItem index={0}>
-          <h1 style={{ fontSize: 26, fontWeight: 500, margin: 0, letterSpacing: '-0.01em' }}>
-            Où veux-tu que vivent tes projets ?
-          </h1>
+          <H1>Où veux-tu que vivent tes projets&nbsp;?</H1>
         </ScreenItem>
 
         <ScreenItem index={1}>
-          <p
-            style={{
-              fontSize: 14,
-              color: 'rgba(245,245,245,0.5)',
-              lineHeight: 1.6,
-              margin: 0,
-              maxWidth: 480,
-            }}
-          >
+          <Body style={{ maxWidth: 480 }}>
             Shift-K créera la structure de dossiers pour chaque nouveau projet ici.
-          </p>
+          </Body>
         </ScreenItem>
 
         <ScreenItem index={2} style={{ marginTop: 16 }}>

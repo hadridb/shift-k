@@ -76,6 +76,9 @@ const bridge: ShiftKBridge = {
       platform: 'windows' | 'macos' | 'linux';
       release: string;
     }>,
+
+  getDefaultDownloads: () =>
+    ipcRenderer.invoke('system:default-downloads') as Promise<string>,
 };
 
 contextBridge.exposeInMainWorld('shiftK', bridge);
