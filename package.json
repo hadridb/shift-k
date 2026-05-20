@@ -1,6 +1,6 @@
 {
   "name": "shift-k",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI Director workflow orchestrator — routes AI-generated files to the right client folder automatically",
   "author": {
     "name": "Hadrien Durand-Baissas",
