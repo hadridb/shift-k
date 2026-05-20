@@ -176,12 +176,19 @@ shift-k/
 
 **Sprint 8 (termine)** : Splash screen + cinematic onboarding 7 ecrans.
 - [x] Splash 400x300 frameless transparent, 1.2 s, wordmark + trait sous "shift" anime + tagline. Skip sur autostart / `--hidden`.
-- [x] Onboarding fullscreen 980x680 plein noir avec 7 ecrans : Welcome (hero wordmark 96 px) → Downloads (folder SVG + particules) → Projects (tree anime) → FirstProject (slot mock pulsant, optionnel via Skip) → Shortcuts (3 chords clavier qui s'illuminent en cascade) → Extension (3 plateformes converging, "Bientot disponible" en attendant la Phase Gamma) → Ready (particle burst final).
-- [x] State machine 1-7 dans `OnboardingApp.tsx`, transitions slide-up + fade 350 ms, contenu cascade fade-in 100 ms stagger. `ScreenLayout` partage (dots de progression, footer Retour/Continuer).
+- [x] Onboarding fullscreen plein noir avec 7 ecrans : Welcome (hero + value prop combine) → Downloads (folder SVG + particules + pre-seed OS default) → Projects (tree anime) → FirstProject (slot mock pulsant, optionnel via Skip) → Shortcuts (3 chords clavier qui s'illuminent en cascade) → Extension (3 plateformes converging, "Bientot disponible" en attendant la Phase Gamma) → Ready (point cloud Touch Designer 140 particules, 3 phases burst/idle/implode).
+- [x] State machine 1-7 dans `OnboardingApp.tsx`, transitions slide-up + fade 350 ms (entry) + 120 ms (exit, opacity-only). `ScreenLayout` partage (dots de progression, footer Retour/Continuer).
 - [x] Persistance per-screen : chaque "Confirmer" ecrit la config. Flag `preferences.firstLaunchCompleted` flippe a la fin sur "Lancer Shift-K".
 - [x] Migration auto : configs existantes avec root + downloadsPath → `firstLaunchCompleted: true` silencieusement au load (les users actuels ne se prennent pas le nouvel onboarding involontairement).
 - [x] Replay : bouton dans Settings → À PROPOS + script `npm run dev:onboarding` (cross-env `SHIFTK_FORCE_ONBOARDING=1`).
 - [x] Voir ADR-031 + docs/MARKETING_ASSETS.md. 118 tests verts.
+
+**Sprint 8 polish (termine — 20/05/2026)** : 5 iterations de raffinement onboarding sur retour Hadrien.
+- [x] **Iter 1** : devtools gate (`SHIFTK_DEVTOOLS=1`), splash + Screen 1 wordmark passes en UPPERCASE sans trait, onboarding window passe `frame: false`, particle burst delai 1100 ms pour etre visible apres l'entry transition.
+- [x] **Iter 2** : `ParticleField.tsx` (140 particules 1-3 px Touch Designer style, 3 phases burst/idle/implode, seed deterministe pour HMR-stable). Screen 7 reecrit autour de la state machine. Screen 1 copy sober "Réalisateur IA".
+- [x] **Iter 3** : window 980x680 → **980x605** (golden ratio 1.619). Typo system extrait dans `ScreenLayout.tsx` (`H1` / `Body` / `Caption`). Screen 1 lowercase 112 px + accent line draw-in sous "shift" (mesuree via ref). `AnimatePresence` passe sans `mode` pour fix le black flash → introduit cross-fade muddy.
+- [x] **Iter 4** : Screen 1 revient UPPERCASE 64 px sans accent line. Tous les em-dashes visibles supprimes (Screen 2 body, Screen 4 placeholder, Screen 5 chord caption). Titres H1 32 → 26 px. `AnimatePresence` revient en `mode="wait"` avec exit ultra-rapide (120 ms opacity-only) — pattern reutilisable, voir ADR-032.
+- [x] **Iter 5** : Screen 1 absorbe le contenu de Screen 2 (devient hero brand + value prop combine, "réalisateurs IA"). Screen 2 devient picker explicite avec pre-seed du dossier OS Downloads via nouveau IPC `system:default-downloads`. Implode duration 0.8 → 0.5 s. `onLaunch` fire 80 ms avant la fin de l'implode pour chevaucher le cold-start de l'overlay. Voir ADR-032, ADR-033, ADR-034.
 
 **Sprint 7.6 (termine — Sprint 7 ferme)** : Cleanup final themes.
 - [x] Mica retire (rendu Electron/Chromium insuffisant vs WinUI 3 natif). Aurora retire (animation CSS instable, ROI faible).
@@ -228,6 +235,18 @@ shift-k/
 - Polish overlay : badge "N fichiers en attente" pres du bouton Rescan, recherche dans EditSlots
 - Phase Gamma : extension navigateur pour capture metadonnees (prompt, seed, params depuis Runway/Higgsfield/Kling)
 
+## Dernieres decisions (session 20/05/2026)
+
+- **Onboarding window 980x605** (golden ratio 1.619) — l'ancien 680 laissait du vide sous chaque ecran. Verrouille `resizable: false` ; tout layout est tune a ce box. Voir ADR-032.
+- **AnimatePresence pattern `mode="wait"` + exit 120 ms opacity-only** : iter 2 avait retire `mode="wait"` pour fixer un black flash avant l'ecran 7 ; le cross-fade resultant donnait l'impression que l'ecran precedent restait colle. Le pattern final retient l'isolation des ecrans tout en gardant la transition perceptible "instant" (~120 ms entre clic et nouvelle content readable). Reutilisable pour toute sequence multi-ecrans. Voir ADR-032.
+- **Typography system extrait** dans `ScreenLayout.tsx` (`H1` 26 / `Body` 15 / `Caption` 13, weight 300/400/400). Regle dure : zero `font-weight: bold` ou `600` dans la copy ; key chips clavier soft a 500. Tous les em-dashes "—" bannis de la copy user-visible (remplaces par virgule, deux-points ou `·`). Voir ADR-033.
+- **Hero + value prop sur Screen 1** (au lieu de l'ancien hero pur). Le wordmark co-existe avec le titre "Tes fichiers savent ou aller." + l'explainer Higgsfield/Runway/Kling/Suno/ElevenLabs. Screen 2 devient picker dedie avec pre-seed du dossier OS Downloads via nouveau IPC `system:default-downloads`. Voir ADR-034.
+- **`ParticleField` Touch Designer** (140 particules 1-3 px, 3 phases burst/idle/implode, seed deterministe). Implode 0.5 s + `onLaunch` fire 80 ms avant la fin → cold-start overlay chevauche les dernieres frames de l'animation, perception "snappy". Voir ADR-031 (cadre general) + commentaires inline pour le tuning.
+
+## Prochaine etape
+
+Sprint 8 polish ferme. Reprendre sur **Sprint 5b** : choisir entre code signing Windows (Sectigo EV, leve SmartScreen au premier lancement) ou auto-update via electron-updater + GitHub Releases (pour pousser les iter sans reinstaller). Le polish onboarding doit etre revalide visuellement par Hadrien sur les 7 ecrans avant tout autre chantier.
+
 ## Contacts
 
 - Co-architecte : Hadrien Durand-Baissas (hadridb@gmail.com)
@@ -235,4 +254,4 @@ shift-k/
 
 ---
 
-*Derniere mise a jour : 20 mai 2026 (Sprint 8 — splash + onboarding cinematique 7 ecrans ; ADR-022 a ADR-031). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 20 mai 2026 (Sprint 8 polish — 5 iter onboarding ; ADR-022 a ADR-034). A maintenir a jour a chaque decision structurante.*

@@ -894,3 +894,107 @@ Bouton dans Settings → APPARENCE → À PROPOS qui invoque `onboarding:replay`
 - Nouveau renderer entry `splash.html` + `src/renderer/splash/`. Total 4 entries dans `vite.config.ts > rollupOptions.input` (overlay, settings, onboarding, splash) + 2 dev-only (index, particle-demo).
 - ParticleBurst (composant Sprint 6) reutilise sur l'ecran 7 final, scale 2.4x pour la cinematique.
 - Les SVG sur ecrans 2/3/5/6 sont volontairement minimaux (line-art fait main). Remplacables par des SVG Figma plus polis plus tard sans toucher la structure.
+
+---
+
+## ADR-032 : Onboarding window 980x605 + AnimatePresence "wait + fast-exit" pattern
+
+**Date :** 2026-05-20
+**Statut :** Acceptee (supersede partiellement ADR-031 sur le format de fenetre)
+
+**Contexte :** Sprint 8 polish, 5 iterations sur retour Hadrien. Deux problemes structurels :
+
+1. **Format fenetre.** ADR-031 avait fixe 980x680 ; en utilisation reelle, chaque ecran laissait ~80-100 px de vide sous le contenu. Le format se "sentait" trop haut.
+2. **Transition entre ecrans.** L'implementation initiale utilisait `<AnimatePresence mode="wait">` avec un slide-up+fade de 350 ms. Au passage ecran 6 → ecran 7, le black canvas restait visible ~350 ms avant que la particle burst ne demarre (le `mode="wait"` retient le mount du nouvel ecran jusqu'a la fin de l'exit du precedent). Iter 2 a retire `mode="wait"` pour gagner cette latence ; resultat : cross-fade muddy ou les deux ecrans co-existent visiblement pendant 350 ms, sensation de "rester colle" sur l'ecran 6.
+
+**Decision :**
+
+1. **Window : 980 × 605 px**, ratio ≈ 1.619 (nombre d'or). Locke `resizable: false`. Constante unique `ONBOARDING_HEIGHT = 605` dans `src/main/windows/onboarding.ts` qui sert de source de verite pour le layout — toute future expansion d'un ecran doit fit dans cette box (paddings verticaux tightenes dans `ScreenLayout` : top dots 22 px, bottom footer 18-22 px).
+
+2. **Transition pattern : `mode="wait"` + exit court asymetrique.** L'entry conserve les 350 ms cinematiques (`{ opacity: 0 → 1, y: 16 → 0 }`, ease Material standard). L'exit est force a **120 ms opacity-only** (`{ opacity: 0 }`, `easeIn`). Implementation :
+
+```tsx
+const ENTER_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] };
+const EXIT_TRANSITION  = { duration: 0.12, ease: 'easeIn' };
+
+<AnimatePresence mode="wait">
+  <motion.div
+    key={step}
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0, transition: ENTER_TRANSITION }}
+    exit={{ opacity: 0, transition: EXIT_TRANSITION }}
+  >
+```
+
+Le `mode="wait"` garde l'isolation visuelle (jamais deux ecrans co-visibles). La latence perceptible entre clic et contenu suivant readable est ~120 ms (sous le seuil "feels instant"). Pour les ecrans avec animation lourde au mount (ecran 7 / particle burst), la burst commence dans la premiere frame apres l'exit du precedent, sans gap noir.
+
+**Consequences :**
+
+- Pattern reutilisable pour toute future sequence multi-ecrans dans le produit (wizard import, debrief de routage, etc.).
+- Un screen qui veut une transition plus longue (effet "fondu cinematique") peut surcharger `EXIT_TRANSITION` localement.
+- L'asymetrie enter (350 ms) vs exit (120 ms) est volontaire : l'entry merite la duree car c'est ce que le user "lit" ; l'exit est de la friction et doit etre minimise.
+- ADR-031 reste valide pour le reste (splash, sequence des 7 ecrans, persistance per-screen). Seule la dimension de fenetre est superseded.
+
+---
+
+## ADR-033 : Onboarding typography system + regles de copy (no em-dash, no bold)
+
+**Date :** 2026-05-20
+**Statut :** Acceptee
+
+**Contexte :** Sprint 8 polish iter 3-5. La copy initiale melangeait des tailles ad-hoc par ecran (h1 24/26/32 px, p 11/13/14 px, weight 400/500/600 melanges) et des em-dashes "—" comme separateur de phrase. Trois problemes :
+
+1. **Incoherence visuelle** entre ecrans : titres qui changent de taille selon l'ecran cassent la sensation de produit homogene.
+2. **Em-dash francais ambigus** : "Quand tu generes X — le fichier atterrit dans Y" lit comme une parenthese alors que la phrase est une simple coordination. En français editorial, le "—" cree un ton trop journalistique pour un onboarding produit.
+3. **Bold sur copy** (font-weight 600 sur titres + key chips) creait une hierarchie visuelle "trop forte" pour un onboarding cinematique qui se veut sobre.
+
+**Decision :**
+
+1. **Typography system centralise** dans `ScreenLayout.tsx`, exporte 3 helpers :
+   - `H1` : 26 px, weight 300, letter-spacing `-0.01em`, line-height 1.25
+   - `Body` : 15 px, weight 400, line-height 1.65, color `rgba(245,245,245,0.78)`
+   - `Caption` : 13 px, weight 400, line-height 1.5, color `rgba(245,245,245,0.6)`
+
+   Toute h1/p/caption dans les 7 ecrans passe par ces helpers. Inline `style` override accepte pour `maxWidth`, `marginTop`, `fontStyle: 'italic'` (caption uniquement).
+
+2. **Regle "no em-dash" sur la copy user-visible.** Aucun "—" autorise dans les strings affichees. Substituts canoniques :
+   - Coordination ou enumeration → virgule
+   - Definition ou liste → deux-points
+   - Separateur visuel discret → middle-dot `·`
+   - Les commentaires de code peuvent garder les "—" (non visibles user-side).
+
+3. **Regle "no bold body".** Aucun `font-weight` > 500 dans la copy. Les CTA primaires (bouton "Commencer", "Confirmer", "Lancer Shift-K") gardent leur weight 600 — c'est de la chrome, pas de la copy.
+
+**Consequences :**
+
+- 7 ecrans homogenes visuellement, hierarchie 26/15/13 lisible au premier coup d'oeil.
+- Les helpers `H1`/`Body`/`Caption` deviennent l'API d'ajout d'ecran : tout nouveau screen impose au dev de passer par eux (pas de h1 inline).
+- La regle "no em-dash" est verifiable par un grep simple sur `src/renderer/onboarding/screens/*.tsx` excluant les commentaires — peut etre ajoute en check CI si la regression devient un probleme.
+- Convention applicable a Settings / overlay si on veut une coherence cross-app — laisse en TODO pour un futur sprint design system unifie.
+
+---
+
+## ADR-034 : Pre-seed du dossier Downloads OS dans l'onboarding via IPC dedie
+
+**Date :** 2026-05-20
+**Statut :** Acceptee
+
+**Contexte :** Sprint 8 polish iter 5. Sur Screen 2 (picker Downloads), le champ texte etait vide au premier lancement car `config.downloadsPath` defaultait a `''` dans le schema Zod. L'utilisateur etait force de cliquer "Choisir un autre dossier" puis naviguer jusqu'a son Downloads — friction inutile pour le cas par defaut.
+
+**Decision :**
+
+Nouveau IPC handler `system:default-downloads` dans `src/main/ipc/config-handlers.ts` qui retourne `app.getPath('downloads')` (chemin cross-platform fourni par Electron). Expose en `window.shiftK.getDefaultDownloads()` via preload.
+
+Dans `OnboardingApp.tsx`, le `useEffect` au mount appelle `getConfig()` puis :
+- si `config.downloadsPath` existe (user qui replay l'onboarding ou avait deja set), on le garde
+- sinon on fall back sur `getDefaultDownloads()` et on pre-rempli le champ
+
+Screen 2 affiche un caption italique "Suggere : ton dossier Downloads systeme." tant que la valeur correspond au default OS.
+
+**Pourquoi ne pas mettre le default dans le schema Zod directement ?** Le schema n'a pas acces a Electron (`app.getPath` est main-only). Le mettre comme default necessiterait soit de l'injecter au boot via `setConfig`, soit de duplicater la logique cross-platform a la main. L'IPC dedie garde le schema pur et delegue le path resolution au seul process qui en a la connaissance native.
+
+**Consequences :**
+
+- 1 IPC, 1 ligne dans preload, 1 entree dans `ShiftKBridge` type. Cost minimal.
+- Le pattern (IPC dedie pour donnees OS-specific) est reutilisable pour `app.getPath('documents')`, `'pictures'`, etc. quand des futurs ecrans en auront besoin.
+- La config n'est pas auto-pre-remplie a l'install ; le pre-seed reste un comportement de l'onboarding (pas du store). Replay onboarding pre-rempli avec la valeur OS courante meme si l'utilisateur avait change de machine entre temps.
