@@ -892,6 +892,29 @@ L'`id` interne reste `'liquid-glass'` — la migration de config ne change rien,
 - Reste une approximation : pas de lensing dynamique (NSGlassEffectView only), pas de refraction inter-fenetres physique.
 - **Sprint 8e (option) : native module NSGlassEffectView.** Si 8d.2 n'est toujours pas suffisant pour Hadrien, l'etape suivante est un native module Electron (node-gyp / nan / N-API) qui expose `NSGlassEffectView` a une BrowserWindow. Cout : 1-2 jours, dependance native qui complique le build cross-platform, surface de bug supplementaire. A peser contre le gain visuel reel.
 
+### ADR-030 (revisited Sprint 8d.3) : Opacite tokens — laisser la vibrancy passer
+
+**Date :** 2026-05-20
+**Statut :** Acceptee, affine ADR-030 (Sprint 8d.2)
+
+**Contexte :** Validation 8d.2 : la bordure specular et l'aberration chromatique sont validees ("top, on touche pas"), mais l'overlay reste **trop opaque**. Audit du rendu : la vibrancy `sidebar` est bien appliquee, mais le `.overlay-root` peint `var(--bg-primary)` qui valait `rgba(20, 20, 20, 0.55)` — un voile noir 55 % qui ecrasait la vibrancy. Resultat : on voyait surtout le wash sombre, pas le vrai materiau macOS.
+
+**Decision :** Baisser drastiquement les tokens d'opacite **pour le thema liquid-glass uniquement** :
+
+| Token | Sprint 8d.2 | Sprint 8d.3 | Raison |
+| --- | --- | --- | --- |
+| `--bg-primary` | `rgba(20,20,20,0.55)` | `rgba(0,0,0,0.04)` | Peint par `.overlay-root` — etait le voile principal qui ecrasait la vibrancy. 0.04 garde un soupcon de wash pour le contraste texte blanc sur wallpaper clair, sans etre un mur. |
+| `--bg-elevated` | `rgba(20,20,20,0.55)` | `rgba(20,20,20,0.30)` | Utilise par inputs / modal inner cards / sections Settings. Trop transparent et les inputs deviennent invisibles. 0.30 = card de verre lisible. |
+| `--bg-modal` | `rgba(0,0,0,0.50)` | `rgba(0,0,0,0.45)` | Tres legere baisse — les modals DOIVENT garder une separation claire avec le champ flou en dessous. |
+| `--bg-hover` | `rgba(255,255,255,0.06)` | `rgba(255,255,255,0.06)` | Inchange — hover des slot rows. |
+| Borders / texts | inchanges | inchanges | Lisibilite preservee. |
+
+**Garde Windows intact :** tous ces tokens sont gates dans le bloc `:root[data-theme='liquid-glass']` de `themes.css` qui ne s'active que quand l'utilisateur a explicitement choisi le thema Liquid Glass (alias "Transparency" sur Windows). Pas de selecteur `process.platform` requis ici — les opaque themes (Obsidian/Carbon/Ivory) gardent leurs propres tokens. Sur Windows, le thema "Transparency" continue d'utiliser ces memes valeurs (plus transparentes qu'avant) mais avec le `.glass-layer` 80 px CSS blur en charge — pas de regression visuelle attendue, le rendu Windows devient juste un cran plus translucide aussi.
+
+**Note layering** : la vibrancy `sidebar` apparait maintenant a travers `.overlay-root` (0.04 alpha noir) + `.glass-layer` (0.02 alpha blanc + saturate 180 % contrast 108 % brightness 105 %) + ::before chromatic + ::after specular. La somme reste tres transparente : le desktop derriere transparait clairement, et les ajustements colorimetriques de glass-layer font ressortir les couleurs. Le contraste texte est garanti par le wash 0.04 + les tokens `--text-*` (blancs sur fond globalement sombre).
+
+**Iteration future** : si certains wallpapers tres lumineux degradent la lisibilite, bumper `--bg-primary` a `0.06` ou `0.08`. Hadrien pourrait aussi vouloir un slider "intensite vibrancy" en Settings — ADR a ecrire si demande.
+
 ---
 
 ## ADR-031 : Splash + onboarding cinematique — fenetre 980x680 plein ecran noir

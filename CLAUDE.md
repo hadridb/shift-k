@@ -183,6 +183,17 @@ shift-k/
 - [x] Replay : bouton dans Settings → À PROPOS + script `npm run dev:onboarding` (cross-env `SHIFTK_FORCE_ONBOARDING=1`).
 - [x] Voir ADR-031 + docs/MARKETING_ASSETS.md. 118 tests verts.
 
+**Sprint 8d.3 (termine — 20/05/2026)** : Transparence max (validation 8d.2 : "specular validee, mais encore trop opaque").
+- [x] `themes.ts` + `themes.css` (liquid-glass uniquement) :
+  - `--bg-primary` : `rgba(20,20,20,0.55)` → `rgba(0,0,0,0.04)`. La VRAIE source d'opacite : `.overlay-root` peint ce token et ecrasait la vibrancy. Maintenant juste un soupcon de wash pour le contraste texte sur wallpaper clair.
+  - `--bg-elevated` : `rgba(20,20,20,0.55)` → `rgba(20,20,20,0.30)`. Inputs / modal inner cards / sections Settings restent lisibles comme des "cards de verre".
+  - `--bg-modal` : `0.50` → `0.45`. Legere baisse, les modals gardent leur separation.
+  - Autres tokens inchanges (hover, borders, texts).
+- [x] Conserve intact : border specular ::after, chromatic aberration SVG ::before, `visualEffectState: 'active'`, modal blur stacking, glass-layer saturate/contrast pump — tout 8d/8d.2 reste.
+- [x] Windows intact : tokens dans le bloc `:root[data-theme='liquid-glass']` non gate `process.platform` — Windows passe a "Transparency" un cran plus translucide aussi, sans regression (.glass-layer 80 px CSS blur en charge la-bas).
+- [x] Voir ADR-030 (Sprint 8d.3 revision). 142 tests verts. HMR pickup confirme.
+- [ ] Validation visuelle Mac. Si toujours insuffisant : Sprint 8e (native module NSGlassEffectView, voir ADR-030 fin).
+
 **Sprint 8d.2 (termine — 20/05/2026)** : Push Liquid Glass plus loin (validation 8d : "trop opaque, aberration invisible").
 - [x] `theme-applier.ts` : vibrancy `'fullscreen-ui'` → `'sidebar'` (`NSVisualEffectMaterialSidebar`, materiau Finder / Mail / Notes sidebar — le plus translucide du stock Apple). Test lisibilite OK.
 - [x] `OverlayApp.tsx` : SVG defs `<filter id="chromatic-aberration">` (feColorMatrix extract R/B + feOffset ±1.5 px + feBlend screen + feComposite over) montes uniquement quand `theme === 'liquid-glass'`.

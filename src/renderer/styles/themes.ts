@@ -175,11 +175,20 @@ const liquidGlass: Theme = {
   // use for their sidebars. Most translucent option that keeps text
   // legible. See ADR-030 + ADR-030 (Sprint 8d.2 revision).
   vibrancy: 'sidebar',
+  // Sprint 8d.3 — pushed bg-primary opacity 0.55 → 0.04 so the
+  // 'sidebar' vibrancy can actually show through. Before, .overlay-root
+  // painted a 55 %-opaque dark layer over the vibrancy and the user
+  // mostly saw that wash, not the macOS material. 0.04 is just enough
+  // dark tint to keep white text readable on bright wallpapers without
+  // becoming a wall. bg-elevated dropped 0.55 → 0.30 — used by inputs,
+  // modal inner cards, settings sections — still readable but reads
+  // as "glass card" rather than "opaque panel". bg-modal stays at 0.45
+  // (modals need clear separation from the blurred underlying field).
   cssVars: vars({
-    'bg-primary': 'rgba(20,20,20,0.55)',
-    'bg-elevated': 'rgba(20,20,20,0.55)',
+    'bg-primary': 'rgba(0,0,0,0.04)',
+    'bg-elevated': 'rgba(20,20,20,0.30)',
     'bg-hover': 'rgba(255,255,255,0.06)',
-    'bg-modal': 'rgba(0,0,0,0.5)',
+    'bg-modal': 'rgba(0,0,0,0.45)',
     'border-subtle': 'rgba(255,255,255,0.12)',
     'border-divider': 'rgba(255,255,255,0.08)',
     'text-primary': '#F5F5F5',
