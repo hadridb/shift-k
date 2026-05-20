@@ -17,14 +17,21 @@ import { getOverlayWindow } from '@main/windows/overlay';
  * effect. See ADR-029.
  *
  * Sprint 8d switched the macOS Liquid Glass vibrancy material from
- * `'hud'` (dark, opaque HUD plate) to `'fullscreen-ui'`. `fullscreen-ui`
- * is NSVisualEffectMaterialFullScreenUI — the same material Apple uses
- * for the Control Center / Menu Bar / Notification Center on macOS
- * 11+, which is the closest stock material to the macOS 26 Liquid
- * Glass appearance. Electron 33 doesn't expose NSGlassEffectView, so
- * this + a very subtle CSS pass in the renderer is the best
- * approximation available without forking Electron. See ADR-030
- * (Sprint 8d revision).
+ * `'hud'` (dark, opaque HUD plate) to `'fullscreen-ui'`.
+ *
+ * Sprint 8d.2 pushed further: `'fullscreen-ui'` → `'sidebar'`
+ * (`NSVisualEffectMaterialSidebar`). `sidebar` is the thinnest stock
+ * NSVisualEffectMaterial — the same material Apple uses for the
+ * Finder / Mail / Notes sidebars. It produces a noticeably more
+ * transparent + dynamic backdrop than `fullscreen-ui` (which was
+ * still reading as a fairly thick HUD plate in 8d). Text stays
+ * legible because the overlay paints its own --text-primary tokens
+ * on top, and slot rows have their own --bg-hover state.
+ *
+ * Electron 33 doesn't expose NSGlassEffectView (the macOS 26 Liquid
+ * Glass API), so `sidebar` + the renderer-side CSS / SVG passes are
+ * the best stock approximation available. See ADR-030 + ADR-030
+ * (Sprint 8d / 8d.2 revisions).
  */
 
 const MICA_MIN_BUILD = 22000;
@@ -37,7 +44,7 @@ export function isWindows11OrLater(): boolean {
 }
 
 interface Plan {
-  macosVibrancy: 'fullscreen-ui' | null;
+  macosVibrancy: 'sidebar' | null;
   /** Render the CSS backdrop-filter fallback in the renderer (Windows liquid-glass). */
   cssGlassFallback: boolean;
 }
@@ -45,7 +52,7 @@ interface Plan {
 function planFor(themeId: ThemeId): Plan {
   if (themeId === 'liquid-glass') {
     return {
-      macosVibrancy: 'fullscreen-ui',
+      macosVibrancy: 'sidebar',
       cssGlassFallback: process.platform !== 'darwin',
     };
   }

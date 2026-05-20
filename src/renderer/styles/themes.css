@@ -99,24 +99,87 @@
 
 /* macOS variant of .glass-layer. The `data-glass-fallback` attribute is
    set on <html> only when the platform has no native vibrancy (Windows
-   / Linux), so the *absence* of that attribute selects macOS. We keep
-   the layer extremely subtle here: native `fullscreen-ui` vibrancy
-   (theme-applier.ts) does the heavy lifting, and this pass adds a
-   barely-there saturation/brightness boost plus a hint of chromatic
-   aberration on the inside edges — mimicking the way a real glass
-   surface refracts light differently at its rim. The chromatic offset
-   is intentionally tiny (~0.5 px each side) and uses warm/cool pairs
-   instead of pure RGB so it reads as "depth" rather than "broken
-   rendering". Calibrated against macOS 26 Settings.app screenshots. */
+   / Linux), so the *absence* of that attribute selects macOS.
+
+   Sprint 8d.2 pushed the layer harder: saturation 140 → 180 %, added
+   contrast 108 %, brightness 105 %. No CSS blur (native `sidebar`
+   vibrancy already provides the dynamic blur). The contrast bump is
+   what makes the desktop colors *pop* through — without it the
+   sidebar material looks flat and milky. The inset box-shadow stays
+   for a cheap chromatic rim, but the real chromatic aberration now
+   lives on the `.overlay-root::before` pseudo (SVG feOffset filter,
+   see below). */
 :root:not([data-glass-fallback='true']) .glass-layer {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: saturate(140%) brightness(108%);
-  -webkit-backdrop-filter: saturate(140%) brightness(108%);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: saturate(180%) contrast(108%) brightness(105%);
+  -webkit-backdrop-filter: saturate(180%) contrast(108%) brightness(105%);
   box-shadow:
-    inset 0.5px 0 0 rgba(255, 130, 150, 0.12),
-    inset -0.5px 0 0 rgba(130, 150, 255, 0.12),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -0.5px 0 rgba(0, 0, 0, 0.05);
+    inset 0.5px 0 0 rgba(255, 130, 150, 0.10),
+    inset -0.5px 0 0 rgba(130, 150, 255, 0.10),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.04);
+}
+
+/* Chromatic aberration border — Sprint 8d.2. macOS + Liquid Glass only.
+   ::before paints a thin white border, then a SVG feOffset filter
+   splits the red and blue channels ±1.5 px horizontally. The red
+   channel shifts left and the blue channel shifts right; the
+   `feComposite over` keeps the original white border on top so the
+   shifted channels show only where the source border doesn't paint —
+   i.e., a blue tint appears immediately inside the LEFT edge of the
+   overlay and a red tint appears immediately inside the RIGHT edge.
+   The filter is gated to this pseudo only (NOT the whole overlay),
+   so text + slot rows render normally. SVG defs live in OverlayApp. */
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .overlay-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 2;
+  filter: url(#chromatic-aberration);
+}
+
+/* Edge specular highlights — Sprint 8d.2. macOS + Liquid Glass only.
+   A 1 px gradient border painted via the canonical CSS gradient-
+   border trick (background-clip + mask-composite exclude). The
+   135° gradient lands a bright highlight in the top-left and a
+   softer one in the bottom-right, like the glint of light along
+   a bevelled glass edge. Two pseudo-elements layered: this ::after
+   sits above ::before so the chromatic ring doesn't visually
+   cancel the specular highlight. */
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .overlay-root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 1px;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.00) 30%,
+    rgba(255, 255, 255, 0.00) 70%,
+    rgba(255, 255, 255, 0.20) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Hidden SVG defs container, lives inside the overlay-root. Zero size,
+   absolute, no pointer events — pure filter definition holder. */
+.overlay-svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
 
 /* Modal blur stacking — only meaningful on Liquid Glass where the

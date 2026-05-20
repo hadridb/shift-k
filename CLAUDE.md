@@ -183,6 +183,16 @@ shift-k/
 - [x] Replay : bouton dans Settings → À PROPOS + script `npm run dev:onboarding` (cross-env `SHIFTK_FORCE_ONBOARDING=1`).
 - [x] Voir ADR-031 + docs/MARKETING_ASSETS.md. 118 tests verts.
 
+**Sprint 8d.2 (termine — 20/05/2026)** : Push Liquid Glass plus loin (validation 8d : "trop opaque, aberration invisible").
+- [x] `theme-applier.ts` : vibrancy `'fullscreen-ui'` → `'sidebar'` (`NSVisualEffectMaterialSidebar`, materiau Finder / Mail / Notes sidebar — le plus translucide du stock Apple). Test lisibilite OK.
+- [x] `OverlayApp.tsx` : SVG defs `<filter id="chromatic-aberration">` (feColorMatrix extract R/B + feOffset ±1.5 px + feBlend screen + feComposite over) montes uniquement quand `theme === 'liquid-glass'`.
+- [x] `themes.css` : `:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .overlay-root::before` — bordure 1.5 px blanche 0.22 alpha + `filter: url(#chromatic-aberration)`. Aberration visible : tinte bleue inside left, rouge inside right. Pseudo only — texte/slots restent nets.
+- [x] `themes.css` : `:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .overlay-root::after` — gradient border 135° (spot brillant top-left, soft bottom-right) via la trick CSS canonique `padding + background + mask-composite: exclude`. z 3 au-dessus du ::before (z 2) pour pas etre avale par l'aberration.
+- [x] `themes.css` : `.glass-layer` macOS variant passe a `saturate(180%) contrast(108%) brightness(105%)` (le contrast est ce qui fait ressortir les couleurs du desktop a travers sidebar). Inset chromatic box-shadow conserve a 0.10 alpha (subtle rim).
+- [x] Windows path strictement inchange : tous les nouveaux selecteurs scopes via `:not([data-glass-fallback='true'])[data-theme='liquid-glass']`. Windows a `data-glass-fallback="true"` donc rien ne match.
+- [x] Voir ADR-030 (Sprint 8d.2 revision) + docs/THEMES.md. 142 tests verts.
+- [ ] Validation visuelle Mac a faire. Si encore insuffisant, Sprint 8e = native module `NSGlassEffectView` (ADR-030 fin de section).
+
 **Sprint 8d (termine — 20/05/2026)** : Liquid Glass refinement macOS — approximation macOS 26.
 - [x] `theme-applier.ts` : vibrancy `'hud'` → `'fullscreen-ui'` (`NSVisualEffectMaterialFullScreenUI`, materiau Control Center / Menu Bar / Notification Center, macOS 11+). Plus translucide, moins teinte HUD.
 - [x] `overlay.ts` + `settings.ts` : `visualEffectState: 'active'` au constructor — la vibrancy macOS reste vivante meme quand la fenetre n'a pas le focus. Critique pour un overlay always-on-top.
@@ -292,7 +302,9 @@ Le test de regression `tests/electron-builder.mac.test.ts` garantit que la confi
 
 ## Themes — gap actuel avec macOS 26 Liquid Glass
 
-Le thema `liquid-glass` rend bien (vibrancy native `'fullscreen-ui'` + couche CSS subtile + aberration chromatique inset ±0.5 px + modal blur stacking — Sprint 8d) mais reste une **approximation** du vrai Liquid Glass macOS 26. Le vrai materiau passe par `NSGlassEffectView` (nouvelle API AppKit macOS 26) qui supporte lensing dynamique et aberration chromatique physique au sampling. Electron 33 ne l'expose pas via `BrowserWindow.setVibrancy()` — limite aux `NSVisualEffectMaterial` stock. Re-evaluer quand Electron exposera l'API (probablement Electron 35+, automne 2026). Voir ADR-030 (Sprint 8d revision) + docs/THEMES.md.
+Le thema `liquid-glass` rend bien (Sprint 8d.2 : vibrancy native `'sidebar'` — la plus translucide du stock — + SVG chromatic aberration filter sur `.overlay-root::before` (±1.5 px R/B shift) + edge specular highlights gradient 135° sur `.overlay-root::after` + saturation/contrast pump `saturate(180%) contrast(108%) brightness(105%)` sur `.glass-layer` + modal blur stacking) mais reste une **approximation** du vrai Liquid Glass macOS 26. Le vrai materiau passe par `NSGlassEffectView` (nouvelle API AppKit macOS 26) qui supporte lensing dynamique et refraction physique au sampling. Electron 33 ne l'expose pas via `BrowserWindow.setVibrancy()` — limite aux `NSVisualEffectMaterial` stock.
+
+**Sprint 8e (option ouverte)** : native module Electron exposant `NSGlassEffectView` (node-gyp / N-API). 1-2 jours de boulot, surface de build cross-platform a gerer. A peser si 8d.2 ne suffit toujours pas, sinon attendre qu'Electron expose l'API (probablement Electron 35+, automne 2026). Voir ADR-030 (Sprint 8d / 8d.2 revisions) + docs/THEMES.md.
 
 ## Dernieres decisions (session 20/05/2026)
 

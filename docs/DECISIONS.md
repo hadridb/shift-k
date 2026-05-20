@@ -868,6 +868,30 @@ L'`id` interne reste `'liquid-glass'` — la migration de config ne change rien,
 - L'effet n'est pas 100% native. Reste un "80%" approximation — l'aberration vraie + lensing dynamique demandent `NSGlassEffectView`. Re-evaluer quand Electron expose l'API (probablement Electron 35+, automne 2026).
 - `MAC_BUGS.md` : screenshot avant/apres a prendre au prochain test Mac.
 
+### ADR-030 (revisited Sprint 8d.2) : Push approximation au max stock-Electron
+
+**Date :** 2026-05-20
+**Statut :** Acceptee, affine ADR-030 (Sprint 8d)
+
+**Contexte :** Validation visuelle 8d → "encore trop opaque, aberration invisible". `fullscreen-ui` reste un materiau plate vise sur la Notification Center / Control Center ; on cherche plus translucide + plus dynamique. Et l'aberration chromatique cosmetique en inset box-shadow ne rendait quasi pas. On veut pousser le rendu sans attendre `NSGlassEffectView`.
+
+**Decision :** Quatre changements supplementaires, toujours macOS-only :
+
+1. **Vibrancy : `'fullscreen-ui'` → `'sidebar'`** (`NSVisualEffectMaterialSidebar`). C'est le materiau le plus translucide du stock Apple — utilise pour les sidebars Finder / Mail / Notes. Notablement plus dynamique : la couleur du desktop derriere transparait davantage, le blur est plus vivant. Test lisibilite OK : le texte de l'overlay paint ses propres tokens `--text-primary` (`#F5F5F5`) sur le materiau, et les slot rows ont leurs propres `--bg-hover` quand actives.
+
+2. **SVG chromatic aberration filter sur `.overlay-root::before`**. Le filtre `feColorMatrix` extrait le canal R (shift -1.5 px) et le canal B (shift +1.5 px) puis composite la source au-dessus. Ne s'applique qu'au pseudo (qui ne porte qu'une bordure 1.5 px blanche a 0.22 alpha) — donc tout le contenu (texte, slot list, footer) reste net. L'aberration visible : tinte bleue immediatement a l'interieur du bord gauche, tinte rouge a l'interieur du bord droit. Defs SVG montees uniquement quand `theme === 'liquid-glass'` dans `OverlayApp.tsx`.
+
+3. **Edge specular highlights sur `.overlay-root::after`**. Bordure gradient 1 px via la trick CSS canonique `padding + background + mask-composite: exclude`. Gradient 135° avec spot brillant top-left et soft spot bottom-right — comme la lumiere sur un bord biseaute de verre. Le `::after` est au-dessus du `::before` (z 3 vs z 2) pour que le specular ne soit pas avale par l'aberration.
+
+4. **Saturation/contrast pump sur `.glass-layer`** : passage de `saturate(140%) brightness(108%)` a `saturate(180%) contrast(108%) brightness(105%)`. Le contraste est ce qui fait *ressortir* les couleurs du desktop a travers la vibrancy — sans lui, `sidebar` reste plate et laiteuse. Aucun blur CSS additionnel — la vibrancy native s'en occupe.
+
+**Aucune nouvelle regression Windows** : tous les nouveaux selecteurs sont scopes `:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .overlay-root::before/::after` — Windows a `data-glass-fallback="true"` donc rien ne match.
+
+**Consequences :**
+- L'aberration vraie est maintenant visible. La specularite donne un edge plus "physique".
+- Reste une approximation : pas de lensing dynamique (NSGlassEffectView only), pas de refraction inter-fenetres physique.
+- **Sprint 8e (option) : native module NSGlassEffectView.** Si 8d.2 n'est toujours pas suffisant pour Hadrien, l'etape suivante est un native module Electron (node-gyp / nan / N-API) qui expose `NSGlassEffectView` a une BrowserWindow. Cout : 1-2 jours, dependance native qui complique le build cross-platform, surface de bug supplementaire. A peser contre le gain visuel reel.
+
 ---
 
 ## ADR-031 : Splash + onboarding cinematique — fenetre 980x680 plein ecran noir

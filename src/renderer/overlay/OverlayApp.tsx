@@ -154,6 +154,37 @@ export function OverlayApp() {
           container so the layout stays simple. */}
       {currentTheme.id === 'liquid-glass' && <div className="glass-layer" />}
 
+      {/* SVG filter defs for the chromatic aberration border on the
+          .overlay-root::before pseudo. Sprint 8d.2 — see themes.css.
+          The filter extracts the red channel and shifts it -1.5 px,
+          the blue channel +1.5 px, then composites the original
+          source over the blended ghosts so only the shifted edges
+          leak through. Mounted only on macOS liquid-glass to skip
+          the (negligible) SVG cost on other themes / platforms. */}
+      {currentTheme.id === 'liquid-glass' && (
+        <svg className="overlay-svg-defs" aria-hidden="true">
+          <defs>
+            <filter id="chromatic-aberration" x="-10%" y="-10%" width="120%" height="120%">
+              <feColorMatrix
+                type="matrix"
+                values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
+                result="r"
+              />
+              <feOffset in="r" dx="-1.5" dy="0" result="rOffset" />
+              <feColorMatrix
+                in="SourceGraphic"
+                type="matrix"
+                values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+                result="b"
+              />
+              <feOffset in="b" dx="1.5" dy="0" result="bOffset" />
+              <feBlend mode="screen" in="rOffset" in2="bOffset" result="rb" />
+              <feComposite operator="over" in="SourceGraphic" in2="rb" />
+            </filter>
+          </defs>
+        </svg>
+      )}
+
       {/* Header — drag region */}
       <div
         className="drag-region flex items-center justify-between px-3"
