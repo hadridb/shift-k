@@ -23,25 +23,24 @@ function register(accelerator: string, callback: () => void): void {
 }
 
 export function registerShortcuts(): void {
-  // Ctrl+Shift+K — signature shortcut: toggle overlay show/hide
-  register('Control+Shift+K', () => {
+  // CmdOrCtrl resolves to Cmd on macOS, Ctrl on Windows/Linux.
+  // Alt resolves to Option on macOS. Result on Mac: Cmd+Shift+K, Cmd+Option+1..0,
+  // Cmd+Option+S, Cmd+Option+P — preserves the muscle memory across platforms.
+  register('CommandOrControl+Shift+K', () => {
     toggleOverlayWindow();
   });
 
-  // Ctrl+Alt+1..9 + Ctrl+Alt+0 — activate slot directly
   for (const key of SLOT_KEYS) {
-    register(`Control+Alt+${key}`, () => {
+    register(`CommandOrControl+Alt+${key}`, () => {
       activateSlot(key);
     });
   }
 
-  // Ctrl+Alt+S — cycle stage
-  register('Control+Alt+S', () => {
+  register('CommandOrControl+Alt+S', () => {
     cycleStage();
   });
 
-  // Ctrl+Alt+P — toggle pause routing
-  register('Control+Alt+P', () => {
+  register('CommandOrControl+Alt+P', () => {
     void toggleRouting();
   });
 }

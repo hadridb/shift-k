@@ -998,3 +998,102 @@ Screen 2 affiche un caption italique "Suggere : ton dossier Downloads systeme." 
 - 1 IPC, 1 ligne dans preload, 1 entree dans `ShiftKBridge` type. Cost minimal.
 - Le pattern (IPC dedie pour donnees OS-specific) est reutilisable pour `app.getPath('documents')`, `'pictures'`, etc. quand des futurs ecrans en auront besoin.
 - La config n'est pas auto-pre-remplie a l'install ; le pre-seed reste un comportement de l'onboarding (pas du store). Replay onboarding pre-rempli avec la valeur OS courante meme si l'utilisateur avait change de machine entre temps.
+
+---
+
+## ADR-035 : Mac packaging — DMG + ZIP, hardened runtime, notarization API, LSUIElement
+
+**Date :** 2026-05-20
+**Statut :** Acceptee (config seule, build effectif des reception des certs Apple)
+
+**Contexte :** Sprint 10 prepare le packaging macOS pour que des reception des certificats Apple Developer (enrollment en cours, 24-48h), on n'ait qu'a remplir le teamId + les variables d'env signing et lancer `npm run dist:mac`. ADR-010 fixait deja la strategie de signing (Apple Developer ID + notarisation) ; cet ADR fige les choix d'architecture du build lui-meme.
+
+### 1. Cibles `dmg` + `zip` (arm64 + x64)
+
+Deux artefacts produits, chacun en arm64 (Apple Silicon, ~80 % du parc cible 2026) et x64 (Intel + Rosetta translation pour les anciens Macs) :
+
+- **DMG** : format d'installation user-facing standard sur macOS. L'utilisateur ouvre, drag-and-drop vers /Applications, jette le DMG. Layout `dmg.contents` standard (icone a gauche, lien Applications a droite).
+- **ZIP** : requis par `electron-updater` quand on le brancher (Phase Release). Format de deploiement update silencieux que macOS Gatekeeper accepte si le contenu est notarise. Pas user-facing.
+
+**Pourquoi PKG est ecarte :** PKG est utile pour les apps avec post-install scripts (services, daemons, kernel exts). Shift-K est une app classique sandboxable / installable par drag-and-drop. PKG ajoute de la friction de confiance ("pourquoi cette app a besoin d'un installer privilegie ?") sans benefice.
+
+**Pourquoi universal binary (`--universal`) non utilise :** electron-builder peut produire un binaire universal qui contient les deux arches dans un meme .app. Beaux papiers, mais le fichier resultant pese 2x. Avec deux DMG separes, le user telecharge uniquement l'arch dont il a besoin (la landing page detectera l'agent et proposera le bon).
+
+### 2. Hardened Runtime obligatoire
+
+`mac.hardenedRuntime: true`. Requis par Apple depuis 2019 pour pouvoir notariser. Active des protections memoire (no JIT par defaut, library validation, etc.) qui doivent etre **explicitement bypassees par entitlements** pour Electron + V8.
+
+Entitlements minimum (dans `electron/resources/entitlements.mac.plist`) :
+- `com.apple.security.cs.allow-unsigned-executable-memory` : V8 alloue du code execute non signe (le moteur JS lui-meme genere du code a l'execution). Sans cet entitlement, Electron crash au boot.
+- `com.apple.security.cs.allow-jit` : autorise les pages JIT memoire (V8 TurboFan).
+- `com.apple.security.files.user-selected.read-write` : sandbox-only (pas active chez nous mais inclus pour future-proof).
+- `com.apple.security.files.downloads.read-write` : meme remarque.
+
+Les deux derniers sont **dormants** tant que `mac.sandbox` reste a `false` (defaut). Inclus quand meme pour signaler l'intent et eviter une migration plus complexe le jour ou on voudra activer App Sandbox.
+
+`gatekeeperAssess: false` desactive le check Gatekeeper local au moment du build (electron-builder l'utilise par defaut pour valider la signature). On le skip pour eviter une etape qui demande la connexion internet et qui n'apporte rien — la notarization Apple est l'autorite finale.
+
+### 3. Notarization API (App Store Connect API key vs Apple ID + app-specific password)
+
+Apple offre deux methodes d'authentification pour la notarization :
+
+- **Apple ID + app-specific password** : variables d'env `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD` + `APPLE_TEAM_ID`. Simple a setup, OK pour solo dev.
+- **App Store Connect API key** : fichier .p8, key ID, issuer ID. Plus securise (rotation possible, scoping), recommande pour CI/CD.
+
+**Decision :** **Apple ID + app-specific password** pour la phase actuelle. Raison : zero overhead a setup, Hadrien gere son build a la main sur sa machine, pas de CI/CD Mac pour l'instant. Le password est revocable a tout moment sur appleid.apple.com.
+
+Si on bascule en CI/CD Mac plus tard (GitHub Actions self-hosted runner ou MacStadium), migrer vers App Store Connect API key — ADR superseed a ecrire a ce moment-la.
+
+### 4. `LSUIElement: true` — Shift-K vit dans la menu bar, pas le Dock
+
+Choix UX confirme par Hadrien le 20/05/2026. Plist key `LSUIElement: true` (= `NSUIElement` historique) injectee via `mac.extendInfo` :
+
+- Pas de Dock icon
+- Pas de menu bar principal de l'app
+- Quit via clic droit sur l'icone menu bar > "Quitter Shift-K" uniquement
+- Cmd+Q ne fonctionne pas globalement (pas de focus possible)
+
+Equivaut a peu pres au comportement Windows (Shift-K vit dans la tray icon, l'overlay frameless). Coherence UX cross-platform.
+
+**Risque assume :** un nouvel user qui n'a pas vu l'onboarding peut "perdre" Shift-K — il ne voit ni Dock icon ni fenetre. Mitigation : l'onboarding (980x605, fullscreen au premier lancement) explique explicitement "Shift-K vit dans la menu bar en haut a droite". Si le retour utilisateur indique que c'est un blocker, on peut basculer en `LSUIElement: false` + retirer la BrowserWindow `skipTaskbar: true` sur Windows pour symetrie.
+
+### 5. `NSDownloadsFolderUsageDescription` dans `extendInfo`
+
+macOS 10.15 (Catalina) introduit le **TCC (Transparency, Consent, and Control)** pour le dossier Downloads. La premiere fois qu'une app y accede, l'OS affiche un prompt natif "Shift-K voudrait acceder a votre dossier Telechargements" avec un message custom tire de cette cle plist.
+
+Sans cette cle, l'app est rejette silencieusement (EPERM sur les operations fs.readdir / chokidar.watch). Catastrophe pour Shift-K dont **toute la valeur est de surveiller Downloads**.
+
+La copie est en francais (cible primaire) : "Shift-K surveille votre dossier Téléchargements pour router automatiquement les fichiers générés par les plateformes IA vers vos dossiers projet."
+
+Si on internationalise plus tard, on devra fournir des `InfoPlist.strings` localises — pour l'instant, francais fixe.
+
+### 6. Test de regression
+
+`tests/electron-builder.mac.test.ts` (18 assertions) :
+- Section `mac:` presente
+- Targets : dmg + zip
+- Arches : arm64 + x64
+- hardenedRuntime: true, gatekeeperAssess: false
+- entitlements + entitlementsInherit referencent le bon chemin
+- LSUIElement: true present
+- NSDownloadsFolderUsageDescription present
+- Le plist existe, contient les 4 entitlements briefes
+- Le script npm `dist:mac` existe et chaine build + electron-builder --mac
+
+Le test tourne sur la CI Windows actuelle (pas besoin de Mac pour valider la config statique). Si quelqu'un casse la section mac:, le test echoue avant qu'on s'en rende compte sur un build Mac reel.
+
+### 7. Hotkeys cross-platform
+
+Effet de bord de cet ADR : `src/main/shortcuts.ts` migre de `Control+Alt+...` vers `CommandOrControl+Alt+...`. Mac obtient Cmd+Option+1..0, Cmd+Shift+K, etc. — coherent avec la culture macOS ou Cmd est le modifier "Action". Le `Alt` token de Electron mappe automatiquement sur la touche Option physique.
+
+Le renderer-side hook `useJklShortcuts` (Shift+J/K/L overlay-focused) n'est pas affecte — Shift est la meme touche cross-platform et le scope est limite au focus overlay.
+
+### Consequences
+
+- `npm run dist:mac` echouera **proprement** tant que :
+  - `electron/resources/icon.icns` n'existe pas (a generer sur Mac via `iconutil`)
+  - `notarize.teamId` est encore `PLACEHOLDER_TEAM_ID`
+  - Les variables d'env signing ne sont pas exportees
+- Aucune de ces dependances n'est runtime — pas de risque de regression sur les builds Windows en cours.
+- ADR-010 reste la decision de fond (Apple Developer ID + Sectigo EV); ADR-035 specifie le COMMENT.
+- Si on doit cibler le Mac App Store un jour (improbable, le cycle de validation est punitif pour un outil pro), il faudra activer `mac.sandbox: true`, retirer les bypass JIT (impossible, V8 en a besoin → blocant Mac App Store de toute facon), ou utiliser un sub-pattern XPC. **Conclusion : pas de Mac App Store, distribution directe uniquement.** Cohrent avec la strategie de pricing direct EUR 29-49/mois.

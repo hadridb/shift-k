@@ -9,15 +9,16 @@
 ## Raccourcis globaux (actifs meme quand Shift-K n'a pas le focus)
 
 Enregistres via `globalShortcut` Electron, ils prennent priorite sur l'OS et
-les autres applications.
+les autres applications. **Sur macOS, lire `Ctrl` = `Cmd` et `Alt` = `Option`**
+(Electron mappe automatiquement `CommandOrControl+Alt+...`).
 
-| Raccourci         | Action                                              |
-| ----------------- | --------------------------------------------------- |
-| **Ctrl+Shift+K**     | Toggle overlay (afficher / masquer)                 |
-| **Ctrl+Alt+1..9**    | Activer directement le slot 1 a 9                   |
-| **Ctrl+Alt+0**       | Activer le slot 10 (touche 0, juste apres 9)        |
-| **Ctrl+Alt+S**       | Cycler le stage (src → img → out → ost → liv → src) |
-| **Ctrl+Alt+P**       | Pause / reprise du routage                          |
+| Raccourci Win/Linux | Raccourci macOS    | Action                                              |
+| ------------------- | ------------------ | --------------------------------------------------- |
+| **Ctrl+Shift+K**    | **Cmd+Shift+K**    | Toggle overlay (afficher / masquer)                 |
+| **Ctrl+Alt+1..9**   | **Cmd+Option+1..9**| Activer directement le slot 1 a 9                   |
+| **Ctrl+Alt+0**      | **Cmd+Option+0**   | Activer le slot 10 (touche 0, juste apres 9)        |
+| **Ctrl+Alt+S**      | **Cmd+Option+S**   | Cycler le stage (src → img → out → ost → liv → src) |
+| **Ctrl+Alt+P**      | **Cmd+Option+P**   | Pause / reprise du routage                          |
 
 > Si un raccourci echoue a s'enregistrer (deja pris par une autre app), un
 > warning apparait dans la console et le raccourci est inactif.

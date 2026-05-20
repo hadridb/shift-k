@@ -235,6 +235,52 @@ shift-k/
 - Polish overlay : badge "N fichiers en attente" pres du bouton Rescan, recherche dans EditSlots
 - Phase Gamma : extension navigateur pour capture metadonnees (prompt, seed, params depuis Runway/Higgsfield/Kling)
 
+**Sprint 10 (en cours — config seule, build Mac attend les certs)** : Preparation packaging macOS.
+- [x] `electron-builder.yml > mac:` : cibles `dmg` + `zip` (arm64 + x64), category `productivity`, hardenedRuntime, gatekeeperAssess false, entitlements + entitlementsInherit, notarize teamId placeholder.
+- [x] `extendInfo.LSUIElement: true` : Shift-K vit dans la menu bar uniquement, pas de Dock icon (UX equivalente au tray Windows). `NSDownloadsFolderUsageDescription` ajoute pour le prompt macOS 10.15+ au premier acces Downloads.
+- [x] `electron/resources/entitlements.mac.plist` cree avec les 4 entitlements briefes (allow-jit, allow-unsigned-executable-memory, files.user-selected, files.downloads).
+- [x] `src/main/shortcuts.ts` migre vers `CommandOrControl+...` (mappe Cmd sur Mac, Ctrl ailleurs ; Alt → Option sur Mac automatiquement). Tests regression `shortcuts.test.ts` bloquent toute regression future vers `Control+...` litteral.
+- [x] `docs/SHORTCUTS.md` : tableau double-colonne Win/Mac.
+- [x] Tests : 6 sur `shortcuts.test.ts` + 18 sur `electron-builder.mac.test.ts` (config YAML + entitlements plist + script npm). Total 142 tests verts (118 → 142). Voir ADR-035.
+- [ ] **Icone .icns** : pas encore generee (a faire au Sprint 8b sur Mac via `iconutil` ou Figma export). Le path est setup, le fichier manque — `npm run dist:mac` echouera proprement avec un message clair tant qu'il n'existe pas.
+- [ ] **TeamId Apple** : placeholder `PLACEHOLDER_TEAM_ID` a remplacer par le vrai (10 chars) une fois l'enrollment Developer Program valide (24-48h).
+- [ ] **Variables d'env signing** : `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`, `CSC_LINK` (chemin .p12), `CSC_KEY_PASSWORD` a renseigner sur la machine Mac avant le run.
+
+## Build Mac — procedure
+
+Sequence a executer **sur Mac**, une fois les certificats Apple Developer recus :
+
+1. **Cloner / pull la branche `main`** sur la machine Mac. Le repo Windows et Mac sont le meme git remote ; pas de fork separe.
+
+2. **Generer l'icone** `electron/resources/icon.icns` :
+   - Source : un PNG 1024x1024 du logo (`electron/resources/icon.png` existe deja, peut servir de base si la resolution est suffisante).
+   - Generation : `mkdir Shift-K.iconset` puis `sips -z 16 16 src.png --out Shift-K.iconset/icon_16x16.png` (et 32, 64, 128, 256, 512, 1024 + leurs @2x), puis `iconutil -c icns Shift-K.iconset -o electron/resources/icon.icns`. Alternative : Image2icon (gratuit, Mac App Store) ou Figma export plugin.
+
+3. **Renseigner le teamId reel** dans `electron-builder.yml > mac.notarize.teamId` (remplacer `PLACEHOLDER_TEAM_ID`).
+
+4. **Exporter les variables d'environnement** dans la session shell :
+   ```bash
+   export APPLE_ID="hadridb@gmail.com"
+   export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"   # genere sur appleid.apple.com
+   export APPLE_TEAM_ID="XXXXXXXXXX"                          # 10 chars, same as electron-builder.yml
+   export CSC_LINK="/path/to/DeveloperID.p12"
+   export CSC_KEY_PASSWORD="mot-de-passe-du-p12"
+   ```
+
+5. **Installer les deps** : `npm install` (le drive Mac est APFS, pas exFAT — on peut revenir a pnpm si on veut, mais npm marche aussi voir ADR-020).
+
+6. **Lancer le packaging** : `npm run dist:mac`. Sequence : build TS + Vite, signing du .app via la cle .p12, creation du .dmg + .zip, upload pour notarization Apple (~3-10 min), staple du ticket dans le .dmg.
+
+7. **Artefacts attendus** dans `release/` :
+   - `Shift-K-X.Y.Z-arm64.dmg` + `Shift-K-X.Y.Z-x64.dmg` (~120 MB chacun)
+   - `Shift-K-X.Y.Z-arm64-mac.zip` + `Shift-K-X.Y.Z-x64-mac.zip` (auto-update feed quand on aura electron-updater)
+   - `Shift-K-X.Y.Z-arm64.dmg.blockmap` + variants
+   - `latest-mac.yml` si on flippe `publish:` plus tard
+
+8. **Verification** : ouvrir le .dmg, drag-and-drop vers /Applications, premier lancement → Gatekeeper doit accepter sans prompt (signe + notarise + stapled). Si "App ne peut etre ouverte", c'est que le staple a echoue — re-lancer `xcrun stapler staple release/Shift-K-X.Y.Z-arm64.dmg`.
+
+Le test de regression `tests/electron-builder.mac.test.ts` garantit que la config Mac ne derive pas pendant qu'on attend les certs. Si on ajoute un entitlement, mettre a jour le plist ET le test.
+
 ## Dernieres decisions (session 20/05/2026)
 
 - **Onboarding window 980x605** (golden ratio 1.619) — l'ancien 680 laissait du vide sous chaque ecran. Verrouille `resizable: false` ; tout layout est tune a ce box. Voir ADR-032.
@@ -245,7 +291,10 @@ shift-k/
 
 ## Prochaine etape
 
-Sprint 8 polish ferme. Reprendre sur **Sprint 5b** : choisir entre code signing Windows (Sectigo EV, leve SmartScreen au premier lancement) ou auto-update via electron-updater + GitHub Releases (pour pousser les iter sans reinstaller). Le polish onboarding doit etre revalide visuellement par Hadrien sur les 7 ecrans avant tout autre chantier.
+Sprint 10 cote config = termine cote Windows. Attendre la validation Apple Developer Program (24-48h, en cours depuis 20/05/2026). Des reception :
+1. Migrer sur la machine Mac, suivre la section "Build Mac — procedure" ci-dessus.
+2. Premier `npm run dist:mac` reussi = livrer le DMG arm64 a un beta testeur Mac (test ami symetrique au Windows 0.1.1).
+3. En parallele cote Windows, reprendre **Sprint 5b** (code signing Sectigo EV ou electron-updater).
 
 ## Contacts
 
@@ -254,4 +303,4 @@ Sprint 8 polish ferme. Reprendre sur **Sprint 5b** : choisir entre code signing 
 
 ---
 
-*Derniere mise a jour : 20 mai 2026 (Sprint 8 polish — 5 iter onboarding ; ADR-022 a ADR-034). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 20 mai 2026 (Sprint 10 — config Mac packaging, en attente certs Apple ; ADR-035). A maintenir a jour a chaque decision structurante.*
