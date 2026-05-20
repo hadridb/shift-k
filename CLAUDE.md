@@ -183,6 +183,11 @@ shift-k/
 - [x] Replay : bouton dans Settings → À PROPOS + script `npm run dev:onboarding` (cross-env `SHIFTK_FORCE_ONBOARDING=1`).
 - [x] Voir ADR-031 + docs/MARKETING_ASSETS.md. 118 tests verts.
 
+**Sprint 8d.5 (essaye puis revert — 20/05/2026)** : Maximisation de la transparence overlay + blur applique sur Settings/popovers.
+- Tente : `--bg-primary` liquid-glass passe de `rgba(0,0,0,0.02)` a `rgba(0,0,0,0)` (overlay-root ne peint plus rien, seules la vibrancy native + glass-layer + chromatic/specular pseudos restent comme chrome). `.settings-root` recoit un `backdrop-filter: blur(40px) saturate(180%) brightness(105%)` macOS-only. `StagePopover` blur 20 → 40 px. `--bg-elevated` macOS 0.05 → 0.04.
+- **Revert** : commit `d8cffeb` (revert de `474fb8f`). Garde dans l'historique git comme trace de l'experience — le rendu visuel ne tenait pas la promesse, soit l'overlay devenait illisible soit Settings perdait sa silhouette. Reason exacte a confirmer si on reattaque (changer un seul vecteur a la fois plutot que 4 en une passe). Si reprise : voir 8e (native module `NSGlassEffectView`) comme alternative.
+- Tests 142 verts au moment du commit + 142 verts apres revert (aucune logique metier touchee).
+
 **Sprint 8d.4 (termine — 20/05/2026)** : Couverture Liquid Glass Settings + modales + popovers (validation 8d.3 : "overlay ok, mais effet pas applique partout").
 - [x] `theme-applier.ts` : `applyTheme()` itere `BrowserWindow.getAllWindows()` au lieu du seul overlay. Toute fenetre ouverte recoit `setVibrancy` + signal glass-fallback. Skip les fenetres `isDestroyed()`.
 - [x] `settings.ts` : appelle `applyThemeToWindow(win, persistedTheme)` au `ready-to-show` — la vibrancy est appliquee AVANT la premiere frame visible. La settings window etait deja `transparent: true` + `visualEffectState: 'active'` (Sprint 8d) mais `applyTheme()` ne l'avait jamais visee.
@@ -345,12 +350,17 @@ Le thema `liquid-glass` rend bien (Sprint 8d.2 : vibrancy native `'sidebar'` —
 - **Hero + value prop sur Screen 1** (au lieu de l'ancien hero pur). Le wordmark co-existe avec le titre "Tes fichiers savent ou aller." + l'explainer Higgsfield/Runway/Kling/Suno/ElevenLabs. Screen 2 devient picker dedie avec pre-seed du dossier OS Downloads via nouveau IPC `system:default-downloads`. Voir ADR-034.
 - **`ParticleField` Touch Designer** (140 particules 1-3 px, 3 phases burst/idle/implode, seed deterministe). Implode 0.5 s + `onLaunch` fire 80 ms avant la fin → cold-start overlay chevauche les dernieres frames de l'animation, perception "snappy". Voir ADR-031 (cadre general) + commentaires inline pour le tuning.
 
+## Build status
+
+- **Windows `Shift-K Setup 0.1.2.exe`** (~80.3 MB) genere dans `release/`, **en attente de distribution test ami**. Inclut Sprint 8c (routage audio out-of-the-box + EXDEV cross-volume fix) + Sprint 8d/8d.2/8d.3/8d.4 (Liquid Glass approximation Mac). Pas de code signing (Sectigo EV pas encore), SmartScreen warning au premier lancement. Sprint 8d.5 NON inclus (revert).
+- **Mac DMG** : config prete (Sprint 10, ADR-035) mais build bloque tant que les certs Apple Developer ne sont pas recus.
+
 ## Prochaine etape
 
-Sprint 10 cote config = termine cote Windows. Attendre la validation Apple Developer Program (24-48h, en cours depuis 20/05/2026). Des reception :
-1. Migrer sur la machine Mac, suivre la section "Build Mac — procedure" ci-dessus.
-2. Premier `npm run dist:mac` reussi = livrer le DMG arm64 a un beta testeur Mac (test ami symetrique au Windows 0.1.1).
-3. En parallele cote Windows, reprendre **Sprint 5b** (code signing Sectigo EV ou electron-updater).
+1. **Sprint 10 (in progress)** : attendre la validation du compte Apple Developer Program (enrollment en cours depuis 20/05/2026, ETA 24-48h). Des reception, suivre la section "Build Mac — procedure" ci-dessus pour produire les DMG arm64 + x64 signes/notarises.
+2. **Distribution test ami Windows 0.1.2** : envoyer l'installer a un beta testeur Mac/Windows. Confirmer que Suno marche out of the box (cross-volume EXDEV) + que les anciens fichiers se routent via Rescan (le testeur a un Downloads sur drive separe ?).
+3. **En parallele Windows** : reprendre **Sprint 5b** (code signing Sectigo EV ou electron-updater + GitHub Releases feed).
+4. **8d.5 reprise** : si on retente la transparence max, decoupler les 4 vecteurs (overlay-root opacity, settings backdrop-filter, popover blur, bg-elevated) un par un pour identifier celui qui casse.
 
 ## Contacts
 
@@ -359,4 +369,4 @@ Sprint 10 cote config = termine cote Windows. Attendre la validation Apple Devel
 
 ---
 
-*Derniere mise a jour : 20 mai 2026 (Sprint 10 — config Mac packaging, en attente certs Apple ; Sprint 8c — audio orphelins out of the box + fix EXDEV cross-volume, ADR-035/036/037). A maintenir a jour a chaque decision structurante.*
+*Derniere mise a jour : 20 mai 2026 (Sprint 8c audio + EXDEV fix ; Sprint 8d → 8d.4 Liquid Glass coverage ; Sprint 8d.5 essaye puis revert ; build Windows 0.1.2 pret pour test ami ; Sprint 10 in progress en attente certs Apple. ADR-035/036/037). A maintenir a jour a chaque decision structurante.*
