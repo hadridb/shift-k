@@ -56,10 +56,10 @@
 }
 
 :root[data-theme='liquid-glass'] {
-  --bg-primary: rgba(20, 20, 20, 0.55);
-  --bg-elevated: rgba(20, 20, 20, 0.55);
+  --bg-primary: rgba(0, 0, 0, 0.02);
+  --bg-elevated: rgba(20, 20, 20, 0.30);
   --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-modal: rgba(0, 0, 0, 0.5);
+  --bg-modal: rgba(0, 0, 0, 0.45);
   --border-subtle: rgba(255, 255, 255, 0.12);
   --border-divider: rgba(255, 255, 255, 0.08);
   --text-primary: #F5F5F5;
@@ -78,9 +78,13 @@
    transparent BrowserWindow surface (which shows the desktop through),
    and the content (z-index: 1) sits above the frosted layer.
 
-   80 px blur + 200 % saturate + 110 % brightness for a pronounced glass
-   feel on Windows where there's no native vibrancy. border-radius +
-   overflow:hidden keep the layer clipped to the rounded overlay shape. */
+   The default rule below (Windows / Linux) ships the strong CSS blur,
+   because there's no native vibrancy and CSS is the only depth source.
+   The macOS override further down keeps the layer extremely light —
+   native vibrancy already provides the blur, and stacking another
+   80 px CSS blur on top would turn the result into opaque grey.
+   border-radius + overflow:hidden keep the layer clipped to the
+   rounded overlay shape. See ADR-030 (Sprint 8d). */
 .glass-layer {
   position: absolute;
   inset: 0;
@@ -91,4 +95,167 @@
   background: rgba(15, 15, 18, 0.45);
   backdrop-filter: blur(80px) saturate(200%) brightness(110%);
   -webkit-backdrop-filter: blur(80px) saturate(200%) brightness(110%);
+}
+
+/* macOS variant of .glass-layer. The `data-glass-fallback` attribute is
+   set on <html> only when the platform has no native vibrancy (Windows
+   / Linux), so the *absence* of that attribute selects macOS.
+
+   Sprint 8d.2 pushed the layer harder: saturation 140 → 180 %, added
+   contrast 108 %, brightness 105 %. No CSS blur (native `sidebar`
+   vibrancy already provides the dynamic blur). The contrast bump is
+   what makes the desktop colors *pop* through — without it the
+   sidebar material looks flat and milky. The inset box-shadow stays
+   for a cheap chromatic rim, but the real chromatic aberration now
+   lives on the `.overlay-root::before` pseudo (SVG feOffset filter,
+   see below). */
+:root:not([data-glass-fallback='true']) .glass-layer {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: saturate(180%) contrast(108%) brightness(105%);
+  -webkit-backdrop-filter: saturate(180%) contrast(108%) brightness(105%);
+  box-shadow:
+    inset 0.5px 0 0 rgba(255, 130, 150, 0.10),
+    inset -0.5px 0 0 rgba(130, 150, 255, 0.10),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.04);
+}
+
+/* Chromatic aberration border — Sprint 8d.2. macOS + Liquid Glass only.
+   ::before paints a thin white border, then a SVG feOffset filter
+   splits the red and blue channels ±1.5 px horizontally. The red
+   channel shifts left and the blue channel shifts right; the
+   `feComposite over` keeps the original white border on top so the
+   shifted channels show only where the source border doesn't paint —
+   i.e., a blue tint appears immediately inside the LEFT edge of the
+   overlay and a red tint appears immediately inside the RIGHT edge.
+   The filter is gated to this pseudo only (NOT the whole overlay),
+   so text + slot rows render normally. SVG defs live in OverlayApp. */
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .overlay-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 2;
+  filter: url(#chromatic-aberration);
+}
+
+/* Edge specular highlights — Sprint 8d.2. macOS + Liquid Glass only.
+   A 1 px gradient border painted via the canonical CSS gradient-
+   border trick (background-clip + mask-composite exclude). The
+   135° gradient lands a bright highlight in the top-left and a
+   softer one in the bottom-right, like the glint of light along
+   a bevelled glass edge. Two pseudo-elements layered: this ::after
+   sits above ::before so the chromatic ring doesn't visually
+   cancel the specular highlight. */
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .overlay-root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 1px;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.00) 30%,
+    rgba(255, 255, 255, 0.00) 70%,
+    rgba(255, 255, 255, 0.20) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Hidden SVG defs container, lives inside the overlay-root. Zero size,
+   absolute, no pointer events — pure filter definition holder. */
+.overlay-svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ─── Sprint 8d.4 ─────────────────────────────────────────────────────
+   Modal panel + popover Liquid Glass coverage. On macOS, override the
+   dark fallback tokens (--bg-modal / --bg-elevated) with *light* frost
+   values so modal panels and popovers read as glass cards floating on
+   the vibrancy material, instead of opaque dark plates that hide it.
+   The inline `style={{ background: 'var(--bg-modal)' }}` on each modal
+   automatically picks up these overrides — no JSX change needed for
+   the background. The dark Windows fallback values stay intact via
+   the parent :root[data-theme='liquid-glass'] block above.
+
+   .modal-panel and .popover-panel are marker classes added to the
+   root element of each modal / popover. They drive the specular
+   gradient border via ::after, scoped to macOS Liquid Glass. */
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] {
+  --bg-modal: rgba(255, 255, 255, 0.04);
+  --bg-elevated: rgba(255, 255, 255, 0.05);
+}
+
+/* Specular gradient border on modal panels — macOS + Liquid Glass only.
+   Same canonical CSS gradient-border trick as .overlay-root::after.
+   pointer-events: none so the modal's own controls stay clickable. */
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .modal-panel::after,
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .popover-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.40) 0%,
+    rgba(255, 255, 255, 0.00) 30%,
+    rgba(255, 255, 255, 0.00) 70%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Modal blur stacking — only meaningful on Liquid Glass where the
+   modal panel itself is semi-transparent (--bg-modal at 0.5 alpha).
+   This div sits between the underlying overlay UI (z-index ≤ 1) and
+   the modal panel (z-index ≥ 100). On macOS it adds a second
+   backdrop-filter pass so the underlying UI appears more recessed
+   when a dialog is open: the user perceives the modal as "floating"
+   on top of a blurred field, which is the macOS 26 dialog metaphor.
+
+   pointer-events:none so click-outside still hits the underlying
+   overlay (currently a no-op, but reserved for future "click outside
+   to dismiss" behavior). z-index:10 puts us above .glass-layer (0)
+   and the overlay content (1), below the modal (100). See ADR-030
+   Sprint 8d.
+
+   The base rule is a no-op layout-only placeholder; the macOS
+   override (no data-glass-fallback) adds the visual effect.
+   Windows / Linux keep their existing behavior intact — the strong
+   .glass-layer (80 px blur) already provides plenty of depth, and
+   layering a second filter on top risks turning the field opaque. */
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+:root:not([data-glass-fallback='true']) .modal-backdrop {
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }

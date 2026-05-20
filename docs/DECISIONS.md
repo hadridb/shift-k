@@ -841,6 +841,112 @@ L'`id` interne reste `'liquid-glass'` — la migration de config ne change rien,
 - Le picker SettingsApp consomme ces helpers via `platformInfo` (deja recupere par IPC `system:platform-info` au mount).
 - Les futurs themes pourront suivre le meme pattern s'ils ont besoin de noms differents par plateforme — l'opt-in vit dans le helper, pas dans le type `Theme`.
 
+### ADR-030 (revisited Sprint 8d) : Approximation macOS 26 Liquid Glass
+
+**Date :** 2026-05-20
+**Statut :** Acceptee, affine ADR-030
+
+**Contexte :** Premier test reel sur Mac. La vibrancy `'hud'` (NSVisualEffectMaterialHUDWindow) rend un gris semi-transparent uniforme — pas du tout l'effet macOS 26 Liquid Glass attendu (backdrop blur dynamique + lensing + aberration chromatique). Electron 33 n'expose pas `NSGlassEffectView`, la nouvelle API AppKit macOS 26. On est limite aux NSVisualEffectMaterial stock.
+
+**Decision :** Approximation a quatre niveaux, gatee sur `process.platform === 'darwin'` partout :
+
+1. **Vibrancy material** : `'hud'` → `'fullscreen-ui'` (`NSVisualEffectMaterialFullScreenUI`, macOS 11+). C'est le materiau du Control Center / Menu Bar / Notification Center — la stock le plus proche visuellement du Liquid Glass macOS 26. Plus translucide, moins de teinte HUD.
+
+2. **`visualEffectState: 'active'`** au constructor de la BrowserWindow (overlay + settings). La vibrancy macOS dim quand la fenetre n'a pas le focus par defaut — catastrophique pour un overlay always-on-top dont l'usage normal est "fenetre secondaire en permanence". `'active'` force le materiau a rester vivant. Option de constructor uniquement (pas de setter runtime), passee a la creation, ignoree sur Windows.
+
+3. **Couche CSS subtile** sur `.glass-layer` cote macOS uniquement (`:root:not([data-glass-fallback='true'])`) : `saturate(140%) brightness(108%)` + inset box-shadow chromatique ±0.5 px (warm rose `rgba(255,130,150,.12)` a gauche, cool blue `rgba(130,150,255,.12)` a droite + minuscule highlight top/shadow bottom). Aucun blur CSS pour ne pas voiler la vibrancy native. L'aberration chromatique mimicke la refraction differente aux bords d'une vraie surface de verre — calibre subtil contre macOS 26 Settings.app.
+
+4. **Modal blur stacking** : nouveau `.modal-backdrop` (z-index 10) entre l'UI overlay (z-index 1) et le panneau du modal (z-index 100). `blur(20px) + rgba(0,0,0,0.15)`. Le panneau du modal (semi-transparent via `--bg-modal: rgba(0,0,0,0.5)` + son propre `backdrop-filter`) blure le backdrop, qui blure lui-meme l'UI — deux passes empilees qui donnent au modal l'impression de flotter au-dessus d'un champ recessé. Style macOS 26.
+
+**Garde Windows intact :**
+- `.glass-layer` regle par defaut (80 px blur strong CSS) **inchangee** — Windows ne match pas `:not([data-glass-fallback='true'])` puisque `data-glass-fallback="true"` est set par `theme-applier.ts > cssGlassFallback: process.platform !== 'darwin'`.
+- `.modal-backdrop` rule par defaut = layout-only (position, z-index, pointer-events). Effet visuel `backdrop-filter` gate sur le meme selecteur macOS-only — Windows ne le voit pas.
+- `visualEffectState` au constructor : option macOS-only en Electron, ignoree silencieusement par Chromium sur Windows.
+
+**Consequences :**
+- Le test `themes.test.ts > 'liquid-glass' vibrancy is fullscreen-ui'` (s'il existait sur 'hud') reste valide en mettant a jour la valeur — actuellement les tests ne touchent pas la vibrancy donc rien a faire.
+- L'effet n'est pas 100% native. Reste un "80%" approximation — l'aberration vraie + lensing dynamique demandent `NSGlassEffectView`. Re-evaluer quand Electron expose l'API (probablement Electron 35+, automne 2026).
+- `MAC_BUGS.md` : screenshot avant/apres a prendre au prochain test Mac.
+
+### ADR-030 (revisited Sprint 8d.2) : Push approximation au max stock-Electron
+
+**Date :** 2026-05-20
+**Statut :** Acceptee, affine ADR-030 (Sprint 8d)
+
+**Contexte :** Validation visuelle 8d → "encore trop opaque, aberration invisible". `fullscreen-ui` reste un materiau plate vise sur la Notification Center / Control Center ; on cherche plus translucide + plus dynamique. Et l'aberration chromatique cosmetique en inset box-shadow ne rendait quasi pas. On veut pousser le rendu sans attendre `NSGlassEffectView`.
+
+**Decision :** Quatre changements supplementaires, toujours macOS-only :
+
+1. **Vibrancy : `'fullscreen-ui'` → `'sidebar'`** (`NSVisualEffectMaterialSidebar`). C'est le materiau le plus translucide du stock Apple — utilise pour les sidebars Finder / Mail / Notes. Notablement plus dynamique : la couleur du desktop derriere transparait davantage, le blur est plus vivant. Test lisibilite OK : le texte de l'overlay paint ses propres tokens `--text-primary` (`#F5F5F5`) sur le materiau, et les slot rows ont leurs propres `--bg-hover` quand actives.
+
+2. **SVG chromatic aberration filter sur `.overlay-root::before`**. Le filtre `feColorMatrix` extrait le canal R (shift -1.5 px) et le canal B (shift +1.5 px) puis composite la source au-dessus. Ne s'applique qu'au pseudo (qui ne porte qu'une bordure 1.5 px blanche a 0.22 alpha) — donc tout le contenu (texte, slot list, footer) reste net. L'aberration visible : tinte bleue immediatement a l'interieur du bord gauche, tinte rouge a l'interieur du bord droit. Defs SVG montees uniquement quand `theme === 'liquid-glass'` dans `OverlayApp.tsx`.
+
+3. **Edge specular highlights sur `.overlay-root::after`**. Bordure gradient 1 px via la trick CSS canonique `padding + background + mask-composite: exclude`. Gradient 135° avec spot brillant top-left et soft spot bottom-right — comme la lumiere sur un bord biseaute de verre. Le `::after` est au-dessus du `::before` (z 3 vs z 2) pour que le specular ne soit pas avale par l'aberration.
+
+4. **Saturation/contrast pump sur `.glass-layer`** : passage de `saturate(140%) brightness(108%)` a `saturate(180%) contrast(108%) brightness(105%)`. Le contraste est ce qui fait *ressortir* les couleurs du desktop a travers la vibrancy — sans lui, `sidebar` reste plate et laiteuse. Aucun blur CSS additionnel — la vibrancy native s'en occupe.
+
+**Aucune nouvelle regression Windows** : tous les nouveaux selecteurs sont scopes `:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .overlay-root::before/::after` — Windows a `data-glass-fallback="true"` donc rien ne match.
+
+**Consequences :**
+- L'aberration vraie est maintenant visible. La specularite donne un edge plus "physique".
+- Reste une approximation : pas de lensing dynamique (NSGlassEffectView only), pas de refraction inter-fenetres physique.
+- **Sprint 8e (option) : native module NSGlassEffectView.** Si 8d.2 n'est toujours pas suffisant pour Hadrien, l'etape suivante est un native module Electron (node-gyp / nan / N-API) qui expose `NSGlassEffectView` a une BrowserWindow. Cout : 1-2 jours, dependance native qui complique le build cross-platform, surface de bug supplementaire. A peser contre le gain visuel reel.
+
+### ADR-030 (revisited Sprint 8d.3) : Opacite tokens — laisser la vibrancy passer
+
+**Date :** 2026-05-20
+**Statut :** Acceptee, affine ADR-030 (Sprint 8d.2)
+
+**Contexte :** Validation 8d.2 : la bordure specular et l'aberration chromatique sont validees ("top, on touche pas"), mais l'overlay reste **trop opaque**. Audit du rendu : la vibrancy `sidebar` est bien appliquee, mais le `.overlay-root` peint `var(--bg-primary)` qui valait `rgba(20, 20, 20, 0.55)` — un voile noir 55 % qui ecrasait la vibrancy. Resultat : on voyait surtout le wash sombre, pas le vrai materiau macOS.
+
+**Decision :** Baisser drastiquement les tokens d'opacite **pour le thema liquid-glass uniquement** :
+
+| Token | Sprint 8d.2 | Sprint 8d.3 | Raison |
+| --- | --- | --- | --- |
+| `--bg-primary` | `rgba(20,20,20,0.55)` | `rgba(0,0,0,0.04)` | Peint par `.overlay-root` — etait le voile principal qui ecrasait la vibrancy. 0.04 garde un soupcon de wash pour le contraste texte blanc sur wallpaper clair, sans etre un mur. |
+| `--bg-elevated` | `rgba(20,20,20,0.55)` | `rgba(20,20,20,0.30)` | Utilise par inputs / modal inner cards / sections Settings. Trop transparent et les inputs deviennent invisibles. 0.30 = card de verre lisible. |
+| `--bg-modal` | `rgba(0,0,0,0.50)` | `rgba(0,0,0,0.45)` | Tres legere baisse — les modals DOIVENT garder une separation claire avec le champ flou en dessous. |
+| `--bg-hover` | `rgba(255,255,255,0.06)` | `rgba(255,255,255,0.06)` | Inchange — hover des slot rows. |
+| Borders / texts | inchanges | inchanges | Lisibilite preservee. |
+
+**Garde Windows intact :** tous ces tokens sont gates dans le bloc `:root[data-theme='liquid-glass']` de `themes.css` qui ne s'active que quand l'utilisateur a explicitement choisi le thema Liquid Glass (alias "Transparency" sur Windows). Pas de selecteur `process.platform` requis ici — les opaque themes (Obsidian/Carbon/Ivory) gardent leurs propres tokens. Sur Windows, le thema "Transparency" continue d'utiliser ces memes valeurs (plus transparentes qu'avant) mais avec le `.glass-layer` 80 px CSS blur en charge — pas de regression visuelle attendue, le rendu Windows devient juste un cran plus translucide aussi.
+
+**Note layering** : la vibrancy `sidebar` apparait maintenant a travers `.overlay-root` (0.04 alpha noir) + `.glass-layer` (0.02 alpha blanc + saturate 180 % contrast 108 % brightness 105 %) + ::before chromatic + ::after specular. La somme reste tres transparente : le desktop derriere transparait clairement, et les ajustements colorimetriques de glass-layer font ressortir les couleurs. Le contraste texte est garanti par le wash 0.04 + les tokens `--text-*` (blancs sur fond globalement sombre).
+
+**Iteration future** : si certains wallpapers tres lumineux degradent la lisibilite, bumper `--bg-primary` a `0.06` ou `0.08`. Hadrien pourrait aussi vouloir un slider "intensite vibrancy" en Settings — ADR a ecrire si demande.
+
+### ADR-030 (revisited Sprint 8d.4) : Couverture Settings + modales + popovers
+
+**Date :** 2026-05-20
+**Statut :** Acceptee, affine ADR-030 (Sprint 8d.3)
+
+**Contexte :** Validation 8d.3 : l'overlay principal rend bien, mais Hadrien remarque que **l'effet Liquid Glass ne s'applique pas a Settings + modales + popovers**. Trois bugs identifies :
+
+1. **Settings window** : `transparent: true` + `visualEffectState: 'active'` + `backgroundColor: '#00000000'` etaient deja en place (Sprint 8d), mais `applyTheme()` ne ciblait QUE l'overlay via `getOverlayWindow()`. La settings window n'avait jamais `setVibrancy()` appele dessus → rectangle transparent sans materiau.
+
+2. **Modales** (NewProject, EditSlots, OpenFolders, Rescan) : leur `var(--bg-modal)` etait `rgba(0,0,0,0.45)` — un dark wash qui occulait completement la vibrancy native presente derriere (les modales sont des absolute overlays *dans* la fenetre overlay, pas des BrowserWindow separees, donc la vibrancy est accessible).
+
+3. **StagePopover** : meme probleme avec `var(--bg-elevated)` a `rgba(20,20,20,0.30)`.
+
+**Decisions :**
+
+1. **`applyTheme()` itere `BrowserWindow.getAllWindows()`** au lieu du seul overlay. Toute fenetre ouverte recoit `setVibrancy(plan.macosVibrancy)` + le signal `theme:glass-fallback`. Les fenetres en `isDestroyed()` sont skip.
+
+2. **`settings.ts` appelle `applyThemeToWindow(win, persistedTheme)` au `ready-to-show`** — la vibrancy est appliquee AVANT la premiere frame visible. Sans ca, la settings window devait attendre un theme switch utilisateur pour recevoir sa vibrancy.
+
+3. **Override macOS-only des tokens `--bg-modal` + `--bg-elevated`** vers du *light frost* `rgba(255,255,255,0.04)` et `rgba(255,255,255,0.05)`. Le selecteur `:root:not([data-glass-fallback='true'])[data-theme='liquid-glass']` cible exclusivement macOS Liquid Glass. Sur Windows ("Transparency") les valeurs sombres du parent restent intactes — pas de regression.
+
+4. **`backdropFilter` inline** sur chaque modal + popover : `blur(20px) saturate(150%)` → `blur(20px) saturate(160%) brightness(108%)`. Saturation pump + brightness lift pour aligner avec le glass-layer macOS et donner aux glass cards le meme caractere visuel que le shell de l'overlay. Inline car les modales gardent leurs styles inline (refacto complet hors scope).
+
+5. **Marker classes `.modal-panel` + `.popover-panel`** ajoutes a chaque root JSX. CSS ::after pseudo (memes selecteurs macOS Liquid Glass) peint un gradient border 135° (specular highlight) — coherent avec `.overlay-root::after` du shell principal.
+
+6. **Bonus transparence shell** : `--bg-primary` 0.04 → 0.02. Cran de plus de transparence demande par Hadrien apres 8d.3.
+
+**Garde Windows intact :** tous les overrides macOS-only sont scopes via `:root:not([data-glass-fallback='true'])[data-theme='liquid-glass']`. Sur Windows, `data-glass-fallback="true"` est set par `theme-applier.ts` — aucun override ne match, le bloc parent `:root[data-theme='liquid-glass']` continue d'appliquer les valeurs sombres "Transparency" inchangees. Le `.glass-layer` 80 px CSS blur reste seul en charge cote Win, comme avant.
+
+**Consequences :**
+- L'iteration sur le shell (8d/8d.2/8d.3/8d.4) est maintenant terminee — tout le chrome macOS Liquid Glass est couvert avec une approximation coherente. Le delta restant vs vrai NSGlassEffectView est essentiellement le lensing + la refraction physique au sampling, non addressables sans native module (Sprint 8e si demande).
+
 ---
 
 ## ADR-031 : Splash + onboarding cinematique — fenetre 980x680 plein ecran noir

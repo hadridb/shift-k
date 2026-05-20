@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { AppConfig, RescanPreview, Stage } from '../../shared/types';
 import { SlotList } from './components/SlotList';
 import { StageBar } from './components/StageBar';
@@ -154,6 +154,37 @@ export function OverlayApp() {
           container so the layout stays simple. */}
       {currentTheme.id === 'liquid-glass' && <div className="glass-layer" />}
 
+      {/* SVG filter defs for the chromatic aberration border on the
+          .overlay-root::before pseudo. Sprint 8d.2 — see themes.css.
+          The filter extracts the red channel and shifts it -1.5 px,
+          the blue channel +1.5 px, then composites the original
+          source over the blended ghosts so only the shifted edges
+          leak through. Mounted only on macOS liquid-glass to skip
+          the (negligible) SVG cost on other themes / platforms. */}
+      {currentTheme.id === 'liquid-glass' && (
+        <svg className="overlay-svg-defs" aria-hidden="true">
+          <defs>
+            <filter id="chromatic-aberration" x="-10%" y="-10%" width="120%" height="120%">
+              <feColorMatrix
+                type="matrix"
+                values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
+                result="r"
+              />
+              <feOffset in="r" dx="-1.5" dy="0" result="rOffset" />
+              <feColorMatrix
+                in="SourceGraphic"
+                type="matrix"
+                values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+                result="b"
+              />
+              <feOffset in="b" dx="1.5" dy="0" result="bOffset" />
+              <feBlend mode="screen" in="rOffset" in2="bOffset" result="rb" />
+              <feComposite operator="over" in="SourceGraphic" in2="rb" />
+            </filter>
+          </defs>
+        </svg>
+      )}
+
       {/* Header — drag region */}
       <div
         className="drag-region flex items-center justify-between px-3"
@@ -226,6 +257,26 @@ export function OverlayApp() {
       </div>
 
       <ActivityToast />
+
+      {/* Modal-backdrop — only on Liquid Glass theme, where the modal
+          panel itself is semi-transparent and a separate blur layer
+          beneath it stacks usefully (modal panel blurs the backdrop,
+          which already blurs the underlying UI). On the opaque themes
+          the modal fully covers the overlay, so this layer would be
+          invisible — we skip rendering it to avoid the compositor
+          cost. See themes.css `.modal-backdrop`. */}
+      <AnimatePresence>
+        {currentTheme.id === 'liquid-glass' && modal !== null && (
+          <motion.div
+            key="modal-backdrop"
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Modals — wrapped in AnimatePresence so the fade+scale exit plays */}
       <AnimatePresence>

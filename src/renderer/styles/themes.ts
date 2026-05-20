@@ -169,12 +169,25 @@ const liquidGlass: Theme = {
   description: 'Verre dépoli translucide.', // overridden per-platform
   category: 'translucent',
   availability: { kind: 'native-or-fallback', native: ['macos'], cssFallback: true },
-  vibrancy: 'hud',
+  // Sprint 8d: 'hud' → 'fullscreen-ui'. Sprint 8d.2: 'fullscreen-ui'
+  // → 'sidebar'. `sidebar` (NSVisualEffectMaterialSidebar) is the
+  // thinnest stock material on macOS — same one Finder/Mail/Notes
+  // use for their sidebars. Most translucent option that keeps text
+  // legible. See ADR-030 + ADR-030 (Sprint 8d.2 revision).
+  vibrancy: 'sidebar',
+  // Sprint 8d.3 — pushed bg-primary opacity 0.55 → 0.04 so the
+  // 'sidebar' vibrancy can actually show through. Sprint 8d.4 — bumped
+  // a notch further (0.04 → 0.02) on user feedback "encore un peu plus
+  // de transparence". The themes.css block also adds macOS-only
+  // overrides that bring bg-modal / bg-elevated to a *light* frost
+  // (rgba(255,255,255,...)) — instead of the dark Windows fallback —
+  // so modal panels and settings cards read as glass cards floating
+  // on the vibrancy rather than opaque dark plates.
   cssVars: vars({
-    'bg-primary': 'rgba(20,20,20,0.55)',
-    'bg-elevated': 'rgba(20,20,20,0.55)',
+    'bg-primary': 'rgba(0,0,0,0.02)',
+    'bg-elevated': 'rgba(20,20,20,0.30)',
     'bg-hover': 'rgba(255,255,255,0.06)',
-    'bg-modal': 'rgba(0,0,0,0.5)',
+    'bg-modal': 'rgba(0,0,0,0.45)',
     'border-subtle': 'rgba(255,255,255,0.12)',
     'border-divider': 'rgba(255,255,255,0.08)',
     'text-primary': '#F5F5F5',

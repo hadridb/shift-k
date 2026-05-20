@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
+import { getConfig } from '@core/config/store';
+import { applyThemeToWindow } from '@main/services/theme-applier';
 
 const SETTINGS_WIDTH = 540;
 const SETTINGS_HEIGHT = 720;
@@ -25,6 +27,10 @@ export function createSettingsWindow(): BrowserWindow {
     // window stayed dark when the user picked Ivory or Liquid Glass.
     transparent: true,
     backgroundColor: '#00000000',
+    // Match the overlay — vibrancy stays vivid even when this settings
+    // window doesn't have focus (the user is constantly switching back
+    // to the overlay to preview their picks). See ADR-030 / Sprint 8d.
+    visualEffectState: 'active',
     autoHideMenuBar: true,
     minimizable: false,
     maximizable: false,
@@ -38,7 +44,14 @@ export function createSettingsWindow(): BrowserWindow {
   });
 
   settingsWindow.once('ready-to-show', () => {
-    settingsWindow?.show();
+    if (!settingsWindow) return;
+    // Sprint 8d.4: apply the persisted theme's native window-level
+    // effect (macOS vibrancy) BEFORE showing, so the first paint
+    // already has the Liquid Glass material. Without this, the
+    // Settings window only got vibrancy on a subsequent theme switch
+    // — the first open was a flat transparent rectangle.
+    applyThemeToWindow(settingsWindow, getConfig().preferences.theme);
+    settingsWindow.show();
   });
 
   settingsWindow.on('closed', () => {

@@ -41,6 +41,7 @@ export function StagePopover({ open, stages, activeStage, onSelect, onClose }: P
       {open && (
         <motion.div
           ref={ref}
+          className="popover-panel"
           initial={{ opacity: 0, scale: 0.96, y: 4 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 4 }}
@@ -61,8 +62,8 @@ export function StagePopover({ open, stages, activeStage, onSelect, onClose }: P
             minWidth: 160,
             maxHeight: 200,
             overflowY: 'auto',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            backdropFilter: 'blur(20px) saturate(160%) brightness(108%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(160%) brightness(108%)',
           }}
           role="menu"
         >

@@ -1,7 +1,6 @@
 import os from 'os';
 import { BrowserWindow } from 'electron';
 import type { ThemeId } from '@shared/types';
-import { getOverlayWindow } from '@main/windows/overlay';
 
 /**
  * Theme-applier: translates a theme id into native window-level effects
@@ -15,6 +14,23 @@ import { getOverlayWindow } from '@main/windows/overlay';
  * its code paths along with it. The `isWindows11OrLater` helper stays
  * exported in case a future sprint reintroduces a Windows-build-gated
  * effect. See ADR-029.
+ *
+ * Sprint 8d switched the macOS Liquid Glass vibrancy material from
+ * `'hud'` (dark, opaque HUD plate) to `'fullscreen-ui'`.
+ *
+ * Sprint 8d.2 pushed further: `'fullscreen-ui'` → `'sidebar'`
+ * (`NSVisualEffectMaterialSidebar`). `sidebar` is the thinnest stock
+ * NSVisualEffectMaterial — the same material Apple uses for the
+ * Finder / Mail / Notes sidebars. It produces a noticeably more
+ * transparent + dynamic backdrop than `fullscreen-ui` (which was
+ * still reading as a fairly thick HUD plate in 8d). Text stays
+ * legible because the overlay paints its own --text-primary tokens
+ * on top, and slot rows have their own --bg-hover state.
+ *
+ * Electron 33 doesn't expose NSGlassEffectView (the macOS 26 Liquid
+ * Glass API), so `sidebar` + the renderer-side CSS / SVG passes are
+ * the best stock approximation available. See ADR-030 + ADR-030
+ * (Sprint 8d / 8d.2 revisions).
  */
 
 const MICA_MIN_BUILD = 22000;
@@ -27,7 +43,7 @@ export function isWindows11OrLater(): boolean {
 }
 
 interface Plan {
-  macosVibrancy: 'hud' | null;
+  macosVibrancy: 'sidebar' | null;
   /** Render the CSS backdrop-filter fallback in the renderer (Windows liquid-glass). */
   cssGlassFallback: boolean;
 }
@@ -35,7 +51,7 @@ interface Plan {
 function planFor(themeId: ThemeId): Plan {
   if (themeId === 'liquid-glass') {
     return {
-      macosVibrancy: 'hud',
+      macosVibrancy: 'sidebar',
       cssGlassFallback: process.platform !== 'darwin',
     };
   }
@@ -62,18 +78,30 @@ function applyToWindow(win: BrowserWindow, themeId: ThemeId, plan: Plan): void {
   }
 
   // Tell the renderer whether to draw the CSS backdrop-filter fallback.
+  // True on Windows / Linux (no native vibrancy → CSS does everything),
+  // false on macOS (native vibrancy + subtle CSS layered on top).
   win.webContents.send('theme:glass-fallback', plan.cssGlassFallback);
   console.log('[theme] glass-fallback signal sent:', plan.cssGlassFallback);
 }
 
 export function applyTheme(themeId: ThemeId): void {
+  // Sprint 8d.4: apply to EVERY BrowserWindow, not just the overlay.
+  // Before 8d.4, only the overlay got `setVibrancy()` called on it, so
+  // the Settings window (created later, transparent + visualEffectState
+  // already wired) showed an empty transparent rectangle instead of the
+  // Liquid Glass material. Now every window with a matching plan gets
+  // vibrancy applied; opaque themes still receive `setVibrancy(null)`
+  // which is a no-op cleanup.
   const plan = planFor(themeId);
-  const overlay = getOverlayWindow();
-  if (!overlay) {
-    console.warn('[theme] applyTheme called but no overlay window');
+  const windows = BrowserWindow.getAllWindows();
+  if (windows.length === 0) {
+    console.warn('[theme] applyTheme called but no BrowserWindows open');
     return;
   }
-  applyToWindow(overlay, themeId, plan);
+  for (const win of windows) {
+    if (win.isDestroyed()) continue;
+    applyToWindow(win, themeId, plan);
+  }
 }
 
 /** Re-apply on every newly created window. */
