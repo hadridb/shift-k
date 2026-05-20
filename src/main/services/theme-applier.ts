@@ -1,7 +1,6 @@
 import os from 'os';
 import { BrowserWindow } from 'electron';
 import type { ThemeId } from '@shared/types';
-import { getOverlayWindow } from '@main/windows/overlay';
 
 /**
  * Theme-applier: translates a theme id into native window-level effects
@@ -86,13 +85,23 @@ function applyToWindow(win: BrowserWindow, themeId: ThemeId, plan: Plan): void {
 }
 
 export function applyTheme(themeId: ThemeId): void {
+  // Sprint 8d.4: apply to EVERY BrowserWindow, not just the overlay.
+  // Before 8d.4, only the overlay got `setVibrancy()` called on it, so
+  // the Settings window (created later, transparent + visualEffectState
+  // already wired) showed an empty transparent rectangle instead of the
+  // Liquid Glass material. Now every window with a matching plan gets
+  // vibrancy applied; opaque themes still receive `setVibrancy(null)`
+  // which is a no-op cleanup.
   const plan = planFor(themeId);
-  const overlay = getOverlayWindow();
-  if (!overlay) {
-    console.warn('[theme] applyTheme called but no overlay window');
+  const windows = BrowserWindow.getAllWindows();
+  if (windows.length === 0) {
+    console.warn('[theme] applyTheme called but no BrowserWindows open');
     return;
   }
-  applyToWindow(overlay, themeId, plan);
+  for (const win of windows) {
+    if (win.isDestroyed()) continue;
+    applyToWindow(win, themeId, plan);
+  }
 }
 
 /** Re-apply on every newly created window. */

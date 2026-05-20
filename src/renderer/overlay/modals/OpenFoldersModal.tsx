@@ -100,6 +100,7 @@ export function OpenFoldersModal({ config, onClose }: Props) {
 
   return (
     <motion.div
+      className="modal-panel"
       initial={MODAL_VARIANTS.initial}
       animate={MODAL_VARIANTS.animate}
       exit={MODAL_VARIANTS.exit}
@@ -108,8 +109,8 @@ export function OpenFoldersModal({ config, onClose }: Props) {
         position: 'absolute',
         inset: 0,
         background: 'var(--bg-modal)',
-        backdropFilter: 'blur(20px) saturate(150%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+        backdropFilter: 'blur(20px) saturate(160%) brightness(108%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(160%) brightness(108%)',
         borderRadius: 14,
         zIndex: 100,
         display: 'flex',

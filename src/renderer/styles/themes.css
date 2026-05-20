@@ -56,7 +56,7 @@
 }
 
 :root[data-theme='liquid-glass'] {
-  --bg-primary: rgba(0, 0, 0, 0.04);
+  --bg-primary: rgba(0, 0, 0, 0.02);
   --bg-elevated: rgba(20, 20, 20, 0.30);
   --bg-hover: rgba(255, 255, 255, 0.06);
   --bg-modal: rgba(0, 0, 0, 0.45);
@@ -180,6 +180,51 @@
   width: 0;
   height: 0;
   pointer-events: none;
+}
+
+/* ─── Sprint 8d.4 ─────────────────────────────────────────────────────
+   Modal panel + popover Liquid Glass coverage. On macOS, override the
+   dark fallback tokens (--bg-modal / --bg-elevated) with *light* frost
+   values so modal panels and popovers read as glass cards floating on
+   the vibrancy material, instead of opaque dark plates that hide it.
+   The inline `style={{ background: 'var(--bg-modal)' }}` on each modal
+   automatically picks up these overrides — no JSX change needed for
+   the background. The dark Windows fallback values stay intact via
+   the parent :root[data-theme='liquid-glass'] block above.
+
+   .modal-panel and .popover-panel are marker classes added to the
+   root element of each modal / popover. They drive the specular
+   gradient border via ::after, scoped to macOS Liquid Glass. */
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] {
+  --bg-modal: rgba(255, 255, 255, 0.04);
+  --bg-elevated: rgba(255, 255, 255, 0.05);
+}
+
+/* Specular gradient border on modal panels — macOS + Liquid Glass only.
+   Same canonical CSS gradient-border trick as .overlay-root::after.
+   pointer-events: none so the modal's own controls stay clickable. */
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .modal-panel::after,
+:root:not([data-glass-fallback='true'])[data-theme='liquid-glass'] .popover-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.40) 0%,
+    rgba(255, 255, 255, 0.00) 30%,
+    rgba(255, 255, 255, 0.00) 70%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 
 /* Modal blur stacking — only meaningful on Liquid Glass where the

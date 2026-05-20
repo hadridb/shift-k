@@ -183,6 +183,16 @@ shift-k/
 - [x] Replay : bouton dans Settings → À PROPOS + script `npm run dev:onboarding` (cross-env `SHIFTK_FORCE_ONBOARDING=1`).
 - [x] Voir ADR-031 + docs/MARKETING_ASSETS.md. 118 tests verts.
 
+**Sprint 8d.4 (termine — 20/05/2026)** : Couverture Liquid Glass Settings + modales + popovers (validation 8d.3 : "overlay ok, mais effet pas applique partout").
+- [x] `theme-applier.ts` : `applyTheme()` itere `BrowserWindow.getAllWindows()` au lieu du seul overlay. Toute fenetre ouverte recoit `setVibrancy` + signal glass-fallback. Skip les fenetres `isDestroyed()`.
+- [x] `settings.ts` : appelle `applyThemeToWindow(win, persistedTheme)` au `ready-to-show` — la vibrancy est appliquee AVANT la premiere frame visible. La settings window etait deja `transparent: true` + `visualEffectState: 'active'` (Sprint 8d) mais `applyTheme()` ne l'avait jamais visee.
+- [x] `themes.css` : override macOS-only de `--bg-modal` (`rgba(255,255,255,0.04)`) + `--bg-elevated` (`rgba(255,255,255,0.05)`) — modales et popovers passent en *light frost* a la place du dark wash 0.30-0.45. Le selecteur `:root:not([data-glass-fallback='true'])[data-theme='liquid-glass']` cible exclusivement macOS Liquid Glass. Windows garde les valeurs sombres du bloc parent.
+- [x] `themes.css` : ::after specular gradient border (135°) sur `.modal-panel` et `.popover-panel`, meme selecteur macOS-only.
+- [x] Marker classes : `.modal-panel` ajoute aux 4 modales (NewProject, EditSlots, OpenFolders, Rescan). `.popover-panel` ajoute a StagePopover. Inline `backdropFilter` passe de `blur(20px) saturate(150%)` a `blur(20px) saturate(160%) brightness(108%)` partout — coherent avec le glass-layer macOS.
+- [x] Bonus shell : `--bg-primary` 0.04 → 0.02 (cran de plus de transparence demande apres 8d.3).
+- [x] Windows intact : tous les overrides scope via `:not([data-glass-fallback='true'])`. Aucune regression Windows.
+- [x] Voir ADR-030 (Sprint 8d.4 revision). 142 tests verts. **Main process change : restart `npm run dev` requis pour que la settings window recoive sa vibrancy.**
+
 **Sprint 8d.3 (termine — 20/05/2026)** : Transparence max (validation 8d.2 : "specular validee, mais encore trop opaque").
 - [x] `themes.ts` + `themes.css` (liquid-glass uniquement) :
   - `--bg-primary` : `rgba(20,20,20,0.55)` → `rgba(0,0,0,0.04)`. La VRAIE source d'opacite : `.overlay-root` peint ce token et ecrasait la vibrancy. Maintenant juste un soupcon de wash pour le contraste texte sur wallpaper clair.
